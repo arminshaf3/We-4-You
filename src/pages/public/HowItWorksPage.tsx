@@ -30,7 +30,7 @@ export const HowItWorksPage: React.FC = () => {
             How It Works
           </h1>
           <p className="text-xl text-content-body mt-4 leading-relaxed">
-            Our service combines a durable physical identification wristband with an attentive office team to reconnect families quickly.
+            Our service combines a durable physical identification wristband with an attentive 24/7 central office team to reconnect individuals with their loved ones and emergency contacts quickly.
           </p>
         </div>
 
@@ -43,14 +43,14 @@ export const HowItWorksPage: React.FC = () => {
                 <span>STEP 01</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-bold text-navy">
-                Register your band and family contacts
+                Register your band and emergency contacts
               </h2>
               <p className="text-base sm:text-lg text-content-body leading-relaxed">
-                When you buy an identification band from an authorized shop, visit our website to register it. You provide your child’s name, primary and emergency guardian numbers, preferred language, and the shop where the band was purchased.
+                When you acquire an identification band, visit our website to register it. You provide the wearer’s name, category (child, senior, adult, or medical care), primary and backup emergency numbers, preferred language, and retailer attribution.
               </p>
               <div className="pt-2">
                 <Button to="/register" variant="primary" size="md">
-                  Register Your Band
+                  Register a Band
                 </Button>
               </div>
             </div>
@@ -62,19 +62,19 @@ export const HowItWorksPage: React.FC = () => {
               <ul className="text-xs text-content-muted space-y-2 pl-2">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-[#088F5B]" />
-                  <span>Guardian full name &amp; relationship</span>
+                  <span>Primary contact name &amp; relationship (Self, Parent, Spouse, Son/Daughter, Caregiver)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-[#088F5B]" />
-                  <span>Primary &amp; secondary emergency mobile numbers</span>
+                  <span>Primary &amp; secondary emergency phone numbers</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-[#088F5B]" />
-                  <span>Child’s first name and optional age</span>
+                  <span>Wearer's name and optional group / medical alert category</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-[#088F5B]" />
-                  <span>Vendor shop attribution for service validity</span>
+                  <span>Partner retailer attribution for continuous service coverage</span>
                 </li>
               </ul>
             </div>
@@ -87,15 +87,15 @@ export const HowItWorksPage: React.FC = () => {
                 <span>STEP 02</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-bold text-navy">
-                Your child wears the band every day
+                Wear the band anywhere, anytime
               </h2>
               <p className="text-base sm:text-lg text-content-body leading-relaxed">
-                Put the band on your child whenever you visit parks, markets, beaches, shopping centres, or travel. The soft, hypoallergenic band is waterproof and resilient against dirt, sweat, and active play.
+                Wear the band whenever visiting crowded places, schools, parks, marathons, community centers, day trips, or travels. The soft, hypoallergenic silicone band is 100% waterproof and resilient against sweat, dirt, water, and daily wear.
               </p>
               <div className="p-4 bg-white rounded-brand border border-border-subtle text-xs text-content-body flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>No electronics or batteries:</strong> Because the band has no electronics, it cannot run out of power, lose satellite lock, or break down when wet.
+                  <strong>No electronics or charging required:</strong> Because the band has no batteries or circuit boards, it cannot run out of power, lose satellite signal, or malfunction in water.
                 </span>
               </div>
             </div>
@@ -103,7 +103,7 @@ export const HowItWorksPage: React.FC = () => {
               <div className="rounded-brand-lg overflow-hidden border border-border-subtle shadow-card max-h-72 w-full">
                 <img
                   src="https://images.unsplash.com/photo-1505377059067-e285a7bac49b?auto=format&fit=crop&w=700&q=80"
-                  alt="Young child playing safely outdoors wearing an identification wristband"
+                  alt="Individual outdoors wearing an identification wristband"
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -117,10 +117,10 @@ export const HowItWorksPage: React.FC = () => {
                 <span>STEP 03</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-heading font-bold text-navy">
-                Our office connects caring people with you
+                Our central office connects caring helpers with you
               </h2>
               <p className="text-base sm:text-lg text-content-body leading-relaxed">
-                If a child is lost or separated, any person or official who finds them sees the clear instructions on the band: they call our office or visit our site and quote the reference. Our staff immediately phones the registered guardians.
+                If an individual requires assistance or is separated, any caring person, first responder, or official sees the clear instructions on the band: they call our hotline or visit our website and quote the reference. Our staff immediately dials the registered emergency contacts.
               </p>
               <div className="pt-2">
                 <Button to="/found-band" variant="mint" size="md">
@@ -134,10 +134,10 @@ export const HowItWorksPage: React.FC = () => {
                 <span className="font-heading font-bold text-sm text-mint">How Office Staff Responds</span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                1. Staff answers the caller and notes their telephone &amp; current safe location.<br />
-                2. Staff matches the band reference to the private guardian file.<br />
-                3. Staff phones the primary guardian; if unreachable, secondary contacts are called immediately.<br />
-                4. Safe reconnection is monitored until confirmed.
+                1. Staff answers the caller and notes their contact telephone &amp; current safe location.<br />
+                2. Staff matches the band reference to the private emergency record.<br />
+                3. Staff phones the primary contact; if unreachable, secondary contacts are called immediately.<br />
+                4. Safe reconnection is coordinated and monitored until confirmed.
               </p>
             </div>
           </div>

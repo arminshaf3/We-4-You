@@ -18,17 +18,23 @@ export const AdminLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex text-content-body font-body antialiased">
       {/* Sidebar */}
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="print:hidden">
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminTopbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <div className="print:hidden">
+          <AdminTopbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        </div>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none">
           <Outlet />
         </main>
       </div>
 
-      <ToastContainer />
+      <div className="print:hidden">
+        <ToastContainer />
+      </div>
     </div>
   );
 };

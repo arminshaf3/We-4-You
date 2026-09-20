@@ -49,17 +49,17 @@ export const RegistrationsListPage: React.FC = () => {
     },
     {
       key: 'child',
-      header: 'Child',
+      header: 'Wearer / Member',
       render: (reg) => (
         <div>
           <span className="font-semibold text-navy block">{reg.child.name}</span>
-          <span className="text-xs text-content-muted">{reg.child.ageRange || 'Age not given'}</span>
+          <span className="text-xs text-content-muted">{reg.child.ageRange || 'Category not given'}</span>
         </div>
       ),
     },
     {
       key: 'guardian',
-      header: 'Guardian',
+      header: 'Primary Contact',
       render: (reg) => (
         <div>
           <span className="font-medium text-navy block">{reg.guardian.fullName}</span>
@@ -119,7 +119,7 @@ export const RegistrationsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Registration Review Queue"
-        description="Verify guardian authority, check band references, and manage activation eligibility."
+        description="Verify emergency contact authority, check band references, and manage activation eligibility."
       />
 
       {/* Queue Stat Filter Pills */}
@@ -204,7 +204,7 @@ export const RegistrationsListPage: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by child, guardian, band, or reference..."
+            placeholder="Search by wearer, contact, band, or reference..."
             className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
           />
         </div>
@@ -260,7 +260,7 @@ export const RegistrationsListPage: React.FC = () => {
             <div>
               <span className="font-semibold text-navy block text-sm">{reg.child.name}</span>
               <span className="text-content-muted">
-                Guardian: {reg.guardian.fullName} ({reg.guardian.mobile})
+                Contact: {reg.guardian.fullName} ({reg.guardian.mobile})
               </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-border-subtle">

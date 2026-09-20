@@ -59,12 +59,12 @@ export const HomePage: React.FC = () => {
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] xl:text-[62px] font-heading font-bold text-white leading-[1.12] tracking-tight">
               A little band.<br />
-              <span className="text-mint">A helping hand.</span>
+              <span className="text-mint">Protection for everyone.</span>
             </h1>
 
             {/* Subheading */}
             <p className="text-base sm:text-lg lg:text-xl text-slate-100 max-w-lg leading-relaxed font-body drop-shadow-sm">
-              A simple way to help caring people connect with your family through our office.
+              Instant emergency reconnection &amp; peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.
             </p>
 
             {/* Action Buttons */}
@@ -75,7 +75,7 @@ export const HomePage: React.FC = () => {
                 size="lg"
                 className="w-full sm:w-auto shadow-xl hover:shadow-2xl font-heading font-bold text-navy hover:scale-[1.02] transition-all"
               >
-                Register Your Child
+                Register a Band
               </Button>
               <Button
                 to="/how-it-works"
@@ -91,15 +91,15 @@ export const HomePage: React.FC = () => {
             <div className="pt-2 flex flex-wrap items-center gap-2.5 sm:gap-4 text-xs text-slate-200">
               <div className="flex items-center gap-1.5 bg-[#05254C]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
                 <CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" />
-                <span>No battery or charging</span>
+                <span>No battery or charging needed</span>
               </div>
               <div className="flex items-center gap-1.5 bg-[#05254C]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
                 <CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" />
-                <span>Private guardian records</span>
+                <span>Private emergency records</span>
               </div>
               <div className="flex items-center gap-1.5 bg-[#05254C]/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
                 <CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" />
-                <span>Comfortable silicone wristband</span>
+                <span>All ages &amp; medical alerts</span>
               </div>
             </div>
           </div>
@@ -113,9 +113,9 @@ export const HomePage: React.FC = () => {
       <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
           <SectionIntro
-            badge="Simple Process"
-            heading="Three simple steps."
-            paragraph="A straightforward way to provide everyday reassurance for your child wherever you go."
+            badge="Universal Safety"
+            heading="Safety and reconnection in three simple steps."
+            paragraph="A straightforward way to provide everyday reassurance for anyone you care about — at home, on trips, or outdoors."
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
@@ -128,7 +128,7 @@ export const HomePage: React.FC = () => {
                 Register
               </h3>
               <p className="text-base text-content-body leading-relaxed">
-                Connect your printed band reference with your private guardian contact details in our office registry.
+                Connect the unique band reference code with your private emergency contact numbers in our secure office registry.
               </p>
             </div>
 
@@ -141,7 +141,7 @@ export const HomePage: React.FC = () => {
                 Wear
               </h3>
               <p className="text-base text-content-body leading-relaxed">
-                Your child wears the lightweight, comfortable, waterproof identification band on family outings and trips.
+                The individual wears the lightweight, waterproof, hypoallergenic silicone band everywhere — schools, parks, runs, or travel.
               </p>
             </div>
 
@@ -154,7 +154,7 @@ export const HomePage: React.FC = () => {
                 Reconnect
               </h3>
               <p className="text-base text-content-body leading-relaxed">
-                If separated, any caring person quotes the printed reference to our office, and our staff contacts you immediately.
+                If assistance is needed, anyone quotes the printed reference code to our central office, and we notify the emergency contacts immediately.
               </p>
             </div>
           </div>
@@ -243,7 +243,7 @@ export const HomePage: React.FC = () => {
                 A simple start to staying connected.
               </h2>
               <p className="text-lg text-content-body leading-relaxed">
-                Have your band ready. Add your child's details, choose your vendor shop, and select a service subscription.
+                Have your band ready. Add the wearer's details, primary and emergency contacts, choose your vendor shop, and select a service plan.
               </p>
               <div className="pt-2">
                 <Button to="/register" variant="mint" size="lg">
@@ -268,7 +268,7 @@ export const HomePage: React.FC = () => {
                   <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle flex items-center justify-between">
                     <div>
                       <span className="text-xs text-content-muted block">Step 1</span>
-                      <span className="text-sm font-semibold text-navy">Guardian Full Name &amp; Phone</span>
+                      <span className="text-sm font-semibold text-navy">Primary &amp; Emergency Contacts</span>
                     </div>
                     <span className="text-xs font-mono font-medium text-slate-500 bg-white px-2 py-1 rounded border">e.g. Elena Vance</span>
                   </div>
@@ -276,7 +276,7 @@ export const HomePage: React.FC = () => {
                   <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle flex items-center justify-between">
                     <div>
                       <span className="text-xs text-content-muted block">Step 2</span>
-                      <span className="text-sm font-semibold text-navy">Band Reference Code</span>
+                      <span className="text-sm font-semibold text-navy">Wearer &amp; Band Reference</span>
                     </div>
                     <span className="text-xs font-mono font-bold text-navy bg-mint-pale px-2 py-1 rounded border border-emerald-300/60">
                       W4Y-XXXX-XX
@@ -331,7 +331,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-sm font-heading font-semibold">Immediate Assistance</span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  If you found a child wearing our band or need immediate office assistance, quote the printed reference to our team.
+                  If you found a person wearing our band or need immediate office assistance, quote the printed reference to our team.
                 </p>
                 <Link
                   to="/found-band"
@@ -441,13 +441,13 @@ export const HomePage: React.FC = () => {
         <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12 space-y-4">
             <span className="inline-block text-xs font-semibold uppercase tracking-wider text-mint-darker bg-mint-pale px-3.5 py-1.5 rounded-full border border-emerald-300/40">
-              Colourful &amp; Child-Friendly Design
+              Comfortable, Universal &amp; Durable Design
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold text-navy tracking-tight">
-              A colour for every personality.
+              Designed for everyone.
             </h2>
             <p className="text-base sm:text-lg text-content-body leading-relaxed">
-              Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for active kids on every everyday adventure.
+              Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for children, seniors, runners, and everyday wearers.
             </p>
           </div>
 
@@ -455,7 +455,7 @@ export const HomePage: React.FC = () => {
           <div className="relative rounded-brand-2xl overflow-hidden shadow-2xl border border-slate-200/80 bg-white group">
             <img
               src="/wristbands-colors-showcase.jpg"
-              alt="We 4 You child identification wristbands in Mint Green, Coral Red, Vibrant Orange, Royal Purple, Clean White, and Deep Navy"
+              alt="We 4 You identification wristbands in Mint Green, Coral Red, Vibrant Orange, Royal Purple, Clean White, and Deep Navy"
               className="w-full h-auto object-cover select-none transition-transform duration-700 group-hover:scale-[1.01]"
               loading="lazy"
             />
@@ -464,7 +464,7 @@ export const HomePage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm font-medium text-slate-200">
                 <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" /> BPA-Free Hypoallergenic Silicone</span>
                 <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" /> Laser-Engraved Contact Info</span>
-                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" /> 100% Waterproof &amp; Playground-Ready</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" /> 100% Waterproof &amp; Adventure-Ready</span>
                 <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-mint flex-shrink-0" /> Breathable Adjustable Clasp</span>
               </div>
               <Button to="/register" variant="mint" size="sm" className="font-heading font-semibold">

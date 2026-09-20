@@ -15,15 +15,15 @@ export const FaqPage: React.FC = () => {
   const faqs: FaqItem[] = [
     {
       category: 'Location & Tracking',
-      question: 'Does the band track my child’s live GPS location?',
+      question: 'Does the band track live GPS location?',
       answer:
-        'This identification band does not provide GPS tracking. It helps our office contact registered guardians using the band reference. The band contains no battery, SIM card, or electronic transmitter, making it waterproof, lightweight, and durable.',
+        'This identification band does not provide electronic GPS tracking. It connects caring helpers with our central office using the unique band reference code. The band contains no battery, SIM card, or electronic transmitter, making it completely waterproof, lightweight, and durable for all ages.',
     },
     {
       category: 'Registration',
-      question: 'How do I register our identification band?',
+      question: 'How do I register an identification band?',
       answer:
-        'Registration is completed on our website in four simple steps. You will provide your guardian contact details, child’s name, printed band reference, and the shop where the band was purchased.',
+        'Registration is completed on our website in a few simple steps. You will provide primary contact details, wearer details (child, senior, adult, or medical alert), printed band reference, and the retailer where the band was acquired.',
     },
     {
       category: 'Band Codes',
@@ -35,19 +35,19 @@ export const FaqPage: React.FC = () => {
       category: 'Subscriptions',
       question: 'Why is there an ongoing subscription for the service?',
       answer:
-        'The wristband is purchased once from an authorized local shop. The subscription covers the maintenance of your private registry file and staffing of our office contact team so assistance is available whenever needed.',
+        'The wristband is purchased once from an authorized partner shop. The subscription covers the maintenance of your private emergency record and 24/7 staffing of our office contact team so assistance is available whenever needed.',
     },
     {
       category: 'Renewals',
       question: 'How do I renew our subscription when it expires?',
       answer:
-        'You can renew your plan through our office. Early renewal automatically extends from your current expiration date without interruption, and you do not need to replace your existing band.',
+        'You can renew your plan online via card or through our office. Early renewal automatically extends from your current expiration date without interruption, and you do not need to replace your existing band.',
     },
     {
       category: 'Replacements',
       question: 'What happens if our band is lost or damaged?',
       answer:
-        'If your band is lost or damaged, contact our office. We can issue a replacement band and link it directly to your existing child file and subscription, retiring the old band reference from service.',
+        'If your band is lost or damaged, contact our office. We can issue a replacement band and link it directly to your existing profile and subscription, retiring the old band reference from service.',
     },
     {
       category: 'Vendor Shops',
@@ -59,13 +59,13 @@ export const FaqPage: React.FC = () => {
       category: 'Contact Updates',
       question: 'How do I keep my phone number and emergency contacts up to date?',
       answer:
-        'If you change telephone numbers or move, please contact our office. For security and child safety, guardian contact updates require verification by our office staff before being updated.',
+        'If you change telephone numbers or move, please contact our office. For security and personal safety, contact updates require identity verification by our office staff before being saved.',
     },
     {
       category: 'Privacy',
       question: 'Can strangers see my personal phone number on the band?',
       answer:
-        'No. Only our office contact number and the unique band reference code are printed on the band. Your private phone number, child’s name, and home address are never displayed publicly.',
+        'No. Only our central office contact number and the unique band reference code are printed on the band. Your private phone number, home address, and personal details are never displayed publicly.',
     },
     {
       category: 'Policies',

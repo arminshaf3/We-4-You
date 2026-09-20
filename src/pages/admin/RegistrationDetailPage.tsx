@@ -158,21 +158,21 @@ export const RegistrationDetailPage: React.FC = () => {
         {/* Left Column (8 cols): Fictional Data Panels */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Child & Band Card */}
+          {/* Wearer & Band Card */}
           <div className="bg-white p-6 rounded-brand border border-border-subtle shadow-subtle space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2 text-navy font-heading font-bold text-base">
                 <User className="w-5 h-5 text-navy" />
-                <span>Child &amp; Band Details</span>
+                <span>Wearer &amp; Band Details</span>
               </div>
               <span className="text-xs text-content-muted">Sample Record</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-content-muted block mb-0.5">Child's Name</span>
+                <span className="text-content-muted block mb-0.5">Wearer's Name</span>
                 <span className="text-base font-bold text-navy">{reg.child.name}</span>
-                <span className="text-content-muted block mt-0.5">Age Range: {reg.child.ageRange || 'Not provided'}</span>
+                <span className="text-content-muted block mt-0.5">Category / Age Group: {reg.child.ageRange || 'Not provided'}</span>
               </div>
 
               <div>
@@ -186,21 +186,21 @@ export const RegistrationDetailPage: React.FC = () => {
             {reg.child.photoUrl && (
               <div className="pt-2">
                 <span className="text-xs text-content-muted block mb-1.5">Submitted Photo (Demo Preview)</span>
-                <img src={reg.child.photoUrl} alt="Submitted child preview" className="w-24 h-24 rounded-brand object-cover border" />
+                <img src={reg.child.photoUrl} alt="Submitted wearer preview" className="w-24 h-24 rounded-brand object-cover border" />
               </div>
             )}
           </div>
 
-          {/* Guardian Contact Card */}
+          {/* Contact Person Card */}
           <div className="bg-white p-6 rounded-brand border border-border-subtle shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle text-navy font-heading font-bold text-base">
               <ShieldCheck className="w-5 h-5 text-navy" />
-              <span>Registered Guardian Information</span>
+              <span>Registered Contact Information</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-content-muted block mb-0.5">Primary Guardian</span>
+                <span className="text-content-muted block mb-0.5">Primary Contact</span>
                 <span className="text-sm font-semibold text-navy block">
                   {reg.guardian.fullName} ({reg.guardian.relationship})
                 </span>
@@ -265,19 +265,46 @@ export const RegistrationDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Separate Payment Requirement Notice */}
-            <div className="p-4 rounded-brand bg-neutral-soft border border-border-subtle flex items-center justify-between gap-4">
-              <div className="space-y-0.5 text-xs">
-                <span className="font-semibold text-navy block">Payment Verification Status</span>
-                <span className="text-content-muted">
-                  Receipt: {linkedPayment?.receiptRef || 'Pending receipt entry'} &bull; Status:{' '}
-                  <strong>{reg.paymentStatus}</strong>
-                </span>
+            {/* Payment Status Box */}
+            <div className="p-4 rounded-brand bg-neutral-soft border border-border-subtle space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-0.5 text-xs">
+                  <span className="font-semibold text-navy block">Subscription Payment Verification</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-content-muted">
+                      Receipt: <strong className="font-mono">{linkedPayment?.receiptRef || reg.paymentRef || 'Pending receipt entry'}</strong>
+                    </span>
+                    <span className="text-content-muted">&bull;</span>
+                    <StatusBadge status={reg.paymentStatus} size="sm" />
+                  </div>
+                </div>
+
+                {reg.paymentStatus !== 'verified' && (
+                  <Button onClick={handleVerifyLinkedPayment} variant="outline" size="sm">
+                    Simulate Payment Verification
+                  </Button>
+                )}
               </div>
-              {reg.paymentStatus !== 'verified' && (
-                <Button onClick={handleVerifyLinkedPayment} variant="outline" size="sm">
-                  Simulate Payment Verification
-                </Button>
+
+              {/* Card Payment Details Breakdown */}
+              {linkedPayment?.method === 'card' || reg.cardDetails ? (
+                <div className="pt-2 border-t border-border-subtle/80 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-[#088F5B]" />
+                    <span className="font-semibold text-emerald-900">
+                      Paid with {reg.cardDetails?.brand || linkedPayment?.cardDetails?.brand || 'Card'} ending in {reg.cardDetails?.last4 || linkedPayment?.cardDetails?.last4 || '4242'}
+                    </span>
+                  </div>
+                  {(reg.cardDetails?.transactionId || linkedPayment?.transactionId) && (
+                    <span className="font-mono text-[11px] text-content-muted">
+                      TXN: {reg.cardDetails?.transactionId || linkedPayment?.transactionId}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="pt-1 text-[11px] text-content-muted">
+                  Offline payment method: In-store voucher / Bank manual transfer.
+                </div>
               )}
             </div>
           </div>
@@ -315,7 +342,7 @@ export const RegistrationDetailPage: React.FC = () => {
         isOpen={isUpdateModalOpen}
         onClose={() => setIsUpdateModalOpen(false)}
         title="Request Information Update"
-        description="Specify what information the guardian must update or clarify."
+        description="Specify what information the primary contact must update or clarify."
       >
         <form onSubmit={handleRequestUpdate} className="space-y-4">
           <FormField label="Update Instructions" required>

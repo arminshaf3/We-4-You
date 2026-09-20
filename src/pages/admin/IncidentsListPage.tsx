@@ -99,7 +99,7 @@ export const IncidentsListPage: React.FC = () => {
       header: 'Report Type',
       render: (inc) => (
         <span className="text-xs font-semibold text-slate-700">
-          {inc.reportType === 'child_found' ? 'Child with Finder' : 'Band Found Alone'}
+          {inc.reportType === 'band_found_alone' ? 'Band Found Alone' : 'Person with Finder'}
         </span>
       ),
     },
@@ -146,7 +146,7 @@ export const IncidentsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Office Assistance Incidents"
-        description="Active office telephone reports, finder intake, and guardian reconnection coordination."
+        description="Active office telephone reports, finder intake, and emergency contact reconnection coordination."
         actions={
           <Button
             onClick={() => setIsNewModalOpen(true)}
@@ -175,13 +175,13 @@ export const IncidentsListPage: React.FC = () => {
 
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Confirmed Reunited
+            Confirmed Reconnected
           </span>
           <span className="text-2xl font-heading font-bold text-[#088F5B] block mt-1">
             {resolvedCount}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Child safely back with guardians
+            Wearer safely back with emergency contacts
           </span>
         </div>
 
@@ -280,7 +280,7 @@ export const IncidentsListPage: React.FC = () => {
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
         title="Log Incoming Office Assistance Report"
-        description="Record telephone details from a person who found a child or lost band."
+        description="Record telephone details from a person who found someone wearing a band or a lost band."
       >
         <form onSubmit={handleCreateIncident} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -289,7 +289,7 @@ export const IncidentsListPage: React.FC = () => {
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value as IncidentReportType)}
               >
-                <option value="child_found">Child Found with Band</option>
+                <option value="child_found">Person Found with Band</option>
                 <option value="band_found_alone">Band Found Alone (Lost Property)</option>
               </Select>
             </FormField>
@@ -324,11 +324,11 @@ export const IncidentsListPage: React.FC = () => {
             </FormField>
           </div>
 
-          <FormField label="Voluntarily Reported Location" hint="Safe location where child is currently waiting">
+          <FormField label="Voluntarily Reported Location" hint="Safe location where individual is currently waiting">
             <Input
               value={locationStr}
               onChange={(e) => setLocationStr(e.target.value)}
-              placeholder="e.g. Riverside Community Park south playground info booth"
+              placeholder="e.g. Riverside Community Park south info booth"
             />
           </FormField>
 
@@ -337,7 +337,7 @@ export const IncidentsListPage: React.FC = () => {
               rows={3}
               value={incidentNotes}
               onChange={(e) => setIncidentNotes(e.target.value)}
-              placeholder="Details about child’s wellbeing, attire, and who is accompanying them..."
+              placeholder="Details about individual's wellbeing, attire, and who is accompanying them..."
               required
             />
           </FormField>

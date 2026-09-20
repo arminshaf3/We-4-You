@@ -124,7 +124,7 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => 
         onClose={() => setIsResetConfirmOpen(false)}
         onConfirm={handleResetConfirm}
         title="Reset Demonstration Data?"
-        message="This action will restore all vendors, child registrations, bands, subscription plans, payments, and incidents to their initial demonstration state. Any newly created entries will be reset."
+        message="This action will restore all vendors, wearer registrations, bands, subscription plans, payments, and incidents to their initial demonstration state. Any newly created entries will be reset."
         confirmLabel="Reset All Demo Data"
         variant="danger"
       />

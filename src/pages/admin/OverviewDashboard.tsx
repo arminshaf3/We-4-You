@@ -76,7 +76,7 @@ export const OverviewDashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Guardian &amp; band checks</span>
+            <span>Contact &amp; band checks</span>
             <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
@@ -105,7 +105,7 @@ export const OverviewDashboard: React.FC = () => {
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Child / band reports</span>
+            <span>Person / band reports</span>
             <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
@@ -212,7 +212,7 @@ export const OverviewDashboard: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-xs text-content-body truncate">
-                        Child: <strong>{reg.child.name}</strong> &bull; Guardian: {reg.guardian.fullName} ({reg.guardian.relationship})
+                        Wearer: <strong>{reg.child.name}</strong> &bull; Contact: {reg.guardian.fullName} ({reg.guardian.relationship})
                       </p>
                       <div className="flex items-center gap-3 text-[11px] text-content-muted">
                         <span>Submitted: {reg.submissionDate}</span>
@@ -309,7 +309,7 @@ export const OverviewDashboard: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Instantly retrieve private child and guardian contact files by querying the unique printed band code.
+              Instantly retrieve private wearer and emergency contact files by querying the unique printed band code.
             </p>
             <Button
               onClick={() => setIsLookupOpen(true)}
@@ -335,7 +335,7 @@ export const OverviewDashboard: React.FC = () => {
                 <span className="font-mono font-bold text-navy">{bands.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-content-muted">Assigned to Children:</span>
+                <span className="text-content-muted">Assigned to Wearers:</span>
                 <span className="font-mono font-bold text-[#088F5B]">{childrenRecords.length}</span>
               </div>
               <div className="flex items-center justify-between">

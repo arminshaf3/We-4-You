@@ -15,6 +15,8 @@ import {
   AppSettings,
   RegistrationStatus,
   ContactAttempt,
+  PaymentMethod,
+  CardPaymentDetails,
 } from '../types';
 import {
   initialVendors,
@@ -69,7 +71,7 @@ interface AppContextType {
   removeToast: (id: string) => void;
 
   // Registration workflows
-  submitPublicRegistration: (data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'>) => Registration;
+  submitPublicRegistration: (data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'> & { paymentMethod?: PaymentMethod; cardDetails?: CardPaymentDetails }) => Registration;
   updateRegistrationStatus: (id: string, status: RegistrationStatus, reason?: string) => void;
 
   // Vendor workflows
@@ -87,7 +89,15 @@ interface AppContextType {
 
   // Plan & Subscription workflows
   updatePlan: (id: string, updates: Partial<SubscriptionPlan>) => void;
-  renewSubscription: (subscriptionId: string, monthsToAdd: number) => void;
+  renewSubscription: (subscriptionId: string, monthsToAdd: number, method?: PaymentMethod, cardDetails?: CardPaymentDetails) => Payment | undefined;
+  directSubscribeWithCard: (params: {
+    bandCode: string;
+    planId: string;
+    guardianName: string;
+    guardianPhone: string;
+    guardianEmail?: string;
+    cardDetails: CardPaymentDetails;
+  }) => { success: boolean; message: string; receipt?: Payment; subscription?: Subscription };
 
   // Payments workflows
   verifyPayment: (paymentId: string) => void;
@@ -303,56 +313,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 1. Submit Public Registration
   const submitPublicRegistration = (
-    data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'>
+    data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'> & {
+      paymentMethod?: PaymentMethod;
+      cardDetails?: CardPaymentDetails;
+    }
   ): Registration => {
     const count = registrations.length + 183;
     const refNumber = `REG-2026-0${count}`;
+    const selectedPlan = plans.find((p) => p.id === data.planId);
+    const amount = selectedPlan?.priceAmount || 29.0;
+    const paymentMethod = data.paymentMethod || (data.cardDetails ? 'card' : 'card');
+    const isCard = paymentMethod === 'card';
+
+    // Generate Transaction Reference and Receipt
+    const transactionId = data.cardDetails?.transactionId || `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+    const payRef = isCard
+      ? (data.paymentRef || `CARD-2026-${Math.floor(1000 + Math.random() * 9000)}`)
+      : `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const cardDetails: CardPaymentDetails | undefined = isCard
+      ? {
+          brand: data.cardDetails?.brand || 'Visa',
+          last4: data.cardDetails?.last4 || '4242',
+          cardholderName: data.cardDetails?.cardholderName || data.guardian.fullName,
+          expMonth: data.cardDetails?.expMonth || '12',
+          expYear: data.cardDetails?.expYear || '28',
+          transactionId,
+          authCode: `AUTH-${Math.floor(100000 + Math.random() * 900000)}`,
+        }
+      : undefined;
+
+    const paymentStatus = isCard ? 'verified' : 'pending';
+
+    const timeline = [
+      {
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        actor: 'Applicant',
+        action: 'Registration submitted online',
+        notes: isCard
+          ? 'Guardian and band details submitted with card checkout.'
+          : 'Awaiting office document verification and subscription payment confirmation.',
+      },
+    ];
+
+    if (isCard && cardDetails) {
+      timeline.push({
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        actor: 'Payment Gateway (Card Processor)',
+        action: 'Card Payment Accepted & Confirmed',
+        notes: `Authorized $${amount.toFixed(2)} USD via ${cardDetails.brand} ending in ${cardDetails.last4}. Transaction Ref: ${transactionId}.`,
+      });
+    }
+
     const newReg: Registration = {
       ...data,
       id: refNumber,
       referenceNumber: refNumber,
       submissionDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
       status: 'pending_verification',
-      paymentStatus: 'pending',
-      timeline: [
-        {
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          actor: 'Applicant',
-          action: 'Registration submitted online',
-          notes: 'Awaiting office document verification and subscription payment confirmation.',
-        },
-      ],
+      paymentStatus,
+      paymentMethod,
+      cardDetails,
+      paymentRef: payRef,
+      timeline,
     };
 
     setRegistrations((prev) => [newReg, ...prev]);
 
-    // Create a pending payment fixture linked to this registration
-    const selectedPlan = plans.find((p) => p.id === data.planId);
-    const payRef = `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Create payment fixture linked to this registration
     const newPay: Payment = {
       id: `PAY-${Date.now()}`,
       receiptRef: payRef,
       type: 'subscription',
-      amount: selectedPlan?.priceAmount || 29.0,
+      method: paymentMethod,
+      cardDetails,
+      transactionId: isCard ? transactionId : undefined,
+      amount,
       currency: 'USD',
-      status: 'pending',
+      status: paymentStatus,
       paymentDate: new Date().toISOString().substring(0, 10),
       registrationId: refNumber,
       payerName: data.guardian.fullName,
-      notes: 'Registration submitted; awaiting manual bank/store confirmation.',
+      notes: isCard
+        ? `Card payment accepted & confirmed online (${cardDetails?.brand} ending ${cardDetails?.last4}). Instant verification.`
+        : 'Registration submitted; awaiting manual bank/store confirmation.',
     };
     setPayments((prev) => [newPay, ...prev]);
 
     // Log Activity
     logAction(
-      'Registration Received',
-      `New registration ${refNumber} received for child "${data.child.name}".`,
+      isCard ? 'Card Payment Confirmed' : 'Registration Received',
+      isCard
+        ? `Registration ${refNumber} received with confirmed card payment of $${amount.toFixed(2)} (${cardDetails?.brand} •••• ${cardDetails?.last4}).`
+        : `New registration ${refNumber} received for wearer "${data.child.name}".`,
       'registration',
       refNumber,
-      'Applicant (Public Web)'
+      isCard ? 'Payment Gateway / Applicant' : 'Applicant (Public Web)'
     );
 
-    addToast('success', 'Registration Submitted', `Reference ${refNumber} created for review.`);
+    addToast(
+      'success',
+      isCard ? 'Card Payment Accepted & Confirmed' : 'Registration Submitted',
+      isCard
+        ? `Receipt ${payRef} confirmed for $${amount.toFixed(2)}. Reference ${refNumber} queued.`
+        : `Reference ${refNumber} created for review.`
+    );
     return newReg;
   };
 
@@ -373,7 +438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         timestamp,
         actor: adminUser,
         action: actionDesc,
-        notes: reason || (status === 'approved' ? 'All guardian and band credentials verified.' : ''),
+        notes: reason || (status === 'approved' ? 'All contact and band credentials verified.' : ''),
       },
     ];
 
@@ -381,7 +446,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((r) => (r.id === id ? { ...r, status, statusReason: reason, verifiedBy: adminUser, verifiedAt: timestamp, timeline: updatedTimeline } : r))
     );
 
-    // If approved, create official Child Record, activate Band, and create Subscription & Commission
+    // If approved, create official Record, activate Band, and create Subscription & Commission
     if (status === 'approved') {
       const childId = `CHD-00${childrenRecords.length + 1}`;
       const subId = `SUB-00${subscriptions.length + 1}`;
@@ -393,7 +458,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expiry.setMonth(expiry.getMonth() + duration);
       const expiryDate = expiry.toISOString().substring(0, 10);
 
-      // Create Child Record
+      // Create Record
       const newChild: ChildRecord = {
         id: childId,
         name: reg.child.name,
@@ -457,8 +522,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCommissions((prev) => [...prev, newComm]);
       }
 
-      addToast('success', 'Registration Approved', `Child ${reg.child.name} is now protected with band ${reg.bandCode}.`);
-      logAction('Registration Approved', `Approved registration ${reg.referenceNumber} for child ${reg.child.name}.`, 'registration', reg.referenceNumber);
+      addToast('success', 'Registration Approved', `Wearer ${reg.child.name} is now protected with band ${reg.bandCode}.`);
+      logAction('Registration Approved', `Approved registration ${reg.referenceNumber} for wearer ${reg.child.name}.`, 'registration', reg.referenceNumber);
     } else {
       addToast('info', 'Status Updated', `Registration ${reg.referenceNumber} marked as ${status.replace('_', ' ')}.`);
       logAction('Registration Status Changed', `Set status of ${reg.referenceNumber} to ${status}.`, 'registration', reg.referenceNumber);
@@ -473,9 +538,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id,
       createdAt: new Date().toISOString().substring(0, 10),
     };
-    setVendors((prev) => [newVendor, ...prev]);
-    logAction('Vendor Created', `Created vendor shop "${newVendor.shopName} - ${newVendor.branch}".`, 'vendor', id);
-    addToast('success', 'Vendor Created', `"${newVendor.shopName}" is now available for registration.`);
+    setVendors((prev) => [...prev, newVendor]);
+    logAction('Vendor Created', `Created retail partner profile for "${newVendor.shopName}".`, 'vendor', id);
+    addToast('success', 'Shop Added', `${newVendor.shopName} added successfully.`);
     return newVendor;
   };
 
@@ -483,26 +548,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setVendors((prev) =>
       prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
     );
-    logAction('Vendor Updated', `Updated profile for vendor ${id}.`, 'vendor', id);
-    addToast('success', 'Vendor Updated', 'Shop details have been updated.');
+    logAction('Vendor Updated', `Updated profile or terms for shop ID ${id}.`, 'vendor', id);
+    addToast('success', 'Shop Updated', 'Shop profile saved.');
   };
 
   const toggleVendorActive = (id: string) => {
-    const target = vendors.find((v) => v.id === id);
-    if (!target) return;
-    const nextState = !target.isActive;
+    const vendor = vendors.find((v) => v.id === id);
+    if (!vendor) return;
+    const newStatus = !vendor.isActive;
     setVendors((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, isActive: nextState } : v))
+      prev.map((v) => (v.id === id ? { ...v, isActive: newStatus } : v))
     );
-    const actionText = nextState ? 'Activated' : 'Deactivated';
-    logAction('Vendor Status Toggled', `${actionText} vendor "${target.shopName} - ${target.branch}".`, 'vendor', id);
-    addToast(
-      nextState ? 'success' : 'warning',
-      `Vendor ${actionText}`,
-      nextState
-        ? `"${target.shopName}" now appears in the public registration dropdown.`
-        : `"${target.shopName}" is now hidden from new public registrations.`
-    );
+    logAction('Vendor Status Toggled', `Shop ${vendor.shopName} marked as ${newStatus ? 'Active' : 'Inactive'}.`, 'vendor', id);
+    addToast(newStatus ? 'success' : 'info', `Shop ${newStatus ? 'Activated' : 'Deactivated'}`, `${vendor.shopName} is now ${newStatus ? 'active' : 'inactive'}.`);
   };
 
   // 4. Band Handlers
@@ -520,7 +578,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, currentBandCode: band.referenceCode } : c))
     );
-    logAction('Band Assigned', `Assigned band ${band.referenceCode} to child ${childId}.`, 'band', band.id);
+    logAction('Band Assigned', `Assigned band ${band.referenceCode} to wearer ${childId}.`, 'band', band.id);
     return true;
   };
 
@@ -554,14 +612,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // 2. Update Child Record with new band while preserving subscription and history
+    // 2. Update Record with new band while preserving subscription and history
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, currentBandCode: newBand.referenceCode } : c))
     );
 
     logAction(
       'Band Replaced',
-      `Replaced band ${oldBandCode} with ${newBand.referenceCode} for child ${childId}. Reason: ${reason}`,
+      `Replaced band ${oldBandCode} with ${newBand.referenceCode} for wearer ${childId}. Reason: ${reason}`,
       'band',
       newBand.id
     );
@@ -582,13 +640,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newBand;
   };
 
-  // 5. Child and Guardian Profile updates
+  // 5. Profile updates
   const updateChildRecord = (childId: string, updates: Partial<ChildRecord>) => {
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, ...updates } : c))
     );
-    logAction('Child Profile Updated', `Updated record details for child ${childId}.`, 'child', childId);
-    addToast('success', 'Record Updated', 'Child and guardian details updated successfully.');
+    logAction('Profile Updated', `Updated record details for wearer ${childId}.`, 'child', childId);
+    addToast('success', 'Record Updated', 'Wearer and emergency contact details updated successfully.');
   };
 
   // 6. Plan & Subscription Handlers
@@ -600,9 +658,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('success', 'Plan Updated', 'Subscription plan configuration saved.');
   };
 
-  const renewSubscription = (subscriptionId: string, monthsToAdd: number) => {
+  const renewSubscription = (
+    subscriptionId: string,
+    monthsToAdd: number,
+    method: PaymentMethod = 'card',
+    cardDetails?: CardPaymentDetails
+  ): Payment | undefined => {
     const sub = subscriptions.find((s) => s.id === subscriptionId);
-    if (!sub) return;
+    if (!sub) return undefined;
 
     // Early renewal extends from existing expiry; late renewal starts from today
     const currentExpiry = new Date(sub.expiryDate);
@@ -610,6 +673,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const baseDate = currentExpiry > now ? currentExpiry : now;
     baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
     const newExpiry = baseDate.toISOString().substring(0, 10);
+    const isCard = method === 'card';
+    const transactionId = cardDetails?.transactionId || (isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined);
+    const receiptRef = isCard ? `CARD-REN-${Math.floor(1000 + Math.random() * 9000)}` : `REC-REN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const amount = monthsToAdd === 24 ? 49.0 : 29.0;
 
     setSubscriptions((prev) =>
       prev.map((s) =>
@@ -618,6 +685,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               ...s,
               expiryDate: newExpiry,
               status: 'active',
+              paymentRef: receiptRef,
+              paymentMethod: method,
+              transactionId,
               renewalCount: s.renewalCount + 1,
             }
           : s
@@ -627,20 +697,120 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Create payment receipt for renewal
     const newPay: Payment = {
       id: `PAY-REN-${Date.now()}`,
-      receiptRef: `REC-REN-${Math.floor(1000 + Math.random() * 9000)}`,
+      receiptRef,
       type: 'subscription',
-      amount: monthsToAdd === 24 ? 49.0 : 29.0,
+      method,
+      cardDetails: isCard ? cardDetails || {
+        brand: 'Visa',
+        last4: '4242',
+        cardholderName: 'Registered Guardian',
+        transactionId: transactionId || `TXN-CARD-${Date.now()}`,
+      } : undefined,
+      transactionId,
+      amount,
       currency: 'USD',
       status: 'verified',
       paymentDate: new Date().toISOString().substring(0, 10),
       childId: sub.childId,
-      payerName: 'Guardian Renewal',
-      notes: `Simulated subscription renewal extended by ${monthsToAdd} months.`,
+      payerName: cardDetails?.cardholderName || 'Guardian Renewal',
+      notes: isCard
+        ? `Card payment accepted & confirmed online (${cardDetails?.brand || 'Visa'} ending ${cardDetails?.last4 || '4242'}). Coverage extended by ${monthsToAdd} months.`
+        : `Manual subscription renewal extended by ${monthsToAdd} months.`,
     };
     setPayments((prev) => [newPay, ...prev]);
 
-    logAction('Subscription Renewed', `Renewed subscription ${subscriptionId} until ${newExpiry}.`, 'payment', subscriptionId);
-    addToast('success', 'Subscription Renewed', `Coverage extended to ${newExpiry}.`);
+    logAction('Subscription Renewed', `Renewed subscription ${subscriptionId} until ${newExpiry} via ${method} ($${amount}).`, 'payment', subscriptionId);
+    addToast('success', isCard ? 'Card Payment Confirmed' : 'Subscription Renewed', `Coverage extended to ${newExpiry}.`);
+    return newPay;
+  };
+
+  const directSubscribeWithCard = (params: {
+    bandCode: string;
+    planId: string;
+    guardianName: string;
+    guardianPhone: string;
+    guardianEmail?: string;
+    cardDetails: CardPaymentDetails;
+  }): { success: boolean; message: string; receipt?: Payment; subscription?: Subscription } => {
+    const normCode = params.bandCode.toUpperCase().replace(/\s+/g, '').trim();
+    const band = bands.find((b) => b.referenceCode.replace(/\s+/g, '').toUpperCase() === normCode);
+    const selectedPlan = plans.find((p) => p.id === params.planId) || plans[0];
+    const durationMonths = selectedPlan?.durationMonths || 12;
+    const amount = selectedPlan?.priceAmount || 29.0;
+    const txnId = params.cardDetails.transactionId || `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+    const receiptRef = `CARD-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const today = new Date().toISOString().substring(0, 10);
+
+    // If band exists and has child/subscription, extend it
+    if (band && band.childId) {
+      const child = childrenRecords.find((c) => c.id === band.childId);
+      const existingSub = subscriptions.find((s) => s.id === child?.subscriptionId);
+      if (existingSub) {
+        // Renew existing
+        const curExp = new Date(existingSub.expiryDate);
+        const now = new Date();
+        const base = curExp > now ? curExp : now;
+        base.setMonth(base.getMonth() + durationMonths);
+        const newExpiry = base.toISOString().substring(0, 10);
+
+        setSubscriptions((prev) =>
+          prev.map((s) =>
+            s.id === existingSub.id
+              ? {
+                  ...s,
+                  status: 'active',
+                  expiryDate: newExpiry,
+                  paymentRef: receiptRef,
+                  paymentMethod: 'card',
+                  transactionId: txnId,
+                  renewalCount: s.renewalCount + 1,
+                }
+              : s
+          )
+        );
+
+        const newPay: Payment = {
+          id: `PAY-${Date.now()}`,
+          receiptRef,
+          type: 'subscription',
+          method: 'card',
+          cardDetails: params.cardDetails,
+          transactionId: txnId,
+          amount,
+          currency: 'USD',
+          status: 'verified',
+          paymentDate: today,
+          childId: child?.id,
+          payerName: params.guardianName,
+          notes: `Direct card subscription renewal for band ${band.referenceCode} (${params.cardDetails.brand} ending ${params.cardDetails.last4}).`,
+        };
+        setPayments((prev) => [newPay, ...prev]);
+
+        logAction('Card Subscription Confirmed', `Direct card renewal for band ${band.referenceCode} ($${amount}).`, 'payment', existingSub.id);
+        addToast('success', 'Card Payment Accepted & Confirmed', `Coverage for band ${band.referenceCode} is active until ${newExpiry}.`);
+        return { success: true, message: `Subscription renewed until ${newExpiry}.`, receipt: newPay, subscription: existingSub };
+      }
+    }
+
+    // Otherwise record payment receipt
+    const newPay: Payment = {
+      id: `PAY-${Date.now()}`,
+      receiptRef,
+      type: 'subscription',
+      method: 'card',
+      cardDetails: params.cardDetails,
+      transactionId: txnId,
+      amount,
+      currency: 'USD',
+      status: 'verified',
+      paymentDate: today,
+      payerName: params.guardianName,
+      notes: `Direct card payment for band ${params.bandCode} (${params.cardDetails.brand} ending ${params.cardDetails.last4}).`,
+    };
+    setPayments((prev) => [newPay, ...prev]);
+    logAction('Card Payment Confirmed', `Direct card payment of $${amount} accepted for band ${params.bandCode}.`, 'payment', newPay.id);
+    addToast('success', 'Card Payment Accepted', `Transaction ${txnId} confirmed.`);
+    return { success: true, message: `Payment of $${amount.toFixed(2)} accepted & confirmed.`, receipt: newPay };
   };
 
   // 7. Payment Verification Handlers
@@ -907,6 +1077,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateChildRecord,
         updatePlan,
         renewSubscription,
+        directSubscribeWithCard,
         verifyPayment,
         reversePayment,
         approveCommission,

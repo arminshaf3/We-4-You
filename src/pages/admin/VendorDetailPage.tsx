@@ -106,7 +106,7 @@ export const VendorDetailPage: React.FC = () => {
             {attributedRegistrations.length}
           </span>
           <span className="text-[11px] text-content-muted mt-1 block">
-            {attributedChildren.length} active registered children
+            {attributedChildren.length} active registered wearers
           </span>
         </div>
 
@@ -167,7 +167,7 @@ export const VendorDetailPage: React.FC = () => {
                         {reg.referenceNumber}
                       </Link>
                       <span className="text-content-muted block">
-                        Child: {reg.child.name} &bull; Band: <span className="font-mono">{reg.bandCode}</span>
+                        Wearer: {reg.child.name} &bull; Band: <span className="font-mono">{reg.bandCode}</span>
                       </span>
                     </div>
                     <StatusBadge status={reg.status} size="sm" />

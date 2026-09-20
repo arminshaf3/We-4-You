@@ -66,7 +66,7 @@ export const Header: React.FC = () => {
           </Link>
 
           <Button to="/register" variant="primary" size="md">
-            Register Your Child
+            Register a Band
           </Button>
         </div>
 
@@ -113,10 +113,10 @@ export const Header: React.FC = () => {
 
             <div className="pt-3 flex flex-col gap-3">
               <Button to="/register" variant="primary" size="lg" className="w-full">
-                Register Your Child
+                Register a Band
               </Button>
               <Button to="/found-band" variant="mint" size="md" className="w-full">
-                Found a Child Wearing Band
+                Found Band Assistance
               </Button>
             </div>
 

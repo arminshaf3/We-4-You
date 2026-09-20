@@ -89,7 +89,7 @@ export const BandsListPage: React.FC = () => {
     },
     {
       key: 'child',
-      header: 'Assigned Child',
+      header: 'Assigned Wearer',
       render: (band) => {
         const child = childrenRecords.find((c) => c.id === band.childId);
         return child ? (
@@ -156,7 +156,7 @@ export const BandsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Band Inventory &amp; Assignments"
-        description="Monitor serialized physical band stock, child assignments, and replacements."
+        description="Monitor serialized physical band stock, wearer assignments, and replacements."
         actions={
           <Button
             onClick={() => setIsAddModalOpen(true)}
@@ -197,13 +197,13 @@ export const BandsListPage: React.FC = () => {
 
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Assigned to Children
+            Assigned to Wearers
           </span>
           <span className="text-2xl font-heading font-bold text-navy block mt-1">
             {assignedCount}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Active child protection
+            Active individual protection
           </span>
         </div>
 
@@ -241,7 +241,7 @@ export const BandsListPage: React.FC = () => {
           >
             <option value="ALL">All Inventory Statuses ({bands.length})</option>
             <option value="available">Available in Stock ({availableCount})</option>
-            <option value="assigned">Assigned to Child ({assignedCount})</option>
+            <option value="assigned">Assigned to Wearer ({assignedCount})</option>
             <option value="lost">Reported Lost ({lostCount})</option>
             <option value="retired">Retired / Replaced ({retiredCount})</option>
           </select>
@@ -290,7 +290,7 @@ export const BandsListPage: React.FC = () => {
         isOpen={isReplaceModalOpen}
         onClose={() => setIsReplaceModalOpen(false)}
         title="Replace Assigned Band"
-        description="Retire the existing band and assign a new available reference while preserving the child's subscription and history."
+        description="Retire the existing band and assign a new available reference while preserving the wearer's subscription and history."
       >
         <form onSubmit={handleConfirmReplace} className="space-y-4">
           {replaceError && (
@@ -305,7 +305,7 @@ export const BandsListPage: React.FC = () => {
               {replacementOldBand}
             </span>
             <span className="text-[11px] text-content-muted">
-              This code will transition to <strong>Retired</strong> and cannot be reassigned to another child.
+              This code will transition to <strong>Retired</strong> and cannot be reassigned to another wearer.
             </span>
           </div>
 

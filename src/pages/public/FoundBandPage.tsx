@@ -45,7 +45,7 @@ export const FoundBandPage: React.FC = () => {
             Help us make a connection.
           </h1>
           <p className="text-lg text-content-body mt-3 leading-relaxed">
-            If you have found a child wearing a We 4 You identification wristband, or have found a lost band, thank you for stepping in.
+            If you have found a person wearing a We 4 You identification wristband (such as a child, senior, or injured individual), or have found a lost band, thank you for stepping in.
           </p>
         </div>
 
@@ -74,10 +74,10 @@ export const FoundBandPage: React.FC = () => {
               Instructions for the finder:
             </h4>
             <ol className="list-decimal pl-5 space-y-2 text-xs sm:text-sm text-slate-300">
-              <li>Keep the child safe, calm, and accompanied in a well-lit, public location (such as a customer service desk, park warden station, or security desk).</li>
-              <li>Locate the printed band reference on the child’s wristband (e.g. <span className="font-mono text-mint font-semibold">W4Y-XXXX-XX</span>).</li>
-              <li>Call our office phone above and quote that printed reference code to our staff.</li>
-              <li>Our staff will immediately contact the registered parent or authorized guardian.</li>
+              <li>Keep the person safe, calm, and accompanied in a well-lit, public location (such as a customer service desk, park warden station, or medical/security desk).</li>
+              <li>Locate the printed band reference code on their wristband (e.g. <span className="font-mono text-mint font-semibold">W4Y-XXXX-XX</span>).</li>
+              <li>Call our central office telephone above and quote that printed reference code to our staff.</li>
+              <li>Our staff will immediately contact their registered emergency contacts or family members.</li>
             </ol>
           </div>
         </div>
@@ -116,7 +116,7 @@ export const FoundBandPage: React.FC = () => {
               </div>
               <p className="text-xs text-content-body leading-relaxed">
                 Please call our office at <strong className="text-navy">{settings.officePhone}</strong> and quote code{' '}
-                <strong className="font-mono text-navy">{enteredCode.toUpperCase().trim()}</strong>. Our team will look up the private guardian record internally and handle the connection.
+                <strong className="font-mono text-navy">{enteredCode.toUpperCase().trim()}</strong>. Our team will look up the private emergency record internally and coordinate the connection.
               </p>
             </div>
           )}
@@ -126,10 +126,10 @@ export const FoundBandPage: React.FC = () => {
         <div className="p-5 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted space-y-2">
           <div className="flex items-center gap-2 font-semibold text-navy">
             <ShieldCheck className="w-4 h-4 text-navy" />
-            <span>Strict Privacy &amp; Family Protection Policy</span>
+            <span>Strict Privacy &amp; Personal Safety Policy</span>
           </div>
           <p className="leading-relaxed">
-            To protect children and family safety, this public website <strong>never</strong> exposes child names, photographs, guardian phone numbers, home addresses, or registration status online. Band codes are private references, not public search queries. All reconnection coordination is handled directly by trained office staff.
+            To protect personal safety and privacy, this public website <strong>never</strong> exposes wearer names, medical details, emergency phone numbers, home addresses, or registration status online. Band codes are private references, not public search queries. All reconnection coordination is handled directly by trained office staff.
           </p>
         </div>
 

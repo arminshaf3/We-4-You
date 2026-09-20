@@ -46,7 +46,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...rest
 }) => {
   const baseClasses =
-    'inline-flex items-center justify-center font-heading font-medium rounded-brand transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer select-none';
+    'inline-flex items-center justify-center font-heading font-medium rounded-brand transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer select-none whitespace-nowrap';
 
   const sizeClasses = {
     sm: 'h-10 px-4 text-sm gap-1.5 min-w-[36px]',
@@ -82,7 +82,7 @@ export const Button: React.FC<ButtonProps> = ({
         </svg>
       )}
       {!isLoading && leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
-      <span>{children}</span>
+      <span className="whitespace-nowrap">{children}</span>
       {!isLoading && rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
     </>
   );

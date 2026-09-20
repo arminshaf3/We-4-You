@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { FormField, Input, Select } from '../../components/common/FormField';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
+import { CardPaymentForm, CardFormData, validateCardData } from '../../components/common/CardPaymentForm';
 import { useApp } from '../../context/AppContext';
 import {
   UserCheck,
@@ -16,8 +17,14 @@ import {
   PhoneCall,
   UploadCloud,
   FileText,
+  CreditCard,
+  Lock,
+  ShieldCheck,
+  Check,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
-import { RelationshipType } from '../../types';
+import { RelationshipType, PaymentMethod } from '../../types';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,27 +34,27 @@ export const RegisterPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form State - Step 1: Guardian Details
+  // Form State - Step 1: Primary Contact Details
   const [guardianName, setGuardianName] = useState('');
-  const [relationship, setRelationship] = useState<RelationshipType>('Mother');
+  const [relationship, setRelationship] = useState<RelationshipType>('Self (Wearer)');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
   const [language, setLanguage] = useState(settings.availableLanguages[0] || 'English');
   const [hasSecondaryContact, setHasSecondaryContact] = useState(false);
   const [secName, setSecName] = useState('');
-  const [secRelationship, setSecRelationship] = useState('Father');
+  const [secRelationship, setSecRelationship] = useState('Spouse / Partner');
   const [secPhone, setSecPhone] = useState('');
 
-  // Form State - Step 2: Child & Band Details
+  // Form State - Step 2: Wearer & Band Details
   const [childName, setChildName] = useState('');
-  const [ageRange, setAgeRange] = useState('4 – 6 years');
+  const [ageRange, setAgeRange] = useState('Adult (18 – 64 years)');
   const [bandCode, setBandCode] = useState('');
   const [vendorId, setVendorId] = useState('');
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
   const [receiptRef, setReceiptRef] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // Form State - Step 3: Subscription
+  // Form State - Step 3: Subscription Plan
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
     const paramPlan = searchParams.get('plan');
     if (paramPlan && activePlans.some((p) => p.id === paramPlan)) {
@@ -56,7 +63,22 @@ export const RegisterPage: React.FC = () => {
     return activePlans[0]?.id || '';
   });
 
-  // Form State - Step 4: Acknowledgment
+  // Form State - Step 4: Payment Method & Card Details
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
+    const payParam = searchParams.get('pay');
+    return payParam === 'offline' ? 'offline_voucher' : 'card';
+  });
+
+  const [cardData, setCardData] = useState<CardFormData>({
+    cardNumber: '',
+    cardholderName: '',
+    expiryDate: '',
+    cvv: '',
+    brand: 'Card',
+    last4: '',
+  });
+
+  // Form State - Step 5: Acknowledgment
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
 
   // Validation Errors
@@ -86,6 +108,25 @@ export const RegisterPage: React.FC = () => {
       }));
     }
   }, [activeVendors, vendorId]);
+
+  // Quick Demo Auto-fill Helper for Step 1
+  const handleFillDemoGuardian = () => {
+    setGuardianName('Elena Vance');
+    setRelationship('Parent / Guardian');
+    setMobile('+1 (555) 012-7819');
+    setEmail('elena.vance@example.com');
+    setCardData((prev) => ({ ...prev, cardholderName: 'ELENA VANCE' }));
+  };
+
+  // Quick Demo Auto-fill Helper for Step 2
+  const handleFillDemoChild = (code = 'W4Y-7821-K9') => {
+    setChildName('Lucas Vance');
+    setAgeRange('Child (0 – 12 years)');
+    setBandCode(code);
+    if (activeVendors.length > 0) {
+      setVendorId(activeVendors[0].id);
+    }
+  };
 
   // Normalize Band Reference: spaces and hyphens, uppercase
   const normalizeBandCode = (input: string) => {
@@ -122,8 +163,8 @@ export const RegisterPage: React.FC = () => {
     const newErrors: { [key: string]: string } = {};
 
     if (step === 1) {
-      if (!guardianName.trim()) newErrors.guardianName = 'Guardian full name is required.';
-      if (!relationship) newErrors.relationship = 'Please select your relationship to the child.';
+      if (!guardianName.trim()) newErrors.guardianName = 'Contact full name is required.';
+      if (!relationship) newErrors.relationship = 'Please select your relationship to the wearer.';
       if (!mobile.trim() || mobile.trim().length < 7) {
         newErrors.mobile = 'A valid primary mobile telephone number is required.';
       }
@@ -139,11 +180,10 @@ export const RegisterPage: React.FC = () => {
     }
 
     if (step === 2) {
-      if (!childName.trim()) newErrors.childName = 'Child’s name is required.';
+      if (!childName.trim()) newErrors.childName = 'Wearer’s full name is required.';
       if (!bandCode.trim()) {
         newErrors.bandCode = 'Printed band reference code is required.';
       } else {
-        // Validate band code format and status in demonstration fixtures
         const formattedCode = bandCode.trim().toUpperCase();
         const existingBand = bands.find(
           (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '')
@@ -172,8 +212,15 @@ export const RegisterPage: React.FC = () => {
     }
 
     if (step === 4) {
+      if (paymentMethod === 'card') {
+        const cardErrs = validateCardData(cardData);
+        Object.assign(newErrors, cardErrs);
+      }
+    }
+
+    if (step === 5) {
       if (!authorityConfirmed) {
-        newErrors.authority = 'You must confirm that you are a parent or authorized legal guardian.';
+        newErrors.authority = 'You must confirm that you are authorized to register for this individual.';
       }
     }
 
@@ -183,7 +230,10 @@ export const RegisterPage: React.FC = () => {
 
   const handleNext = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
+      if (currentStep === 1 && !cardData.cardholderName && guardianName.trim()) {
+        setCardData((prev) => ({ ...prev, cardholderName: guardianName.trim().toUpperCase() }));
+      }
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -196,12 +246,16 @@ export const RegisterPage: React.FC = () => {
   // Submit Handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep(4)) return;
+    if (!validateStep(5)) return;
 
     setIsSubmitting(true);
 
-    // Simulate short intentional processing delay
+    const processingDelay = paymentMethod === 'card' ? 800 : 400;
+
     setTimeout(() => {
+      const isCard = paymentMethod === 'card';
+      const txnId = isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined;
+
       const newRegistration = submitPublicRegistration({
         guardian: {
           fullName: guardianName.trim(),
@@ -225,19 +279,42 @@ export const RegisterPage: React.FC = () => {
         bandCode: bandCode.toUpperCase().trim(),
         vendorId,
         planId: selectedPlanId,
+        paymentMethod,
+        cardDetails: isCard ? {
+          brand: cardData.brand || 'Visa',
+          last4: cardData.last4 || '4242',
+          cardholderName: cardData.cardholderName.trim() || guardianName.trim(),
+          expMonth: cardData.expiryDate.split('/')[0] || '12',
+          expYear: cardData.expiryDate.split('/')[1] || '28',
+          transactionId: txnId || `TXN-CARD-${Date.now()}`,
+        } : undefined,
       });
 
       setIsSubmitting(false);
 
-      // Navigate to confirmation page passing reference in state (safe, un-guessable parameter)
       navigate('/registration/confirmation', {
         state: {
           referenceNumber: newRegistration.referenceNumber,
           childName: childName.trim(),
           bandCode: bandCode.toUpperCase().trim(),
+          guardianName: guardianName.trim(),
+          guardianPhone: mobile.trim(),
+          guardianLanguage: language || 'English',
+          vendorName: selectedVendor?.shopName || 'Authorized We 4 You Partner Outlet',
+          durationMonths: selectedPlan?.durationMonths || 12,
+          isCardPaid: isCard,
+          paymentMethod,
+          transactionId: newRegistration.cardDetails?.transactionId || txnId,
+          receiptRef: newRegistration.paymentRef,
+          amountFormatted: selectedPlan?.priceFormatted,
+          amountPaid: selectedPlan?.priceAmount,
+          cardBrand: newRegistration.cardDetails?.brand || cardData.brand,
+          cardLast4: newRegistration.cardDetails?.last4 || cardData.last4,
+          planName: selectedPlan?.name,
+          paymentDate: new Date().toISOString().substring(0, 10),
         },
       });
-    }, 400);
+    }, processingDelay);
   };
 
   const selectedPlan = activePlans.find((p) => p.id === selectedPlanId);
@@ -255,21 +332,22 @@ export const RegisterPage: React.FC = () => {
             Guided Registration
           </span>
           <h1 className="text-3xl sm:text-4xl font-heading font-bold text-navy">
-            A simple start to staying connected.
+            Register a safety identification band.
           </h1>
           <p className="text-base text-content-body mt-2">
-            Have your band ready. Add your child's details, choose your vendor shop, and select a service subscription.
+            Have your band ready. Add the wearer and emergency contact details, select your subscription plan, and complete card payment.
           </p>
         </div>
 
-        {/* 4-Step Progress Indicator */}
+        {/* 5-Step Progress Indicator */}
         <div className="bg-white p-4 sm:p-5 rounded-brand border border-border-subtle shadow-subtle mb-8">
           <div className="flex items-center justify-between text-xs font-heading font-semibold">
             {[
-              { num: 1, label: 'Guardian Details' },
-              { num: 2, label: 'Child & Band' },
-              { num: 3, label: 'Subscription' },
-              { num: 4, label: 'Review & Submit' },
+              { num: 1, label: 'Contact' },
+              { num: 2, label: 'Wearer & Band' },
+              { num: 3, label: 'Choose Plan' },
+              { num: 4, label: 'Card Payment' },
+              { num: 5, label: 'Review & Submit' },
             ].map((step) => {
               const isCompleted = currentStep > step.num;
               const isCurrent = currentStep === step.num;
@@ -288,7 +366,7 @@ export const RegisterPage: React.FC = () => {
                     {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : step.num}
                   </div>
                   <span
-                    className={`text-[11px] sm:text-xs truncate max-w-[80px] sm:max-w-none ${
+                    className={`text-[10px] sm:text-xs truncate max-w-[65px] sm:max-w-none ${
                       isCurrent ? 'text-navy font-bold' : 'text-content-muted font-medium'
                     }`}
                   >
@@ -302,7 +380,7 @@ export const RegisterPage: React.FC = () => {
           <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
             <div
               className="bg-navy h-full transition-all duration-300 rounded-full"
-              style={{ width: `${(currentStep / 4) * 100}%` }}
+              style={{ width: `${(currentStep / 5) * 100}%` }}
             />
           </div>
         </div>
@@ -310,21 +388,31 @@ export const RegisterPage: React.FC = () => {
         {/* Main Step Form Card */}
         <div className="bg-white rounded-brand-lg border border-border-subtle shadow-card p-6 sm:p-10">
           
-          {/* STEP 1: GUARDIAN DETAILS */}
+          {/* STEP 1: PRIMARY CONTACT DETAILS */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="pb-4 border-b border-border-subtle">
-                <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
-                  Step 1 — Guardian Details
-                </h2>
-                <p className="text-sm text-content-muted mt-1">
-                  Primary contact details used by office staff to contact you if your child is reported.
-                </p>
+              <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
+                    Step 1 — Primary Contact Details
+                  </h2>
+                  <p className="text-sm text-content-muted mt-1">
+                    Emergency contact details used by office staff to contact you immediately if assistance is requested.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleFillDemoGuardian}
+                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#088F5B]" />
+                  <span>Fill Demo Info</span>
+                </button>
               </div>
 
               <div className="space-y-4">
                 <FormField
-                  label="Guardian Full Name"
+                  label="Contact Full Name"
                   id="guardianName"
                   required
                   error={errors.guardianName}
@@ -333,14 +421,14 @@ export const RegisterPage: React.FC = () => {
                     id="guardianName"
                     value={guardianName}
                     onChange={(e) => setGuardianName(e.target.value)}
-                    placeholder="e.g. Sarah Watson"
+                    placeholder="e.g. Elena Vance"
                     error={!!errors.guardianName}
                   />
                 </FormField>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
-                    label="Relationship to Child"
+                    label="Relationship to Wearer"
                     id="relationship"
                     required
                     error={errors.relationship}
@@ -350,12 +438,19 @@ export const RegisterPage: React.FC = () => {
                       value={relationship}
                       onChange={(e) => setRelationship(e.target.value as RelationshipType)}
                     >
+                      <option value="Self (Wearer)">Self (Wearer)</option>
+                      <option value="Parent / Guardian">Parent / Guardian</option>
                       <option value="Mother">Mother</option>
                       <option value="Father">Father</option>
-                      <option value="Legal Guardian">Legal Guardian</option>
+                      <option value="Spouse / Partner">Spouse / Partner</option>
+                      <option value="Son / Daughter">Son / Daughter</option>
                       <option value="Grandparent">Grandparent</option>
+                      <option value="Caregiver / Nurse">Caregiver / Nurse</option>
+                      <option value="Sibling">Sibling</option>
+                      <option value="Legal Guardian">Legal Guardian</option>
                       <option value="Foster Parent">Foster Parent</option>
-                      <option value="Other Authorized Adult">Other Authorized Adult</option>
+                      <option value="Emergency Contact">Emergency Contact</option>
+                      <option value="Other Authorized Contact">Other Authorized Contact</option>
                     </Select>
                   </FormField>
 
@@ -363,7 +458,7 @@ export const RegisterPage: React.FC = () => {
                     label="Primary Mobile Telephone"
                     id="mobile"
                     required
-                    hint="For urgent voice calls if child is found"
+                    hint="For urgent voice calls if assistance is needed"
                     error={errors.mobile}
                   >
                     <Input
@@ -389,7 +484,7 @@ export const RegisterPage: React.FC = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="sarah.w@example.com"
+                      placeholder="elena.vance@example.com"
                       error={!!errors.email}
                     />
                   </FormField>
@@ -434,7 +529,7 @@ export const RegisterPage: React.FC = () => {
                           <Input
                             value={secName}
                             onChange={(e) => setSecName(e.target.value)}
-                            placeholder="e.g. Thomas Watson"
+                            placeholder="e.g. Marcus Vance"
                             error={!!errors.secName}
                           />
                         </FormField>
@@ -444,11 +539,15 @@ export const RegisterPage: React.FC = () => {
                             value={secRelationship}
                             onChange={(e) => setSecRelationship(e.target.value)}
                           >
+                            <option value="Spouse / Partner">Spouse / Partner</option>
                             <option value="Father">Father</option>
                             <option value="Mother">Mother</option>
+                            <option value="Son / Daughter">Son / Daughter</option>
                             <option value="Grandparent">Grandparent</option>
+                            <option value="Caregiver / Nurse">Caregiver / Nurse</option>
+                            <option value="Sibling">Sibling</option>
                             <option value="Aunt / Uncle">Aunt / Uncle</option>
-                            <option value="Other Authorized">Other Authorized Adult</option>
+                            <option value="Other Authorized">Other Authorized Contact</option>
                           </Select>
                         </FormField>
                       </div>
@@ -469,53 +568,65 @@ export const RegisterPage: React.FC = () => {
 
               <div className="pt-6 flex justify-end">
                 <Button onClick={handleNext} variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Continue to Child &amp; Band
+                  Continue to Wearer &amp; Band
                 </Button>
               </div>
             </div>
           )}
 
-          {/* STEP 2: CHILD AND BAND */}
+          {/* STEP 2: WEARER AND BAND */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="pb-4 border-b border-border-subtle">
-                <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
-                  Step 2 — Child &amp; Band Information
-                </h2>
-                <p className="text-sm text-content-muted mt-1">
-                  Identify the band reference and attribute the purchase to your local shop.
-                </p>
+              <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
+                    Step 2 — Wearer &amp; Band Information
+                  </h2>
+                  <p className="text-sm text-content-muted mt-1">
+                    Identify who will wear the band and attribute the purchase to your local retailer.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFillDemoChild('W4Y-7821-K9')}
+                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#088F5B]" />
+                  <span>Fill Demo Wearer</span>
+                </button>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
-                    label="Child’s Name"
+                    label="Wearer’s Full Name"
                     id="childName"
                     required
-                    hint="First name or full name"
+                    hint="First name or full name of person wearing band"
                     error={errors.childName}
                   >
                     <Input
                       id="childName"
                       value={childName}
                       onChange={(e) => setChildName(e.target.value)}
-                      placeholder="e.g. Emma"
+                      placeholder="e.g. Lucas Vance"
                       error={!!errors.childName}
                     />
                   </FormField>
 
-                  <FormField label="Age Range" id="ageRange" hint="Optional developmental range">
+                  <FormField label="Category / Age Group" id="ageRange" hint="Select group / demographic">
                     <Select
                       id="ageRange"
                       value={ageRange}
                       onChange={(e) => setAgeRange(e.target.value)}
                     >
-                      <option value="Under 2 years">Under 2 years</option>
-                      <option value="2 – 3 years">2 – 3 years</option>
-                      <option value="4 – 6 years">4 – 6 years</option>
-                      <option value="7 – 9 years">7 – 9 years</option>
-                      <option value="10+ years">10+ years</option>
+                      <option value="Child (0 – 12 years)">Child (0 – 12 years)</option>
+                      <option value="Teen (13 – 17 years)">Teen (13 – 17 years)</option>
+                      <option value="Adult (18 – 64 years)">Adult (18 – 64 years)</option>
+                      <option value="Senior (65+ years)">Senior (65+ years)</option>
+                      <option value="Medical / Memory Support">Medical / Memory Support</option>
+                      <option value="Outdoor / Athlete / Traveler">Outdoor / Athlete / Traveler</option>
+                      <option value="Special Care / Other">Special Care / Other</option>
                     </Select>
                   </FormField>
                 </div>
@@ -538,14 +649,21 @@ export const RegisterPage: React.FC = () => {
                   />
                 </FormField>
 
-                <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle text-xs text-content-muted flex items-start gap-2">
-                  <ShieldAlert className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Verification Notice:</strong> Possession of a printed code does not constitute legal proof of guardianship. All submissions are held in a pending verification queue until office verification is completed.
-                  </span>
+                <div className="flex items-center gap-2 flex-wrap text-[11px] text-content-muted">
+                  <span>Demo Available Codes:</span>
+                  {['W4Y-7821-K9', 'W4Y-9014-P3', 'W4Y-8833-Z1'].map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setBandCode(code)}
+                      className="font-mono bg-slate-100 hover:bg-slate-200 text-navy px-1.5 py-0.5 rounded border border-slate-300"
+                    >
+                      {code}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Vendor Dropdown: Only active admin vendors */}
+                {/* Vendor Dropdown */}
                 <FormField
                   label="Purchased From (Vendor Shop)"
                   id="vendorId"
@@ -599,37 +717,6 @@ export const RegisterPage: React.FC = () => {
                     />
                   </FormField>
                 </div>
-
-                {/* Optional Photo Preview (in-memory demo only) */}
-                {settings.allowPhotoUpload && (
-                  <div className="pt-2">
-                    <label className="text-sm font-semibold text-navy block mb-1.5">
-                      Child Photo Preview (Demonstration Preview Only)
-                    </label>
-                    <div className="flex items-center gap-4">
-                      {photoPreview ? (
-                        <div className="w-16 h-16 rounded-brand overflow-hidden border border-border-subtle flex-shrink-0 bg-slate-100">
-                          <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 rounded-brand border border-dashed border-slate-300 flex items-center justify-center text-slate-400 bg-slate-50 flex-shrink-0">
-                          <UploadCloud className="w-6 h-6" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoUpload}
-                          className="text-xs text-content-muted file:mr-3 file:py-2 file:px-3 file:rounded-brand file:border-0 file:text-xs file:font-semibold file:bg-navy file:text-white hover:file:bg-navy-light cursor-pointer"
-                        />
-                        <p className="text-[11px] text-content-muted mt-1">
-                          Photos remain strictly in browser memory for demonstration preview; no persistent cloud storage is used.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="pt-6 flex items-center justify-between">
@@ -637,13 +724,13 @@ export const RegisterPage: React.FC = () => {
                   Back
                 </Button>
                 <Button onClick={handleNext} variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Continue to Subscription
+                  Continue to Choose Plan
                 </Button>
               </div>
             </div>
           )}
 
-          {/* STEP 3: SUBSCRIPTION */}
+          {/* STEP 3: CHOOSE PLAN */}
           {currentStep === 3 && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="pb-4 border-b border-border-subtle">
@@ -712,47 +799,145 @@ export const RegisterPage: React.FC = () => {
                 })}
               </div>
 
-              {/* Manual Payment Verification Explanation */}
-              <div className="p-5 bg-neutral-soft rounded-brand border border-border-subtle space-y-2.5">
-                <div className="flex items-center gap-2 text-navy font-semibold text-sm">
-                  <Clock className="w-4 h-4 text-navy" />
-                  <span>Manual Payment Verification Workflow</span>
-                </div>
-                <p className="text-xs text-content-body leading-relaxed">
-                  Submitting this registration does not automatically activate your service. No credit card is charged on this website. Our office will verify your vendor purchase receipt or payment receipt and activate your coverage once confirmed.
+              <div className="pt-6 flex items-center justify-between">
+                <Button onClick={handleBack} variant="outline" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+                  Back
+                </Button>
+                <Button onClick={handleNext} variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                  Continue to Card Payment
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 4: CARD PAYMENT & CHECKOUT */}
+          {currentStep === 4 && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="pb-4 border-b border-border-subtle">
+                <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded mb-1">
+                  Instant Authorization
+                </span>
+                <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
+                  Step 4 — Subscription Payment
+                </h2>
+                <p className="text-sm text-content-muted mt-1">
+                  Enter your card details for instant payment confirmation and registry activation.
                 </p>
               </div>
+
+              {/* Payment Method Selector */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold uppercase tracking-wider text-content-muted block">
+                  Select Payment Method
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Option 1: Card Payment */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('card')}
+                    className={`p-4 rounded-brand border-2 text-left transition-all flex flex-col justify-between ${
+                      paymentMethod === 'card'
+                        ? 'border-navy bg-mint-pale/30 ring-2 ring-navy/10'
+                        : 'border-border-subtle bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className={`w-5 h-5 ${paymentMethod === 'card' ? 'text-navy' : 'text-slate-400'}`} />
+                        <span className="font-heading font-bold text-navy text-sm">
+                          Credit / Debit Card
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">
+                        Instant
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-content-muted mt-2">
+                      Instant acceptance &amp; immediate subscription activation with official digital card receipt.
+                    </p>
+                  </button>
+
+                  {/* Option 2: Offline Store Voucher */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('offline_voucher')}
+                    className={`p-4 rounded-brand border-2 text-left transition-all flex flex-col justify-between ${
+                      paymentMethod === 'offline_voucher'
+                        ? 'border-navy bg-mint-pale/30 ring-2 ring-navy/10'
+                        : 'border-border-subtle bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className={`w-5 h-5 ${paymentMethod === 'offline_voucher' ? 'text-navy' : 'text-slate-400'}`} />
+                        <span className="font-heading font-bold text-navy text-sm">
+                          Offline Store Voucher
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                        Manual
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-content-muted mt-2">
+                      Pay in-store or bank transfer; requires manual staff receipt matching.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Conditional Payment Method Content */}
+              {paymentMethod === 'card' ? (
+                <CardPaymentForm
+                  cardData={cardData}
+                  onChange={setCardData}
+                  errors={errors}
+                  planAmountFormatted={selectedPlan?.priceFormatted}
+                  planName={selectedPlan?.name}
+                  isProcessing={isSubmitting}
+                />
+              ) : (
+                <div className="p-5 bg-neutral-soft rounded-brand border border-border-subtle space-y-2.5">
+                  <div className="flex items-center gap-2 text-navy font-semibold text-sm">
+                    <Clock className="w-4 h-4 text-navy" />
+                    <span>Manual Store Voucher Verification</span>
+                  </div>
+                  <p className="text-xs text-content-body leading-relaxed">
+                    Submitting with offline payment will queue your registration for manual staff review. Your coverage will activate once our office verifies your vendor purchase receipt or payment voucher.
+                  </p>
+                </div>
+              )}
 
               <div className="pt-6 flex items-center justify-between">
                 <Button onClick={handleBack} variant="outline" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
                   Back
                 </Button>
                 <Button onClick={handleNext} variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Continue to Review
+                  Continue to Review &amp; Confirm
                 </Button>
               </div>
             </div>
           )}
 
-          {/* STEP 4: REVIEW AND SUBMIT */}
-          {currentStep === 4 && (
+          {/* STEP 5: REVIEW AND SUBMIT */}
+          {currentStep === 5 && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="pb-4 border-b border-border-subtle">
                 <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
-                  Step 4 — Review &amp; Submit Registration
+                  Step 5 — Final Review &amp; Confirmation
                 </h2>
                 <p className="text-sm text-content-muted mt-1">
-                  Please confirm your entered details before submitting your registration for office verification.
+                  Please review your details and confirm your subscription payment.
                 </p>
               </div>
 
               {/* Review Summary Blocks with Edit buttons */}
               <div className="space-y-4">
-                {/* Block 1: Guardian Details */}
+                {/* Block 1: Contact Details */}
                 <div className="bg-neutral-soft p-4 rounded-brand border border-border-subtle flex items-start justify-between">
                   <div className="space-y-1 text-xs">
                     <span className="font-heading font-bold text-navy text-sm block">
-                      Guardian Details
+                      Primary Contact Details
                     </span>
                     <p className="text-content-body">
                       <strong>Name:</strong> {guardianName} ({relationship})
@@ -779,14 +964,14 @@ export const RegisterPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Block 2: Child & Band Details */}
+                {/* Block 2: Wearer & Band Details */}
                 <div className="bg-neutral-soft p-4 rounded-brand border border-border-subtle flex items-start justify-between">
                   <div className="space-y-1 text-xs">
                     <span className="font-heading font-bold text-navy text-sm block">
-                      Child &amp; Band Details
+                      Wearer &amp; Band Details
                     </span>
                     <p className="text-content-body">
-                      <strong>Child Name:</strong> {childName} ({ageRange})
+                      <strong>Wearer Name:</strong> {childName} ({ageRange})
                     </p>
                     <p className="text-content-body">
                       <strong>Band Reference:</strong>{' '}
@@ -809,24 +994,35 @@ export const RegisterPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Block 3: Selected Subscription */}
+                {/* Block 3: Selected Subscription & Payment */}
                 <div className="bg-neutral-soft p-4 rounded-brand border border-border-subtle flex items-start justify-between">
                   <div className="space-y-1 text-xs">
                     <span className="font-heading font-bold text-navy text-sm block">
-                      Subscription Plan
+                      Subscription &amp; Payment
                     </span>
                     <p className="text-content-body">
-                      <strong>Plan:</strong> {selectedPlan?.name || 'Selected Plan'}
-                    </p>
-                    <p className="text-content-body">
-                      <strong>Duration:</strong> {selectedPlan?.durationMonths} months coverage
+                      <strong>Plan:</strong> {selectedPlan?.name || 'Selected Plan'} ({selectedPlan?.durationMonths} months coverage)
                     </p>
                     <p className="text-content-body font-semibold text-navy">
-                      <strong>Price:</strong> {selectedPlan?.priceFormatted} (Demonstration)
+                      <strong>Amount Due:</strong> {selectedPlan?.priceFormatted}
                     </p>
+                    <div className="pt-1 flex items-center gap-2">
+                      <span className="text-content-muted">Payment Method:</span>
+                      {paymentMethod === 'card' ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-200">
+                          <CreditCard className="w-3.5 h-3.5 text-[#088F5B]" />
+                          {cardData.brand || 'Card'} ending in {cardData.last4 || '4242'} (Instant Confirmation)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-[11px] border border-amber-200">
+                          <Clock className="w-3.5 h-3.5" />
+                          Offline Voucher Check
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
-                    onClick={() => setCurrentStep(3)}
+                    onClick={() => setCurrentStep(4)}
                     className="text-xs font-semibold text-navy hover:underline flex-shrink-0"
                   >
                     Edit
@@ -844,7 +1040,7 @@ export const RegisterPage: React.FC = () => {
                     className="w-4 h-4 rounded text-navy focus:ring-navy mt-1"
                   />
                   <span className="text-xs sm:text-sm text-content-body leading-normal">
-                    I confirm that I am a parent or authorized legal guardian of the child named above. I acknowledge that registration establishes an identification record for office contact assistance in accordance with the{' '}
+                    I confirm that I am registering this safety band with full authorization for the individual named above. I acknowledge that registration establishes an emergency contact identification record for central office assistance in accordance with the{' '}
                     <Link to="/privacy" target="_blank" className="text-navy font-semibold underline">
                       Privacy Policy
                     </Link>{' '}
@@ -861,9 +1057,18 @@ export const RegisterPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="p-4 bg-mint-pale/50 rounded-brand border border-emerald-300/40 text-xs text-content-muted leading-relaxed">
-                <strong>Simulated Submission:</strong> Your registration reference will be generated and routed directly into the administrator demonstration queue with a status of <em>pending verification</em>.
-              </div>
+              {paymentMethod === 'card' ? (
+                <div className="p-4 bg-emerald-50/70 rounded-brand border border-emerald-300/60 text-xs text-emerald-950 flex items-start gap-2.5 shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-[#088F5B] flex-shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    <strong>Instant Card Payment Guarantee:</strong> Clicking below will authorize <strong>{selectedPlan?.priceFormatted}</strong> on your {cardData.brand || 'card'} ending in {cardData.last4 || '4242'}. Your payment receipt and registration reference will be generated and confirmed immediately.
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-mint-pale/50 rounded-brand border border-emerald-300/40 text-xs text-content-muted leading-relaxed">
+                  <strong>Simulated Submission:</strong> Your registration reference will be generated and routed directly into the administrator demonstration queue with a status of <em>pending verification</em>.
+                </div>
+              )}
 
               <div className="pt-6 flex items-center justify-between">
                 <Button onClick={handleBack} variant="outline" size="md" leftIcon={<ArrowLeft className="w-4 h-4" />}>
@@ -874,9 +1079,11 @@ export const RegisterPage: React.FC = () => {
                   variant="primary"
                   size="lg"
                   isLoading={isSubmitting}
-                  leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                  leftIcon={paymentMethod === 'card' ? <Lock className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                 >
-                  Submit Registration
+                  {paymentMethod === 'card'
+                    ? `Pay ${selectedPlan?.priceFormatted || '$29.00'} & Confirm`
+                    : 'Submit Registration'}
                 </Button>
               </div>
             </div>

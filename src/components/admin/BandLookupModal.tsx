@@ -39,7 +39,7 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
         onClose();
       }}
       title="Exact Band Reference Lookup"
-      description="Internal office tool to find private child and guardian records by band reference."
+      description="Internal office tool to find private individual and emergency contact records by band reference."
       maxWidth="lg"
     >
       <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -68,7 +68,7 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
                 <StatusBadge status={result.band.status} />
               </div>
 
-              {/* Matched Private Child & Guardian Details (Admin-only) */}
+              {/* Matched Private Wearer & Contact Details (Admin-only) */}
               {result.child ? (
                 <div className="p-5 rounded-brand bg-white border border-border-subtle shadow-subtle space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
@@ -82,13 +82,13 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
                       onClick={onClose}
                       className="text-xs font-semibold text-navy hover:underline"
                     >
-                      View Full Child Profile →
+                      View Full Wearer Profile →
                     </Link>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-content-muted block mb-0.5">Primary Guardian:</span>
+                      <span className="text-content-muted block mb-0.5">Primary Contact:</span>
                       <span className="font-semibold text-navy block text-sm">
                         {result.child.primaryGuardian.fullName} ({result.child.primaryGuardian.relationship})
                       </span>
@@ -132,7 +132,7 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
                 </div>
               ) : (
                 <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs text-amber-900">
-                  Band is in inventory ({result.band.status}), but has not been assigned to a child record yet.
+                  Band is in inventory ({result.band.status}), but has not been assigned to a wearer record yet.
                 </div>
               )}
 

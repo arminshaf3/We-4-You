@@ -110,7 +110,7 @@ export const SettingsPage: React.FC = () => {
                 className="w-4 h-4 rounded text-navy mt-0.5"
               />
               <div>
-                <span className="font-bold text-navy text-sm block">Enable Child Photo Preview in Registration</span>
+                <span className="font-bold text-navy text-sm block">Enable Wearer Photo Preview in Registration</span>
                 <span className="text-content-muted">
                   Enables demonstration in-memory photo previewing without persistent cloud storage.
                 </span>

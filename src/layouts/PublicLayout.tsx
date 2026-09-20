@@ -7,12 +7,16 @@ import { ToastContainer } from '../components/common/ToastContainer';
 export const PublicLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white text-content-body font-body selection:bg-mint selection:text-navy">
-      <Header />
+      <div className="print:hidden">
+        <Header />
+      </div>
       <main className="flex-grow">
         <Outlet />
       </main>
-      <Footer />
-      <ToastContainer />
+      <div className="print:hidden">
+        <Footer />
+        <ToastContainer />
+      </div>
     </div>
   );
 };

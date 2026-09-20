@@ -23,7 +23,7 @@ export const ChildrenListPage: React.FC = () => {
   const columns: Column<ChildRecord>[] = [
     {
       key: 'name',
-      header: 'Child Record',
+      header: 'Wearer / Individual',
       render: (child) => (
         <Link to={`/admin/children/${child.id}`} className="font-semibold text-navy hover:underline text-sm block">
           {child.name}
@@ -33,7 +33,7 @@ export const ChildrenListPage: React.FC = () => {
     },
     {
       key: 'primaryGuardian',
-      header: 'Primary Guardian',
+      header: 'Primary Contact',
       render: (child) => (
         <div className="text-xs">
           <span className="font-semibold text-navy block">
@@ -111,21 +111,21 @@ export const ChildrenListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Children &amp; Guardians Registry"
-        description="Searchable fictional family profiles, emergency contact priority, and linked band assignments."
+        title="Wearers & Contacts Registry"
+        description="Searchable individual and member profiles, emergency contact priority, and linked band assignments."
       />
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Registered Children
+            Registered Wearers
           </span>
           <span className="text-2xl font-heading font-bold text-navy block mt-1">
             {childrenRecords.length}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Approved guardian files
+            Approved member files
           </span>
         </div>
 
@@ -149,7 +149,7 @@ export const ChildrenListPage: React.FC = () => {
             {multipleContactsCount}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Multi-guardian redundancy
+            Multi-contact redundancy
           </span>
         </div>
 
@@ -174,7 +174,7 @@ export const ChildrenListPage: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search child name, guardian, or band..."
+            placeholder="Search wearer name, contact, or band..."
             className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
           />
         </div>
@@ -188,8 +188,7 @@ export const ChildrenListPage: React.FC = () => {
         columns={columns}
         data={filteredChildren}
         keyExtractor={(item) => item.id}
-        emptyTitle="No Children Records Found"
-        emptyDescription="Registrations approved by staff will automatically appear in this registry."
+        emptyTitle="No Wearer Records Found"
         mobileCardRender={(child) => (
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
@@ -215,3 +214,4 @@ export const ChildrenListPage: React.FC = () => {
     </div>
   );
 };
+

@@ -15,10 +15,10 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-2 space-y-4">
             <Logo variant="light" size="lg" />
             <p className="text-base text-slate-300 font-medium max-w-sm">
-              Helping families stay connected.
+              Helping people and families stay connected.
             </p>
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
-              We 4 You provides simple child identification wristbands paired with a dedicated office contact service so caring people can reach your family quickly and calmly.
+              We 4 You provides simple safety identification wristbands paired with a dedicated 24/7 central office contact service so caring people and responders can reach emergency contacts quickly and calmly.
             </p>
 
             <div className="pt-3 flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -54,7 +54,7 @@ export const Footer: React.FC = () => {
                 <Link to="/subscriptions" className="hover:text-mint transition-colors">Subscriptions</Link>
               </li>
               <li>
-                <Link to="/register" className="hover:text-mint transition-colors font-medium">Register Your Child</Link>
+                <Link to="/register" className="hover:text-mint transition-colors font-medium">Register a Band</Link>
               </li>
             </ul>
           </div>

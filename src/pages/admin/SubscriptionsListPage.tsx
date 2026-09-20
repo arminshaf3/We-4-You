@@ -20,6 +20,7 @@ export const SubscriptionsListPage: React.FC = () => {
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
   const [renewalMonths, setRenewalMonths] = useState(12);
+  const [renewalMethod, setRenewalMethod] = useState<'card' | 'offline_voucher'>('card');
 
   const activeCount = useMemo(() => subscriptions.filter((s) => s.status === 'active').length, [subscriptions]);
   const expiringCount = useMemo(() => subscriptions.filter((s) => s.status === 'expiring_soon').length, [subscriptions]);
@@ -43,13 +44,14 @@ export const SubscriptionsListPage: React.FC = () => {
   const handleOpenRenew = (sub: Subscription) => {
     setSelectedSub(sub);
     setRenewalMonths(12);
+    setRenewalMethod('card');
     setIsRenewModalOpen(true);
   };
 
   const handleConfirmRenew = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSub) return;
-    renewSubscription(selectedSub.id, Number(renewalMonths));
+    renewSubscription(selectedSub.id, Number(renewalMonths), renewalMethod);
     setIsRenewModalOpen(false);
   };
 
@@ -65,7 +67,7 @@ export const SubscriptionsListPage: React.FC = () => {
   const columns: Column<Subscription>[] = [
     {
       key: 'child',
-      header: 'Covered Child',
+      header: 'Covered Wearer',
       render: (sub) => {
         const child = childrenRecords.find((c) => c.id === sub.childId);
         return child ? (
@@ -76,7 +78,7 @@ export const SubscriptionsListPage: React.FC = () => {
             <span className="font-mono text-xs text-content-muted">Band: {child.currentBandCode}</span>
           </div>
         ) : (
-          <span className="text-xs text-content-muted">Child {sub.childId}</span>
+          <span className="text-xs text-content-muted">Wearer {sub.childId}</span>
         );
       },
     },
@@ -139,7 +141,7 @@ export const SubscriptionsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Active &amp; Pending Subscriptions"
-        description="Monitor covered children, coverage expiration timelines, and simulate renewal extensions."
+        description="Monitor covered individuals, coverage expiration timelines, and simulate renewal extensions."
       />
 
       {/* Summary KPI Cards */}
@@ -201,7 +203,7 @@ export const SubscriptionsListPage: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search child name, band code, or subscription ID..."
+            placeholder="Search wearer name, band code, or subscription ID..."
             className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
           />
         </div>
@@ -233,7 +235,7 @@ export const SubscriptionsListPage: React.FC = () => {
         isOpen={isRenewModalOpen}
         onClose={() => setIsRenewModalOpen(false)}
         title="Simulate Subscription Renewal"
-        description="Extend registry coverage for the registered child."
+        description="Extend registry coverage for the registered wearer."
       >
         <form onSubmit={handleConfirmRenew} className="space-y-4">
           <div className="p-4 bg-neutral-soft rounded-brand border border-border-subtle space-y-2 text-xs">
@@ -247,18 +249,30 @@ export const SubscriptionsListPage: React.FC = () => {
             </div>
           </div>
 
-          <FormField label="Select Renewal Term" required>
-            <Select
-              value={renewalMonths}
-              onChange={(e) => setRenewalMonths(Number(e.target.value))}
-            >
-              <option value="12">12 Months (+$29.00 Sample)</option>
-              <option value="24">24 Months (+$49.00 Sample)</option>
-            </Select>
-          </FormField>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Select Renewal Term" required>
+              <Select
+                value={renewalMonths}
+                onChange={(e) => setRenewalMonths(Number(e.target.value))}
+              >
+                <option value="12">12 Months (+$29.00 Sample)</option>
+                <option value="24">24 Months (+$49.00 Sample)</option>
+              </Select>
+            </FormField>
+
+            <FormField label="Renewal Payment Method" required>
+              <Select
+                value={renewalMethod}
+                onChange={(e) => setRenewalMethod(e.target.value as 'card' | 'offline_voucher')}
+              >
+                <option value="card">Credit / Debit Card (Instant)</option>
+                <option value="offline_voucher">Manual Office Voucher</option>
+              </Select>
+            </FormField>
+          </div>
 
           <p className="text-[11px] text-content-muted">
-            Note: Early renewal automatically extends from the current expiration date. Renewals do not generate vendor shop commissions unless specifically enabled.
+            Note: Early renewal automatically extends from current expiry date. Selecting Card Payment generates an instant verified payment receipt.
           </p>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -266,7 +280,7 @@ export const SubscriptionsListPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="md">
-              Confirm Simulated Renewal
+              Confirm Renewal
             </Button>
           </div>
         </form>

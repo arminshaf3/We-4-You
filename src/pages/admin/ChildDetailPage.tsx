@@ -90,7 +90,7 @@ export const ChildDetailPage: React.FC = () => {
       <PageHeader
         title={child.name}
         breadcrumbs={[
-          { label: 'Children Registry', to: '/admin/children' },
+          { label: 'Wearers & Contacts Registry', to: '/admin/children' },
           { label: child.name },
         ]}
         actions={
@@ -107,7 +107,7 @@ export const ChildDetailPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Column (8 cols): Child & Guardian Profiles */}
+        {/* Left Column (8 cols): Wearer & Contact Profiles */}
         <div className="lg:col-span-8 space-y-6">
           
           {/* Main Info Card */}
@@ -115,18 +115,18 @@ export const ChildDetailPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2 text-navy font-heading font-bold text-base">
                 <User className="w-5 h-5 text-navy" />
-                <span>Child Profile (Fictional Demo Record)</span>
+                <span>Wearer Profile (Fictional Demo Record)</span>
               </div>
               <span className="text-xs font-mono text-content-muted">ID: {child.id}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <span className="text-content-muted block mb-0.5">Child Full Name</span>
+                <span className="text-content-muted block mb-0.5">Wearer Full Name</span>
                 <span className="text-base font-bold text-navy">{child.name}</span>
               </div>
               <div>
-                <span className="text-content-muted block mb-0.5">Age Range</span>
+                <span className="text-content-muted block mb-0.5">Category / Age Group</span>
                 <span className="text-sm font-semibold text-navy">{child.ageRange}</span>
               </div>
               <div>
@@ -136,12 +136,12 @@ export const ChildDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Linked Guardians & Contact Priority */}
+          {/* Linked Emergency Contacts & Contact Priority */}
           <div className="bg-white p-6 rounded-brand border border-border-subtle shadow-subtle space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2 text-navy font-heading font-bold text-base">
                 <Shield className="w-5 h-5 text-navy" />
-                <span>Authorized Guardian Contacts (Priority Order)</span>
+                <span>Authorized Emergency Contacts (Priority Order)</span>
               </div>
               <span className="text-xs text-mint-darker bg-mint-pale px-2 py-0.5 rounded font-semibold border border-emerald-300">
                 Staff Intermediary Call Order
@@ -240,7 +240,7 @@ export const ChildDetailPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-content-muted italic">No assistance incidents recorded for this child.</p>
+              <p className="text-xs text-content-muted italic">No assistance incidents recorded for this wearer.</p>
             )}
           </div>
 
@@ -329,11 +329,11 @@ export const ChildDetailPage: React.FC = () => {
 
       </div>
 
-      {/* Edit Child Profile Modal with Sensitive Verification Step */}
+      {/* Edit Wearer Profile Modal with Sensitive Verification Step */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title="Edit Child &amp; Guardian Record"
+        title="Edit Wearer & Contact Record"
         description="Update profile details with simulated identity audit verification."
       >
         <form onSubmit={handleSaveEdit} className="space-y-4">
@@ -344,7 +344,7 @@ export const ChildDetailPage: React.FC = () => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Child's Full Name" required>
+            <FormField label="Wearer Full Name" required>
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -352,7 +352,7 @@ export const ChildDetailPage: React.FC = () => {
               />
             </FormField>
 
-            <FormField label="Age Range" required>
+            <FormField label="Category / Age Group" required>
               <Input
                 value={editAge}
                 onChange={(e) => setEditAge(e.target.value)}
@@ -362,7 +362,7 @@ export const ChildDetailPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Primary Guardian Name" required>
+            <FormField label="Primary Contact Name" required>
               <Input
                 value={editGuardianName}
                 onChange={(e) => setEditGuardianName(e.target.value)}
@@ -370,7 +370,7 @@ export const ChildDetailPage: React.FC = () => {
               />
             </FormField>
 
-            <FormField label="Guardian Mobile Telephone" required hint="Sensitive contact field">
+            <FormField label="Primary Contact Mobile Telephone" required hint="Sensitive contact field">
               <Input
                 type="tel"
                 value={editMobile}
@@ -388,13 +388,13 @@ export const ChildDetailPage: React.FC = () => {
                 <span>Sensitive Contact Modification Protocol</span>
               </div>
               <p className="text-[11px] text-amber-900 leading-normal">
-                Modifying the emergency telephone contact directly impacts child safety. Please record the verification rationale.
+                Modifying the emergency telephone contact directly impacts individual safety. Please record the verification rationale.
               </p>
               <FormField label="Verification Note / Reason" required>
                 <Input
                   value={changeReason}
                   onChange={(e) => setChangeReason(e.target.value)}
-                  placeholder="e.g. Guardian phoned from previous registered number to confirm new digits"
+                  placeholder="e.g. Primary contact phoned from previous registered number to confirm new digits"
                   required
                 />
               </FormField>
@@ -405,7 +405,7 @@ export const ChildDetailPage: React.FC = () => {
                   onChange={(e) => setChangeVerified(e.target.checked)}
                   className="w-4 h-4 rounded text-navy"
                 />
-                <span>I confirm staff has verified guardian identity prior to this change.</span>
+                <span>I confirm staff has verified contact identity prior to this change.</span>
               </label>
             </div>
           )}

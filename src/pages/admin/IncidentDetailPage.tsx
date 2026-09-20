@@ -34,8 +34,8 @@ export const IncidentDetailPage: React.FC = () => {
   // Modal: Record Contact Attempt
   const [isAttemptModalOpen, setIsAttemptModalOpen] = useState(false);
   const [attemptMethod, setAttemptMethod] = useState<'phone_call' | 'sms' | 'office_followup'>('phone_call');
-  const [contactTarget, setContactTarget] = useState('Primary Guardian');
-  const [outcome, setOutcome] = useState('Connected and spoken with guardian');
+  const [contactTarget, setContactTarget] = useState('Primary Contact');
+  const [outcome, setOutcome] = useState('Connected and spoken with contact');
   const [attemptNotes, setAttemptNotes] = useState('');
 
   // Modal: Resolve Incident
@@ -90,8 +90,8 @@ export const IncidentDetailPage: React.FC = () => {
                   onClick={() => {
                     setContactTarget(
                       matchedChild
-                        ? `Primary Guardian (${matchedChild.primaryGuardian.fullName})`
-                        : 'Registered Guardian'
+                        ? `Primary Contact (${matchedChild.primaryGuardian.fullName})`
+                        : 'Registered Contact'
                     );
                     setIsAttemptModalOpen(true);
                   }}
@@ -129,7 +129,7 @@ export const IncidentDetailPage: React.FC = () => {
             Band: {incident.bandReference}
           </span>
           <span className="text-xs text-content-muted">
-            Report Type: {incident.reportType === 'child_found' ? 'Child with Finder' : 'Band Found Alone'}
+            Report Type: {incident.reportType === 'band_found_alone' ? 'Band Found Alone' : 'Person with Finder'}
           </span>
         </div>
         <div className="text-xs text-content-muted">
@@ -150,7 +150,7 @@ export const IncidentDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Two Column: Incident Data vs Matched Private Child & Guardian Record */}
+      {/* Two Column: Incident Data vs Matched Private Wearer & Contact Record */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Column (7 cols): Caller Info & Contact Attempt Logs */}
@@ -220,14 +220,14 @@ export const IncidentDetailPage: React.FC = () => {
 
         </div>
 
-        {/* Right Column (5 cols): Matched Private Guardian File (Admin only) */}
+        {/* Right Column (5 cols): Matched Private Member File (Admin only) */}
         <div className="lg:col-span-5 space-y-6">
           
           <div className="bg-white p-6 rounded-brand border border-border-subtle shadow-subtle space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
               <h3 className="text-base font-heading font-bold text-navy flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#088F5B]" />
-                <span>Matched Private Family Record</span>
+                <span>Matched Private Member Record</span>
               </h3>
               <span className="text-[10px] uppercase font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
                 Admin Confidential
@@ -237,15 +237,15 @@ export const IncidentDetailPage: React.FC = () => {
             {matchedChild ? (
               <div className="space-y-4 text-xs">
                 <div>
-                  <span className="text-content-muted block">Child Full Name:</span>
+                  <span className="text-content-muted block">Wearer Full Name:</span>
                   <span className="text-base font-bold text-navy block">{matchedChild.name}</span>
-                  <span className="text-content-muted">Age Range: {matchedChild.ageRange}</span>
+                  <span className="text-content-muted">Category / Age Group: {matchedChild.ageRange}</span>
                 </div>
 
                 {/* Priority 1 Contact Box */}
                 <div className="p-3.5 bg-mint-pale/60 rounded-brand border border-emerald-300/60 space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-mint-darker block">
-                    Priority 1 — Primary Guardian
+                    Priority 1 — Primary Contact
                   </span>
                   <span className="font-heading font-bold text-navy block text-sm">
                     {matchedChild.primaryGuardian.fullName} ({matchedChild.primaryGuardian.relationship})
@@ -286,18 +286,18 @@ export const IncidentDetailPage: React.FC = () => {
                   to={`/admin/children/${matchedChild.id}`}
                   className="text-xs font-semibold text-navy hover:underline block pt-2 text-center"
                 >
-                  View Complete Child Registry File →
+                  View Complete Wearer Registry File →
                 </Link>
               </div>
             ) : (
               <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs text-amber-900">
-                No active registered child matched this band code ({incident.bandReference}). The band may be unregistered or retired.
+                No active registered wearer matched this band code ({incident.bandReference}). The band may be unregistered or retired.
               </div>
             )}
           </div>
 
           <div className="p-4 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted leading-relaxed">
-            <strong>Staff Protocol:</strong> Telephone attempts do not automatically resolve the report. An incident must remain open until explicit confirmation is obtained that the child is safely reunited.
+            <strong>Staff Protocol:</strong> Telephone attempts do not automatically resolve the report. An incident must remain open until explicit confirmation is obtained that the individual is safely reconnected.
           </div>
 
         </div>
@@ -309,7 +309,7 @@ export const IncidentDetailPage: React.FC = () => {
         isOpen={isAttemptModalOpen}
         onClose={() => setIsAttemptModalOpen(false)}
         title="Record Contact Attempt"
-        description="Log an official telephone call or relay attempt to the guardian."
+        description="Log an official telephone call or relay attempt to the emergency contact."
       >
         <form onSubmit={handleSaveAttempt} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -338,7 +338,7 @@ export const IncidentDetailPage: React.FC = () => {
               value={outcome}
               onChange={(e) => setOutcome(e.target.value)}
             >
-              <option value="Connected and spoken with guardian">Connected and spoken with guardian</option>
+              <option value="Connected and spoken with contact">Connected and spoken with contact</option>
               <option value="Phone rang, went to voicemail">Phone rang, went to voicemail</option>
               <option value="Line busy or unavailable">Line busy or unavailable</option>
               <option value="SMS relay delivered">SMS relay delivered</option>
@@ -350,7 +350,7 @@ export const IncidentDetailPage: React.FC = () => {
               rows={3}
               value={attemptNotes}
               onChange={(e) => setAttemptNotes(e.target.value)}
-              placeholder="e.g. Guardian confirmed they are en route to the park info booth..."
+              placeholder="e.g. Primary contact confirmed they are en route to the rendezvous point..."
             />
           </FormField>
 
@@ -370,7 +370,7 @@ export const IncidentDetailPage: React.FC = () => {
         isOpen={isResolveModalOpen}
         onClose={() => setIsResolveModalOpen(false)}
         title="Record Confirmed Outcome"
-        description="Explicitly record confirmed child reconnection to resolve this incident."
+        description="Explicitly record confirmed individual reconnection to resolve this incident."
       >
         <form onSubmit={handleConfirmResolve} className="space-y-4">
           <FormField label="Resolution Outcome Summary" required>
@@ -378,7 +378,7 @@ export const IncidentDetailPage: React.FC = () => {
               rows={4}
               value={outcomeSummary}
               onChange={(e) => setOutcomeSummary(e.target.value)}
-              placeholder="e.g. Confirmed with Officer Ramos and mother Elena Vance: Child safely reunited at park pavilion at 10:45 AM."
+              placeholder="e.g. Confirmed with finder and primary contact: Individual safely reconnected at rendezvous point at 10:45 AM."
               required
             />
           </FormField>

@@ -1,10 +1,17 @@
 export type RelationshipType = 
+  | 'Self (Wearer)'
+  | 'Parent / Guardian'
   | 'Mother'
   | 'Father'
-  | 'Legal Guardian'
+  | 'Spouse / Partner'
+  | 'Son / Daughter'
   | 'Grandparent'
+  | 'Caregiver / Nurse'
+  | 'Sibling'
+  | 'Legal Guardian'
   | 'Foster Parent'
-  | 'Other Authorized Adult';
+  | 'Emergency Contact'
+  | 'Other Authorized Contact';
 
 export interface EmergencyContact {
   fullName: string;
@@ -26,6 +33,8 @@ export interface ChildData {
   ageRange?: string;
   photoUrl?: string;
 }
+
+export type WearerData = ChildData;
 
 export interface Vendor {
   id: string;
@@ -64,12 +73,27 @@ export interface RegistrationTimelineEntry {
   notes?: string;
 }
 
+export type PaymentMethod = 'card' | 'offline_voucher' | 'bank_transfer' | 'store_cash';
+
+export interface CardPaymentDetails {
+  brand: string; // 'Visa', 'Mastercard', 'Amex', 'Discover', etc.
+  last4: string; // e.g. '4242'
+  cardholderName: string;
+  expMonth?: string;
+  expYear?: string;
+  transactionId: string; // e.g. 'TXN-CARD-2026-8910'
+  authCode?: string;
+}
+
 export interface Registration {
   id: string;
   referenceNumber: string; // e.g. REG-2026-8192
   submissionDate: string;
   status: RegistrationStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  cardDetails?: CardPaymentDetails;
+  paymentRef?: string;
   guardian: GuardianData;
   child: ChildData;
   bandCode: string;
@@ -97,6 +121,8 @@ export interface ChildRecord {
   incidentsCount: number;
 }
 
+export type WearerRecord = ChildRecord;
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -120,13 +146,18 @@ export interface Subscription {
   startDate: string;
   expiryDate: string;
   paymentRef?: string;
+  paymentMethod?: PaymentMethod;
+  transactionId?: string;
   renewalCount: number;
 }
 
 export interface Payment {
   id: string;
-  receiptRef: string; // e.g. REC-8492
+  receiptRef: string; // e.g. REC-8492 or CARD-2026-8492
   type: 'band_purchase' | 'subscription' | 'replacement';
+  method?: PaymentMethod;
+  cardDetails?: CardPaymentDetails;
+  transactionId?: string;
   amount: number;
   currency: string;
   status: PaymentStatus;
@@ -163,7 +194,7 @@ export interface Payout {
   notes?: string;
 }
 
-export type IncidentReportType = 'child_found' | 'band_found_alone';
+export type IncidentReportType = 'person_found' | 'child_found' | 'band_found_alone';
 export type IncidentStatus = 'open' | 'contacting_guardian' | 'awaiting_confirmation' | 'resolved';
 
 export interface ContactAttempt {

@@ -54,7 +54,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
           badge: openIncidents > 0 ? openIncidents : undefined,
           badgeColor: 'bg-rose-500 text-white font-bold',
         },
-        { to: '/admin/children', label: 'Children & Guardians', icon: <Users className="w-4 h-4" /> },
+        { to: '/admin/children', label: 'Wearers & Contacts', icon: <Users className="w-4 h-4" /> },
         { to: '/admin/bands', label: 'Band Inventory', icon: <Radio className="w-4 h-4" /> },
       ],
     },

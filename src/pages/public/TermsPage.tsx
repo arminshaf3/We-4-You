@@ -38,10 +38,10 @@ export const TermsPage: React.FC = () => {
               1. Service Description &amp; Scope
             </h2>
             <p>
-              We 4 You provides a physical child identification wristband and an office intermediary contact service. The product functions by providing a visible reference number and office contact phone number on the band so that caring individuals or officials who find a lost child may contact our office.
+              We 4 You provides a physical identification wristband and an office intermediary contact service. The product functions by providing a visible reference number and office contact phone number on the band so that caring individuals or officials who find an individual requiring assistance may contact our central office.
             </p>
             <p>
-              <strong>Important Scope Definition:</strong> The We 4 You identification band does <em>not</em> contain GPS hardware, cellular transmitters, bluetooth tracking beacons, or electronic battery devices. The service does not promise automated location broadcasts or continuous supervision.
+              <strong>Important Scope Definition:</strong> The We 4 You identification band does <em>not</em> contain GPS hardware, cellular transmitters, bluetooth tracking beacons, or electronic battery devices. The service does not promise automated location broadcasts or continuous electronic supervision.
             </p>
           </section>
 
@@ -61,14 +61,14 @@ export const TermsPage: React.FC = () => {
 
           <section className="space-y-3">
             <h2 className="text-xl font-heading font-bold text-navy">
-              3. Guardian Responsibilities
+              3. User &amp; Contact Responsibilities
             </h2>
             <p>
-              Registered guardians are responsible for:
+              Registered contacts and users are responsible for:
             </p>
             <ul className="list-disc pl-5 space-y-1 text-sm">
               <li>Ensuring telephone numbers and emergency contacts provided are current and operational.</li>
-              <li>Ensuring the child comfortably wears the band during outings.</li>
+              <li>Ensuring the individual comfortably wears the band during outings, travels, or daily activities.</li>
               <li>Promptly reporting lost or broken bands to our office for replacement.</li>
             </ul>
           </section>
@@ -78,7 +78,7 @@ export const TermsPage: React.FC = () => {
               4. Vendor Attribution &amp; Commissions
             </h2>
             <p>
-              Selecting the retail shop where the band was acquired attributes the sale to an authorized partner. Attribution is subject to office validation and does not represent an independent commercial agreement between the guardian and the retailer.
+              Selecting the retail shop where the band was acquired attributes the sale to an authorized partner. Attribution is subject to office validation and does not represent an independent commercial agreement between the user and the retailer.
             </p>
           </section>
 
@@ -87,7 +87,7 @@ export const TermsPage: React.FC = () => {
               5. Office Operating Scope &amp; Limitation of Liability
             </h2>
             <p>
-              We 4 You acts as a caring communication intermediary. The service cannot replace attentive parental supervision, and the business does not guarantee child recovery or prevent separation. Office operating hours and contact response availability are subject to configured staffing schedules.
+              We 4 You acts as a caring communication intermediary. The service cannot replace attentive care, medical management, or supervision, and the business does not guarantee individual location recovery or prevent separation. Office operating hours and contact response availability are subject to configured staffing schedules.
             </p>
           </section>
 

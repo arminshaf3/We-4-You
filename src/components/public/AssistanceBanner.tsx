@@ -16,10 +16,10 @@ export const AssistanceBanner: React.FC = () => {
           </div>
           <div>
             <span className="block text-base sm:text-lg font-heading font-semibold text-white">
-              Found a child wearing our band?
+              Found someone wearing our band?
             </span>
             <span className="text-xs sm:text-sm text-slate-300">
-              Contact our office and quote the band code. We will reach the registered guardian immediately.
+              Contact our central office and quote the band reference. We will reach their registered emergency contacts immediately.
             </span>
           </div>
         </div>

@@ -38,12 +38,12 @@ export const PrivacyPage: React.FC = () => {
               1. Collection Purposes &amp; Scope
             </h2>
             <p>
-              We 4 You collects information solely to facilitate emergency guardian reconnection when an identification band reference is reported to our office. The types of information gathered during registration include:
+              We 4 You collects information solely to facilitate emergency contact reconnection when an identification band reference is reported to our office. The types of information gathered during registration include:
             </p>
             <ul className="list-disc pl-5 space-y-1 text-sm">
-              <li>Guardian full name, relationship to the child, and primary contact phone number.</li>
+              <li>Primary contact full name, relationship to the wearer, and primary contact phone number.</li>
               <li>Optional secondary authorized adult emergency contact numbers.</li>
-              <li>Child’s first name and general age range.</li>
+              <li>Wearer’s first name and category/age group (e.g. child, senior, adult, or medical alert).</li>
               <li>Unique printed band reference code and authorized vendor purchase attribution.</li>
             </ul>
           </section>
@@ -53,19 +53,19 @@ export const PrivacyPage: React.FC = () => {
               2. Strict Confidentiality &amp; Non-Disclosure
             </h2>
             <p>
-              Family contact information is kept confidential within our secure intermediary office registry. We <strong>never</strong> display registered child names, photographs, guardian phone numbers, or addresses on public web pages or on the physical band itself.
+              Emergency contact information is kept confidential within our secure intermediary office registry. We <strong>never</strong> display registered wearer names, photographs, phone numbers, or addresses on public web pages or on the physical band itself.
             </p>
             <p>
-              When a member of the public reports a child wearing a band, our staff facilitates the phone connection directly rather than disclosing parent contact details to the finder.
+              When a member of the public reports a person wearing a band, our staff facilitates the phone connection directly rather than disclosing private contact details to the finder.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-heading font-bold text-navy">
-              3. Parental and Guardian Consent
+              3. Authorized Registration &amp; Consent
             </h2>
             <p>
-              Registration requires explicit affirmation that the submitting individual is the parent or authorized legal guardian of the child. Possession of a printed band reference alone does not confer authorization.
+              Registration requires explicit affirmation that the submitting individual is the wearer or authorized to register on behalf of the wearer. Possession of a printed band reference alone does not confer authorization.
             </p>
           </section>
 
@@ -74,7 +74,7 @@ export const PrivacyPage: React.FC = () => {
               4. Updating and Accessing Your Records
             </h2>
             <p>
-              Guardians are encouraged to maintain current telephone numbers. Because records relate to child safety, requests to update phone numbers or authorized contacts undergo office staff identity verification before modification.
+              Contacts are encouraged to maintain current telephone numbers. Because records relate to personal safety, requests to update phone numbers or authorized emergency contacts undergo office staff identity verification before modification.
             </p>
           </section>
 

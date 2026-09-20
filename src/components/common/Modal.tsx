@@ -100,16 +100,16 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white rounded-brand-lg shadow-floating border border-border-subtle p-6 sm:p-8 z-10 my-8`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white rounded-brand-lg shadow-floating border border-border-subtle p-5 sm:p-7 z-10 my-auto`}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 pb-4 border-b border-border-subtle">
+        <div className="flex items-start justify-between gap-4 pb-3 sm:pb-4 border-b border-border-subtle flex-shrink-0">
           <div>
-            <h3 id="modal-title" className="text-xl sm:text-2xl font-heading font-bold text-navy">
+            <h3 id="modal-title" className="text-lg sm:text-xl font-heading font-bold text-navy">
               {title}
             </h3>
             {description && (
-              <p className="text-sm text-content-muted mt-1 leading-normal">
+              <p className="text-xs sm:text-sm text-content-muted mt-0.5 leading-normal">
                 {description}
               </p>
             )}
@@ -117,14 +117,14 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-2 -mr-2 text-content-muted hover:text-navy hover:bg-neutral-soft rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy"
+            className="p-1.5 -mr-1.5 text-content-muted hover:text-navy hover:bg-neutral-soft rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="mt-5">{children}</div>
+        <div className="mt-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">{children}</div>
       </div>
     </div>
   );

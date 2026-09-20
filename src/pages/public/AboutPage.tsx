@@ -56,7 +56,7 @@ export const AboutPage: React.FC = () => {
               The Office's Intermediary Role
             </h3>
             <p className="text-base text-content-body leading-relaxed">
-              When a person finds a child wearing our band, they reach out to our dedicated office team. We quote the printed reference to locate the private registration and reach the registered guardian directly.
+              When a person finds someone wearing our band or an individual requires assistance, they reach out to our dedicated office team. We quote the printed reference to locate the private registration and reach the registered emergency contact directly.
             </p>
           </div>
 
@@ -66,10 +66,10 @@ export const AboutPage: React.FC = () => {
               <Lock className="w-6 h-6 text-[#088F5B]" />
             </div>
             <h3 className="text-2xl font-heading font-bold text-navy">
-              Respect for Family Information
+              Respect for Private Information
             </h3>
             <p className="text-base text-content-body leading-relaxed">
-              No personal telephone numbers, home addresses, or child names are printed on the physical band. Your family’s details remain strictly confidential within our protected registry.
+              No personal telephone numbers, home addresses, or private names are printed on the physical band. All emergency contact details remain strictly confidential within our protected registry.
             </p>
           </div>
         </div>
@@ -84,7 +84,7 @@ export const AboutPage: React.FC = () => {
               Connect &bull; Verify &bull; Empower
             </h2>
             <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              We connect caring community members with our dedicated office, verify registered guardian identities with strict privacy standards, and empower parents with dependable peace of mind.
+              We connect caring community members with our dedicated office, verify registered contact identities with strict privacy standards, and empower families and individuals with dependable peace of mind.
             </p>
           </div>
           <div className="flex-shrink-0 p-4 bg-white/5 rounded-brand border border-white/10">
@@ -99,14 +99,14 @@ export const AboutPage: React.FC = () => {
         {/* Call to Action Box */}
         <div className="bg-neutral-soft rounded-brand-lg p-8 sm:p-12 border border-border-subtle text-center space-y-5 max-w-3xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-heading font-bold text-navy">
-            Ready to protect your child with We 4 You?
+            Ready to protect yourself or a loved one with We 4 You?
           </h2>
           <p className="text-base sm:text-lg text-content-body max-w-xl mx-auto">
             Have your band ready and complete your registration in just a few minutes.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button to="/register" variant="primary" size="lg">
-              Register Your Child
+              Register a Band
             </Button>
             <Button to="/how-it-works" variant="outline" size="lg">
               How It Works

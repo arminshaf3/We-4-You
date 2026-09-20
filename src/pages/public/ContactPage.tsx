@@ -59,7 +59,7 @@ export const ContactPage: React.FC = () => {
                 Time-Sensitive Band Assistance
               </h3>
               <p className="text-sm text-slate-300 max-w-xl leading-relaxed">
-                If you have found a child wearing our band or need immediate emergency contact coordination, please do not use the contact form. Use our dedicated assistance guidance or phone our office directly.
+                If you have found a person wearing our band or need immediate emergency contact coordination, please do not use the contact form. Use our dedicated assistance guidance or phone our office directly.
               </p>
             </div>
           </div>
