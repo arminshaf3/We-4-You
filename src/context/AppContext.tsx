@@ -287,6 +287,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     supabaseService.getIncidents().then((data) => {
       if (data && data.length > 0) setIncidents(data);
     });
+
+    supabaseService.getPayments().then((data) => {
+      if (data && data.length > 0) setPayments(data);
+    });
+
+    supabaseService.getCommissions().then((data) => {
+      if (data && data.length > 0) setCommissions(data);
+    });
+
+    supabaseService.getPayouts().then((data) => {
+      if (data && data.length > 0) setPayouts(data);
+    });
+
+    supabaseService.getContactMessages().then((data) => {
+      if (data && data.length > 0) setEnquiries(data);
+    });
   }, []);
 
   // Active getters
@@ -1034,6 +1050,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'new',
     };
     setEnquiries((prev) => [newEnq, ...prev]);
+    supabaseService.insertContactMessage(newEnq);
     logAction('Public Enquiry Received', `New enquiry from ${name} on topic: ${topic}.`, 'enquiry', newEnq.id, 'Visitor');
     addToast('success', 'Message Sent', 'Thank you! Our office staff will review your message.');
     return newEnq;

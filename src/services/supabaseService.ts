@@ -401,6 +401,176 @@ export const supabaseService = {
     }
   },
 
+  // --- PAYMENTS ---
+  async getPayments(): Promise<Payment[] | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase.from('payments').select('*').order('payment_date', { ascending: false });
+      if (error || !data) return null;
+      return data.map((p: any) => ({
+        id: p.id,
+        receiptRef: p.receipt_ref,
+        type: p.type || 'subscription',
+        method: p.method || 'card',
+        cardDetails: p.card_details || undefined,
+        transactionId: p.transaction_id || undefined,
+        amount: Number(p.amount),
+        currency: p.currency || 'USD',
+        status: p.status,
+        paymentDate: p.payment_date ? p.payment_date.substring(0, 10) : new Date().toISOString().substring(0, 10),
+        registrationId: p.registration_id || undefined,
+        childId: p.wearer_id || undefined,
+        payerName: p.payer_name,
+        notes: p.notes || undefined,
+      }));
+    } catch {
+      return null;
+    }
+  },
+
+  async insertPayment(payment: Payment): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.from('payments').insert({
+        receipt_ref: payment.receiptRef,
+        type: payment.type,
+        method: payment.method,
+        card_details: payment.cardDetails || null,
+        transaction_id: payment.transactionId || null,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        payment_date: payment.paymentDate,
+        registration_id: payment.registrationId || null,
+        wearer_id: payment.childId || null,
+        payer_name: payment.payerName,
+        notes: payment.notes || null,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  // --- COMMISSIONS ---
+  async getCommissions(): Promise<Commission[] | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase.from('commissions').select('*').order('created_at', { ascending: false });
+      if (error || !data) return null;
+      return data.map((c: any) => ({
+        id: c.id,
+        vendorId: c.vendor_id,
+        saleId: c.sale_id || '',
+        registrationRef: c.registration_ref || '',
+        type: c.type || 'percentage',
+        rate: Number(c.rate),
+        eligibleAmount: Number(c.eligible_amount),
+        commissionAmount: Number(c.commission_amount),
+        status: c.status,
+        createdAt: c.created_at ? c.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10),
+        payoutId: c.payout_id || undefined,
+      }));
+    } catch {
+      return null;
+    }
+  },
+
+  async insertCommission(commission: Commission): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.from('commissions').insert({
+        vendor_id: commission.vendorId,
+        sale_id: commission.saleId,
+        registration_ref: commission.registrationRef,
+        type: commission.type,
+        rate: commission.rate,
+        eligible_amount: commission.eligibleAmount,
+        commission_amount: commission.commissionAmount,
+        status: commission.status,
+        payout_id: commission.payoutId || null,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  // --- PAYOUTS ---
+  async getPayouts(): Promise<Payout[] | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase.from('payouts').select('*').order('payout_date', { ascending: false });
+      if (error || !data) return null;
+      return data.map((po: any) => ({
+        id: po.id,
+        payoutRef: po.payout_ref,
+        vendorId: po.vendor_id,
+        commissionIds: po.commission_ids || [],
+        totalAmount: Number(po.total_amount),
+        payoutDate: po.payout_date ? po.payout_date.substring(0, 10) : new Date().toISOString().substring(0, 10),
+        notes: po.notes || undefined,
+      }));
+    } catch {
+      return null;
+    }
+  },
+
+  async insertPayout(payout: Payout): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.from('payouts').insert({
+        payout_ref: payout.payoutRef,
+        vendor_id: payout.vendorId,
+        commission_ids: payout.commissionIds,
+        total_amount: payout.totalAmount,
+        payout_date: payout.payoutDate,
+        notes: payout.notes || null,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  // --- CONTACT MESSAGES / ENQUIRIES ---
+  async getContactMessages(): Promise<Enquiry[] | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+      if (error || !data) return null;
+      return data.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        topic: m.topic,
+        message: m.message,
+        status: m.status,
+        notes: m.notes || undefined,
+        createdAt: m.created_at ? m.created_at.substring(0, 10) : new Date().toISOString().substring(0, 10),
+      }));
+    } catch {
+      return null;
+    }
+  },
+
+  async insertContactMessage(msg: Omit<Enquiry, 'id' | 'createdAt'>): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.from('contact_messages').insert({
+        name: msg.name,
+        email: msg.email,
+        topic: msg.topic,
+        message: msg.message,
+        status: msg.status || 'new',
+        notes: msg.notes || null,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
   // --- PHOTO UPLOAD TO SUPABASE STORAGE ---
   async uploadWearerPhoto(file: File): Promise<string | null> {
     if (!isSupabaseConfigured) return null;
