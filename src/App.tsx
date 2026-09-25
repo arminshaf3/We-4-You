@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Layouts
 import { PublicLayout } from './layouts/PublicLayout';
@@ -19,6 +21,9 @@ import { FaqPage } from './pages/public/FaqPage';
 import { PrivacyPage } from './pages/public/PrivacyPage';
 import { TermsPage } from './pages/public/TermsPage';
 import { NotFoundPage } from './pages/public/NotFoundPage';
+import { LoginPage } from './pages/public/LoginPage';
+import { SignupPage } from './pages/public/SignupPage';
+import { ResetPasswordPage } from './pages/public/ResetPasswordPage';
 
 // Admin Pages
 import { AdminLoginPage } from './pages/admin/AdminLoginPage';
@@ -44,54 +49,66 @@ import { ActivityHistoryPage } from './pages/admin/ActivityHistoryPage';
 
 export const App: React.FC = () => {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Website Routes with Shared PublicLayout */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/how-it-works" element={<HowItWorksPage />} />
-            <Route path="/subscriptions" element={<SubscriptionsPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/registration/confirmation" element={<RegistrationConfirmationPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/found-band" element={<FoundBandPage />} />
-            <Route path="/band/:publicCode" element={<FoundBandPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
+    <AuthProvider>
+      <AppProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Website Routes with Shared PublicLayout */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
+              <Route path="/subscriptions" element={<SubscriptionsPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/registration/confirmation" element={<RegistrationConfirmationPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/found-band" element={<FoundBandPage />} />
+              <Route path="/band/:publicCode" element={<FoundBandPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
 
-          {/* Admin Login Route (standalone) */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+            {/* Admin Login Route (standalone) */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
 
-          {/* Administrator Demonstration Dashboard Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<OverviewDashboard />} />
-            <Route path="registrations" element={<RegistrationsListPage />} />
-            <Route path="registrations/:id" element={<RegistrationDetailPage />} />
-            <Route path="children" element={<ChildrenListPage />} />
-            <Route path="children/:id" element={<ChildDetailPage />} />
-            <Route path="bands" element={<BandsListPage />} />
-            <Route path="vendors" element={<VendorsListPage />} />
-            <Route path="vendors/:id" element={<VendorDetailPage />} />
-            <Route path="plans" element={<PlansConfigPage />} />
-            <Route path="subscriptions" element={<SubscriptionsListPage />} />
-            <Route path="payments" element={<PaymentsListPage />} />
-            <Route path="commissions" element={<CommissionsListPage />} />
-            <Route path="payouts" element={<PayoutsListPage />} />
-            <Route path="incidents" element={<IncidentsListPage />} />
-            <Route path="incidents/:id" element={<IncidentDetailPage />} />
-            <Route path="enquiries" element={<EnquiriesListPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-            <Route path="activity" element={<ActivityHistoryPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AppProvider>
+            {/* Administrator & Staff Protected Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'support']}>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<OverviewDashboard />} />
+              <Route path="registrations" element={<RegistrationsListPage />} />
+              <Route path="registrations/:id" element={<RegistrationDetailPage />} />
+              <Route path="children" element={<ChildrenListPage />} />
+              <Route path="children/:id" element={<ChildDetailPage />} />
+              <Route path="bands" element={<BandsListPage />} />
+              <Route path="vendors" element={<VendorsListPage />} />
+              <Route path="vendors/:id" element={<VendorDetailPage />} />
+              <Route path="plans" element={<PlansConfigPage />} />
+              <Route path="subscriptions" element={<SubscriptionsListPage />} />
+              <Route path="payments" element={<PaymentsListPage />} />
+              <Route path="commissions" element={<CommissionsListPage />} />
+              <Route path="payouts" element={<PayoutsListPage />} />
+              <Route path="incidents" element={<IncidentsListPage />} />
+              <Route path="incidents/:id" element={<IncidentDetailPage />} />
+              <Route path="enquiries" element={<EnquiriesListPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="activity" element={<ActivityHistoryPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AppProvider>
+    </AuthProvider>
   );
 };
 export default App;

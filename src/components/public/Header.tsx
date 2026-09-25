@@ -55,11 +55,11 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3">
           <Link
             to="/found-band"
             className="text-xs font-semibold text-navy bg-mint-pale hover:bg-mint/30 px-3.5 py-2 rounded-brand border border-emerald-300/40 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-navy"
-            title="Found a child wearing our band?"
+            title="Found someone wearing our band?"
           >
             <PhoneCall className="w-3.5 h-3.5 text-navy" />
             <span>Found a Band?</span>
@@ -68,6 +68,13 @@ export const Header: React.FC = () => {
           <Button to="/register" variant="primary" size="md">
             Register a Band
           </Button>
+
+          <Link
+            to="/login"
+            className="text-xs font-bold text-navy hover:text-mint-darker px-3 py-2 rounded-brand border border-border-subtle hover:border-mint transition-colors"
+          >
+            Sign In
+          </Link>
         </div>
 
         {/* Mobile Menu Toggle Button */}
@@ -118,6 +125,12 @@ export const Header: React.FC = () => {
               <Button to="/found-band" variant="mint" size="md" className="w-full">
                 Found Band Assistance
               </Button>
+              <Link
+                to="/login"
+                className="text-center py-2.5 text-sm font-bold text-navy hover:bg-slate-50 rounded-brand border border-border-subtle"
+              >
+                Sign In to Account
+              </Link>
             </div>
 
             <div className="pt-2 text-center text-xs text-content-muted">
