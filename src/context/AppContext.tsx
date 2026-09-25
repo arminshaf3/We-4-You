@@ -33,6 +33,7 @@ import {
   initialActivity,
   initialSettings,
 } from './fixtures';
+import { supabaseService } from '../services/supabaseService';
 
 export interface ToastMessage {
   id: string;
@@ -259,6 +260,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sessionStorage.setItem('we4u_settings', JSON.stringify(settings));
   }, [settings]);
 
+  // Asynchronously synchronize live data from Supabase if configured
+  useEffect(() => {
+    if (!supabaseService.isConfigured) return;
+
+    supabaseService.getVendors().then((data) => {
+      if (data && data.length > 0) setVendors(data);
+    });
+
+    supabaseService.getPlans().then((data) => {
+      if (data && data.length > 0) setPlans(data);
+    });
+
+    supabaseService.getBands().then((data) => {
+      if (data && data.length > 0) setBands(data);
+    });
+
+    supabaseService.getWearers().then((data) => {
+      if (data && data.length > 0) setChildrenRecords(data);
+    });
+
+    supabaseService.getRegistrations().then((data) => {
+      if (data && data.length > 0) setRegistrations(data);
+    });
+
+    supabaseService.getIncidents().then((data) => {
+      if (data && data.length > 0) setIncidents(data);
+    });
+  }, []);
+
   // Active getters
   const activeVendors = vendors.filter((v) => v.isActive);
   const activePlans = plans.filter((p) => p.isActive);
@@ -379,6 +409,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setRegistrations((prev) => [newReg, ...prev]);
+    supabaseService.insertRegistration(newReg);
 
     // Create payment fixture linked to this registration
     const newPay: Payment = {
@@ -445,6 +476,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRegistrations((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status, statusReason: reason, verifiedBy: adminUser, verifiedAt: timestamp, timeline: updatedTimeline } : r))
     );
+    supabaseService.updateRegistration(id, { status, statusReason: reason, timeline: updatedTimeline });
 
     // If approved, create official Record, activate Band, and create Subscription & Commission
     if (status === 'approved') {
@@ -539,6 +571,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().substring(0, 10),
     };
     setVendors((prev) => [...prev, newVendor]);
+    supabaseService.insertVendor(newVendor);
     logAction('Vendor Created', `Created retail partner profile for "${newVendor.shopName}".`, 'vendor', id);
     addToast('success', 'Shop Added', `${newVendor.shopName} added successfully.`);
     return newVendor;
@@ -548,6 +581,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setVendors((prev) =>
       prev.map((v) => (v.id === id ? { ...v, ...updates } : v))
     );
+    supabaseService.updateVendor(id, updates);
     logAction('Vendor Updated', `Updated profile or terms for shop ID ${id}.`, 'vendor', id);
     addToast('success', 'Shop Updated', 'Shop profile saved.');
   };
@@ -559,6 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setVendors((prev) =>
       prev.map((v) => (v.id === id ? { ...v, isActive: newStatus } : v))
     );
+    supabaseService.updateVendor(id, { isActive: newStatus });
     logAction('Vendor Status Toggled', `Shop ${vendor.shopName} marked as ${newStatus ? 'Active' : 'Inactive'}.`, 'vendor', id);
     addToast(newStatus ? 'success' : 'info', `Shop ${newStatus ? 'Activated' : 'Deactivated'}`, `${vendor.shopName} is now ${newStatus ? 'active' : 'inactive'}.`);
   };
@@ -578,6 +613,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, currentBandCode: band.referenceCode } : c))
     );
+    supabaseService.updateBand(band.referenceCode, { status: 'assigned', childId, assignedDate: new Date().toISOString().substring(0, 10) });
+    supabaseService.updateWearer(childId, { currentBandCode: band.referenceCode });
     logAction('Band Assigned', `Assigned band ${band.referenceCode} to wearer ${childId}.`, 'band', band.id);
     return true;
   };
@@ -617,6 +654,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((c) => (c.id === childId ? { ...c, currentBandCode: newBand.referenceCode } : c))
     );
 
+    supabaseService.updateBand(oldBandCode, { status: 'retired', replacementNotes: reason, replacedByCode: newBand.referenceCode });
+    supabaseService.updateBand(newBandCode, { status: 'assigned', childId, assignedDate: today });
+    supabaseService.updateWearer(childId, { currentBandCode: newBand.referenceCode });
+
     logAction(
       'Band Replaced',
       `Replaced band ${oldBandCode} with ${newBand.referenceCode} for wearer ${childId}. Reason: ${reason}`,
@@ -635,6 +676,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'available',
     };
     setBands((prev) => [...prev, newBand]);
+    supabaseService.insertBand(code.toUpperCase().trim());
     logAction('Band Added', `Added band ${code} to available inventory.`, 'band', id);
     addToast('success', 'Band Added', `${code} is now available in inventory.`);
     return newBand;
@@ -645,6 +687,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, ...updates } : c))
     );
+    supabaseService.updateWearer(childId, updates);
     logAction('Profile Updated', `Updated record details for wearer ${childId}.`, 'child', childId);
     addToast('success', 'Record Updated', 'Wearer and emergency contact details updated successfully.');
   };
@@ -909,6 +952,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setIncidents((prev) => [newInc, ...prev]);
+    supabaseService.insertIncident(newInc);
 
     // Check if child matches and increment incident count
     const matchedBand = bands.find((b) => b.referenceCode.toUpperCase() === data.bandReference.toUpperCase());
@@ -934,17 +978,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       staffName: adminUser,
     };
 
+    let updatedAttempts: ContactAttempt[] = [];
     setIncidents((prev) =>
-      prev.map((inc) =>
-        inc.id === incidentId
-          ? {
-              ...inc,
-              status: 'contacting_guardian',
-              attempts: [...inc.attempts, newAttempt],
-            }
-          : inc
-      )
+      prev.map((inc) => {
+        if (inc.id === incidentId) {
+          updatedAttempts = [...inc.attempts, newAttempt];
+          return {
+            ...inc,
+            status: 'contacting_guardian',
+            attempts: updatedAttempts,
+          };
+        }
+        return inc;
+      })
     );
+    supabaseService.updateIncident(incidentId, { status: 'contacting_guardian', attempts: updatedAttempts });
 
     logAction(
       'Contact Attempt Recorded',
@@ -969,6 +1017,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : inc
       )
     );
+    supabaseService.updateIncident(incidentId, { status: 'resolved', resolvedAt: timestamp, outcomeSummary });
     logAction('Incident Resolved', `Incident ${incidentId} resolved: "${outcomeSummary}".`, 'incident', incidentId);
     addToast('success', 'Incident Resolved', 'Incident marked resolved with recorded outcome.');
   };
