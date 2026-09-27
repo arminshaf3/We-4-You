@@ -659,7 +659,7 @@ export const initialActivity: AppActivity[] = [
     timestamp: '2026-09-16 13:40',
     actor: 'Admin Staff',
     actionType: 'Payment Verified',
-    description: 'Simulated payment verification for registration REG-2026-0179 ($49.00).',
+    description: 'Verified in-store payment receipt for registration REG-2026-0179 ($49.00).',
     entityType: 'payment',
     entityId: 'PAY-003',
   },
