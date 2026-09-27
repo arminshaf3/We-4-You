@@ -221,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return sessionStorage.getItem('we4u_admin_auth') === 'true';
   });
 
-  const [adminUser, setAdminUser] = useState<string>('Demo Admin Staff (Coordinator)');
+  const [adminUser, setAdminUser] = useState<string>('Staff Administrator');
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Persist state changes to sessionStorage
@@ -397,18 +397,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Admin Auth Handlers
-  const loginAdmin = (username = 'Demo Coordinator (Staff)') => {
+  const loginAdmin = (username = 'Staff Administrator') => {
     setIsAdminLoggedIn(true);
     setAdminUser(username);
     sessionStorage.setItem('we4u_admin_auth', 'true');
-    addToast('success', 'Admin Demonstration Mode', 'Signed in as demonstration administrator.');
+    addToast('success', 'Admin Sign In', 'Signed in successfully.');
     logAction('Admin Sign-In', `Signed in as ${username}.`, 'settings', 'AUTH');
   };
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
     sessionStorage.removeItem('we4u_admin_auth');
-    addToast('info', 'Signed Out', 'Exited demonstration admin dashboard.');
+    addToast('info', 'Signed Out', 'Exited admin dashboard.');
   };
 
   // 1. Submit Public Registration
@@ -1278,7 +1278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEnquiries(initialEnquiries);
     setActivity(initialActivity);
     setSettings(initialSettings);
-    addToast('info', 'Demo Reset', 'All demonstration data restored to initial state.');
+    addToast('info', 'System Restored', 'Initial system dataset loaded.');
   };
 
   // 12. Global Search for Band Reference

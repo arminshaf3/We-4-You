@@ -185,7 +185,7 @@ export const RegistrationDetailPage: React.FC = () => {
 
             {reg.child.photoUrl && (
               <div className="pt-2">
-                <span className="text-xs text-content-muted block mb-1.5">Submitted Photo (Demo Preview)</span>
+                <span className="text-xs text-content-muted block mb-1.5">Submitted Photo</span>
                 <img src={reg.child.photoUrl} alt="Submitted wearer preview" className="w-24 h-24 rounded-brand object-cover border" />
               </div>
             )}

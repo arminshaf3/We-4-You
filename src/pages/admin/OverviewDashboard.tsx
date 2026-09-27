@@ -400,7 +400,7 @@ export const OverviewDashboard: React.FC = () => {
           <div className="bg-white p-5 rounded-brand border border-slate-200/90 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h4 className="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-500">
-                Recent Demonstration Actions
+                Recent System Activity
               </h4>
               <Link to="/admin/activity" className="text-[11px] font-semibold text-navy hover:underline">
                 View All

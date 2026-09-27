@@ -3,10 +3,10 @@ import { PageHeader } from '../../components/admin/PageHeader';
 import { Button } from '../../components/common/Button';
 import { FormField, Input, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
-import { Settings, Save, CheckCircle2, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Settings, Save, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
-  const { settings, updateSettings, resetDemoData } = useApp();
+  const { settings, updateSettings } = useApp();
 
   const [officePhone, setOfficePhone] = useState(settings.officePhone);
   const [officeEmail, setOfficeEmail] = useState(settings.officeEmail);
@@ -110,9 +110,9 @@ export const SettingsPage: React.FC = () => {
                 className="w-4 h-4 rounded text-navy mt-0.5"
               />
               <div>
-                <span className="font-bold text-navy text-sm block">Enable Wearer Photo Preview in Registration</span>
+                <span className="font-bold text-navy text-sm block">Enable Wearer Photo Upload in Registration</span>
                 <span className="text-content-muted">
-                  Enables demonstration in-memory photo previewing without persistent cloud storage.
+                  Enables secure encrypted photo capture for protected wearer identification.
                 </span>
               </div>
             </label>
@@ -132,17 +132,7 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            type="button"
-            onClick={resetDemoData}
-            variant="outline"
-            size="md"
-            leftIcon={<RotateCcw className="w-4 h-4 text-rose-600" />}
-          >
-            Reset All Demo Data
-          </Button>
-
+        <div className="flex items-center justify-end pt-2">
           <Button type="submit" variant="primary" size="lg" leftIcon={<Save className="w-4 h-4" />}>
             Save Configuration Changes
           </Button>

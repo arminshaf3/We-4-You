@@ -164,18 +164,6 @@ export const CardPaymentForm: React.FC<CardPaymentFormProps> = ({
             </p>
           </div>
         </div>
-
-        {/* Quick Demo Autofill Button */}
-        <button
-          type="button"
-          onClick={handleAutoFillDemo}
-          disabled={isProcessing}
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded transition-colors shadow-sm"
-          title="Fills demo testing card info instantly"
-        >
-          <Sparkles className="w-3 h-3 text-[#088F5B]" />
-          <span>Demo Card (4242)</span>
-        </button>
       </div>
 
       {/* Plan Amount Summary Pill if provided */}

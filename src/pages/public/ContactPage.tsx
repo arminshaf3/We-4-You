@@ -26,7 +26,7 @@ export const ContactPage: React.FC = () => {
     setError('');
     submitPublicEnquiry(name.trim(), email.trim(), topic, message.trim());
     setIsSubmitted(true);
-    addToast('success', 'Message Recorded', 'Your message has been sent to our demonstration inbox.');
+    addToast('success', 'Message Recorded', 'Your message has been submitted to our support team.');
   };
 
   return (
@@ -113,10 +113,6 @@ export const ContactPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            <div className="p-4 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted">
-              <strong>Demonstration Notice:</strong> Submissions on this page create demo enquiries in the administrator demonstration dashboard.
-            </div>
           </div>
 
           {/* Right: Contact Form */}
@@ -135,7 +131,7 @@ export const ContactPage: React.FC = () => {
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <h4 className="text-xl font-heading font-bold text-navy">
-                    Enquiry Logged (Demonstration)
+                    Enquiry Logged
                   </h4>
                   <p className="text-sm text-content-body max-w-md mx-auto leading-relaxed">
                     Thank you, {name}! Your message regarding{' '}

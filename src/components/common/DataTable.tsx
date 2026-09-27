@@ -109,7 +109,7 @@ export function DataTable<T>({
             Showing <strong className="font-semibold text-navy">{data.length}</strong> record{data.length === 1 ? '' : 's'}
           </span>
           <span className="text-[11px] text-slate-400">
-            Interactive demonstration dataset
+            System records
           </span>
         </div>
       </div>

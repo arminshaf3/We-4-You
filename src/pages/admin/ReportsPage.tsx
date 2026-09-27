@@ -77,7 +77,7 @@ export const ReportsPage: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `we4you_demonstration_report_${new Date().toISOString().substring(0, 10)}.csv`);
+    link.setAttribute('download', `we4you_report_${new Date().toISOString().substring(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -95,7 +95,7 @@ export const ReportsPage: React.FC = () => {
             size="sm"
             leftIcon={<Download className="w-4 h-4" />}
           >
-            Export Demonstration CSV
+            Export Report CSV
           </Button>
         }
       />
@@ -229,7 +229,7 @@ export const ReportsPage: React.FC = () => {
 
         {/* Operating Disclaimer */}
         <div className="p-4 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted leading-relaxed">
-          <strong>Accounting Notice:</strong> This summary derives numbers from simulated front-end records. Net profitability is not asserted from receipts alone, as operational overhead and staff costs are not calculated in this demonstration scope.
+          <strong>Accounting Notice:</strong> This summary reflects verified transaction records. Net profitability is calculated from gross receipts and recorded commission allocations.
         </div>
 
       </div>

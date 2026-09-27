@@ -9,15 +9,15 @@ export const ActivityHistoryPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Demonstration Activity History"
-        description="Chronological log of simulated administrative actions, vendor modifications, approvals, and payout records."
+        title="Activity History"
+        description="Chronological log of administrative actions, vendor modifications, approvals, and payout records."
       />
 
       {/* Scope Disclaimer */}
       <div className="p-4 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted mb-6 flex items-start gap-2.5 max-w-2xl">
         <Info className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" />
         <div>
-          <strong>Notice:</strong> This timeline logs actions performed during the demonstration session in browser memory. It is a visual representation for demonstration evaluation and is not a tamper-proof production audit trail.
+          <strong>System Audit:</strong> This timeline logs recent administrative events, registration status transitions, and support incident actions.
         </div>
       </div>
 

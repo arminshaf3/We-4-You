@@ -349,9 +349,9 @@ export const HomePage: React.FC = () => {
                 {contactSubmitted ? (
                   <div className="p-6 bg-mint-pale border border-emerald-300 rounded-brand text-center space-y-3">
                     <CheckCircle2 className="w-8 h-8 text-[#088F5B] mx-auto" />
-                    <h4 className="text-lg font-heading font-bold text-navy">Message Sent (Demonstration)</h4>
+                    <h4 className="text-lg font-heading font-bold text-navy">Message Sent</h4>
                     <p className="text-sm text-content-body">
-                      Thank you, {contactName}! Your enquiry has been added to our office demonstration inbox.
+                      Thank you, {contactName}! Your enquiry has been received by our office team.
                     </p>
                     <button
                       onClick={() => {
@@ -423,10 +423,6 @@ export const HomePage: React.FC = () => {
                     <Button type="submit" variant="primary" size="md" leftIcon={<Send className="w-4 h-4" />}>
                       Send Message
                     </Button>
-
-                    <p className="text-[11px] text-content-muted">
-                      Demonstration mode: Your message is logged directly into the administrator demonstration inbox.
-                    </p>
                   </form>
                 )}
               </div>

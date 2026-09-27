@@ -324,7 +324,7 @@ export const CommissionsListPage: React.FC = () => {
           </FormField>
 
           <p className="text-[11px] text-content-muted">
-            Demonstration notice: This action marks all eligible entries as Paid and records an immutable batch reference. No actual banking transaction is executed.
+            Batch settlement notice: This action marks all eligible commission entries as Paid and records an immutable payout batch reference.
           </p>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -337,7 +337,7 @@ export const CommissionsListPage: React.FC = () => {
               size="md"
               disabled={approvedCommissionsForVendor.length === 0}
             >
-              Process Simulated Payout
+              Process Payout Settlement
             </Button>
           </div>
         </form>

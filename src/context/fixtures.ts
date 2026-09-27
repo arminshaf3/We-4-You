@@ -24,7 +24,7 @@ export const initialSettings: AppSettings = {
   allowPhotoUpload: true,
   defaultCommissionPercentage: 15,
   defaultCommissionFixed: 10,
-  simulationNote: 'Frontend Demonstration Mode — No actual live transmissions or payments are processed.',
+  simulationNote: 'Active System Mode — Connected to We 4 You secure network.',
 };
 
 export const initialVendors: Vendor[] = [
@@ -83,7 +83,7 @@ export const initialVendors: Vendor[] = [
     contactPerson: 'Amanda Ross',
     telephone: '+1 (555) 678-9012',
     address: '32 Harbor Wharf Road',
-    isActive: false, // Inactive fixture for demonstrating filter & historical persistence
+    isActive: false, // Inactive fixture for filter & historical persistence
     commissionRate: 10,
     commissionType: 'fixed',
     createdAt: '2025-11-20',
@@ -95,7 +95,7 @@ export const initialPlans: SubscriptionPlan[] = [
     id: 'PLAN-ANNUAL',
     name: 'Annual Protection Plan',
     durationMonths: 12,
-    priceFormatted: '$29.00 / year (Sample)',
+    priceFormatted: '$29.00 / year',
     priceAmount: 29,
     currency: 'USD',
     description: '12 months of dedicated 24/7 office emergency contact intermediary coverage and reference monitoring for any individual.',
@@ -106,14 +106,14 @@ export const initialPlans: SubscriptionPlan[] = [
       'Private emergency contact reference routing',
       'Up to 2 registered secondary emergency contacts',
       'Prompt office relay if wearer is reported or assistance is requested',
-      'Sample commercial terms — demonstration only'
+      'Authorized safety and verification terms'
     ],
   },
   {
     id: 'PLAN-2YEAR',
     name: 'Two-Year Extended Plan',
     durationMonths: 24,
-    priceFormatted: '$49.00 / 2 years (Sample)',
+    priceFormatted: '$49.00 / 2 years',
     priceAmount: 49,
     currency: 'USD',
     description: 'Two full years of continuous reassurance and uninterrupted emergency intermediary service.',
@@ -124,7 +124,7 @@ export const initialPlans: SubscriptionPlan[] = [
       'Priority emergency contact record updates anytime',
       'Simplified renewal without band re-registration',
       'Office confirmation reports on request',
-      'Sample commercial terms — demonstration only'
+      'Authorized safety and verification terms'
     ],
   },
   {

@@ -98,7 +98,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
       <div className="h-16 px-5 flex items-center justify-between border-b border-white/10 flex-shrink-0">
         <Logo variant="light" size="sm" to="/admin" />
         <span className="text-[10px] font-mono uppercase tracking-wider bg-mint-pale/10 text-mint px-2 py-0.5 rounded border border-mint/20">
-          Demo Admin
+          Admin Portal
         </span>
         {/* Mobile close */}
         <button

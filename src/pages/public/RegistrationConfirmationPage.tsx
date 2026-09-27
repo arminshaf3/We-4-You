@@ -223,17 +223,6 @@ export const RegistrationConfirmationPage: React.FC = () => {
               <strong>Instant Intermediary Protection:</strong> When anyone reports band <code>{bandCode}</code>, our hotline coordinates with <code>{guardianPhone}</code> without sharing private details.
             </li>
           </ol>
-          <div className="pt-2 text-xs text-content-muted border-t border-border-subtle">
-            For demonstration evaluators: This record is accessible in the{' '}
-            <Link to="/admin/registrations" className="text-navy font-semibold underline">
-              Admin Registrations Queue
-            </Link>{' '}
-            and{' '}
-            <Link to="/admin/payments" className="text-navy font-semibold underline">
-              Payments Ledger
-            </Link>
-            .
-          </div>
         </div>
 
       </div>

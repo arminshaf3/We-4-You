@@ -80,7 +80,7 @@ export const EnquiriesListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Website Inquiries &amp; Messages"
-        description="Public contact form submissions forwarded to the office demonstration inbox."
+        description="Public contact form submissions forwarded to the office inbox."
       />
 
       <DataTable

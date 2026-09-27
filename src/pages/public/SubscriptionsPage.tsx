@@ -122,7 +122,7 @@ export const SubscriptionsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Configurable Demonstration Plans Grid */}
+        {/* Subscription Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {activePlans.map((plan) => (
             <div

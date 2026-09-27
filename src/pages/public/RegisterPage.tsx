@@ -109,25 +109,6 @@ export const RegisterPage: React.FC = () => {
     }
   }, [activeVendors, vendorId]);
 
-  // Quick Demo Auto-fill Helper for Step 1
-  const handleFillDemoGuardian = () => {
-    setGuardianName('Elena Vance');
-    setRelationship('Parent / Guardian');
-    setMobile('+1 (555) 012-7819');
-    setEmail('elena.vance@example.com');
-    setCardData((prev) => ({ ...prev, cardholderName: 'ELENA VANCE' }));
-  };
-
-  // Quick Demo Auto-fill Helper for Step 2
-  const handleFillDemoChild = (code = 'W4Y-7821-K9') => {
-    setChildName('Lucas Vance');
-    setAgeRange('Child (0 – 12 years)');
-    setBandCode(code);
-    if (activeVendors.length > 0) {
-      setVendorId(activeVendors[0].id);
-    }
-  };
-
   // Normalize Band Reference: spaces and hyphens, uppercase
   const normalizeBandCode = (input: string) => {
     let clean = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -406,23 +387,13 @@ export const RegisterPage: React.FC = () => {
           {/* STEP 1: PRIMARY CONTACT DETAILS */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
-                    Step 1 — Primary Contact Details
-                  </h2>
-                  <p className="text-sm text-content-muted mt-1">
-                    Emergency contact details used by office staff to contact you immediately if assistance is requested.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleFillDemoGuardian}
-                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#088F5B]" />
-                  <span>Fill Demo Info</span>
-                </button>
+              <div className="pb-4 border-b border-border-subtle">
+                <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
+                  Step 1 — Primary Contact Details
+                </h2>
+                <p className="text-sm text-content-muted mt-1">
+                  Emergency contact details used by office staff to contact you immediately if assistance is requested.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -592,23 +563,13 @@ export const RegisterPage: React.FC = () => {
           {/* STEP 2: WEARER AND BAND */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
-                    Step 2 — Wearer &amp; Band Information
-                  </h2>
-                  <p className="text-sm text-content-muted mt-1">
-                    Identify who will wear the band and attribute the purchase to your local retailer.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleFillDemoChild('W4Y-7821-K9')}
-                  className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#088F5B]" />
-                  <span>Fill Demo Wearer</span>
-                </button>
+              <div className="pb-4 border-b border-border-subtle">
+                <h2 className="text-xl sm:text-2xl font-heading font-bold text-navy">
+                  Step 2 — Wearer &amp; Band Information
+                </h2>
+                <p className="text-sm text-content-muted mt-1">
+                  Identify who will wear the band and attribute the purchase to your local retailer.
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -663,20 +624,6 @@ export const RegisterPage: React.FC = () => {
                     error={!!errors.bandCode}
                   />
                 </FormField>
-
-                <div className="flex items-center gap-2 flex-wrap text-[11px] text-content-muted">
-                  <span>Demo Available Codes:</span>
-                  {['W4Y-7821-K9', 'W4Y-9014-P3', 'W4Y-8833-Z1'].map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => setBandCode(code)}
-                      className="font-mono bg-slate-100 hover:bg-slate-200 text-navy px-1.5 py-0.5 rounded border border-slate-300"
-                    >
-                      {code}
-                    </button>
-                  ))}
-                </div>
 
                 {/* Vendor Dropdown */}
                 <FormField
@@ -1080,8 +1027,8 @@ export const RegisterPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-mint-pale/50 rounded-brand border border-emerald-300/40 text-xs text-content-muted leading-relaxed">
-                  <strong>Simulated Submission:</strong> Your registration reference will be generated and routed directly into the administrator demonstration queue with a status of <em>pending verification</em>.
+                <div className="p-4 bg-slate-50 rounded-brand border border-slate-200 text-xs text-content-muted leading-relaxed">
+                  <strong>Registration Submission:</strong> Your registration reference will be generated and routed directly into the administrative queue with a status of <em>pending verification</em>.
                 </div>
               )}
 

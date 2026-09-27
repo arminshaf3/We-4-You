@@ -122,14 +122,13 @@ export const Footer: React.FC = () => {
           </p>
 
           <div className="flex items-center gap-6">
-            <span className="text-slate-500">Frontend Preview Demonstration</span>
             <Link
               to="/admin/login"
               className="inline-flex items-center gap-1.5 text-slate-300 hover:text-mint transition-colors border border-white/10 px-2.5 py-1 rounded bg-white/5"
-              title="Demonstration Administrative Dashboard"
+              title="Administrative Dashboard"
             >
               <Lock className="w-3 h-3 text-mint" />
-              <span>Staff Demo Portal</span>
+              <span>Staff Portal</span>
             </Link>
           </div>
         </div>

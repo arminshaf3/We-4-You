@@ -213,7 +213,7 @@ export const VendorsListPage: React.FC = () => {
       <div className="p-4 bg-mint-pale/50 rounded-brand border border-emerald-300/40 text-xs text-content-body mb-6 flex items-start gap-2.5">
         <Store className="w-4 h-4 text-navy flex-shrink-0 mt-0.5" />
         <div>
-          <strong>Connected Demonstration Notice:</strong> Vendors created or toggled here immediately reflect in the public registration dropdown at <Link to="/register" className="font-semibold text-navy underline">/register</Link>. Inactive vendors disappear from new selections while remaining preserved on historical sales.
+          <strong>Vendor Shop Directory:</strong> Active vendor shops configured here are available in the customer registration dropdown at <Link to="/register" className="font-semibold text-navy underline">/register</Link>. Inactive vendors are hidden from new selections while remaining preserved on historical records.
         </div>
       </div>
 
@@ -298,7 +298,7 @@ export const VendorsListPage: React.FC = () => {
           {/* Commission Structure */}
           <div className="p-4 bg-white rounded-brand border border-border-subtle space-y-3">
             <span className="text-xs font-heading font-bold text-navy block">
-              Demonstration Commission Arrangement
+              Commission Arrangement
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <FormField label="Commission Type">

@@ -83,7 +83,7 @@ export const PayoutsListPage: React.FC = () => {
     <div>
       <PageHeader
         title="Vendor Commission Payout Records"
-        description="Historical demonstration logs of batched vendor commission settlements."
+        description="Historical logs of batched vendor commission settlements."
         actions={
           <Link
             to="/admin/commissions"

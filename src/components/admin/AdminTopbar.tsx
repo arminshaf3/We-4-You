@@ -2,16 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BandLookupModal } from './BandLookupModal';
-import { ConfirmDialog } from '../common/ConfirmDialog';
 import {
   Menu,
   Search,
-  RotateCcw,
   LogOut,
   User,
-  ShieldCheck,
-  Sparkles,
-  Command,
 } from 'lucide-react';
 
 interface AdminTopbarProps {
@@ -19,20 +14,14 @@ interface AdminTopbarProps {
 }
 
 export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => {
-  const { adminUser, logoutAdmin, resetDemoData } = useApp();
+  const { adminUser, logoutAdmin } = useApp();
   const navigate = useNavigate();
 
   const [isLookupOpen, setIsLookupOpen] = useState(false);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   const handleLogout = () => {
     logoutAdmin();
     navigate('/admin/login');
-  };
-
-  const handleResetConfirm = () => {
-    resetDemoData();
-    setIsResetConfirmOpen(false);
   };
 
   return (
@@ -67,24 +56,8 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => 
             </button>
           </div>
 
-          {/* Right: Demo Notice, Reset Action & User Menu */}
+          {/* Right: User Menu */}
           <div className="flex items-center gap-2.5 sm:gap-3">
-            
-            {/* Demonstration Environment Tag */}
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50/80 border border-amber-200/70 text-[11px] font-medium text-amber-900">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span>Interactive Demo</span>
-            </div>
-
-            {/* Reset Demo Data Button */}
-            <button
-              onClick={() => setIsResetConfirmOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-brand text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-200/80 transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400"
-              title="Reset all demonstration records to initial fixtures"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Reset Demo</span>
-            </button>
 
             {/* Logged-In User Profile */}
             <div className="flex items-center gap-2.5 pl-2.5 border-l border-slate-200">
@@ -104,7 +77,7 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => 
               <button
                 onClick={handleLogout}
                 className="p-1.5 text-slate-400 hover:text-navy rounded-brand hover:bg-slate-100 transition-colors ml-0.5 focus:outline-none focus:ring-2 focus:ring-navy"
-                title="Sign out of demo"
+                title="Sign out"
                 aria-label="Sign out"
               >
                 <LogOut className="w-4 h-4" />
@@ -117,17 +90,6 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => 
 
       {/* Band Lookup Modal */}
       <BandLookupModal isOpen={isLookupOpen} onClose={() => setIsLookupOpen(false)} />
-
-      {/* Reset Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={isResetConfirmOpen}
-        onClose={() => setIsResetConfirmOpen(false)}
-        onConfirm={handleResetConfirm}
-        title="Reset Demonstration Data?"
-        message="This action will restore all vendors, wearer registrations, bands, subscription plans, payments, and incidents to their initial demonstration state. Any newly created entries will be reset."
-        confirmLabel="Reset All Demo Data"
-        variant="danger"
-      />
     </>
   );
 };

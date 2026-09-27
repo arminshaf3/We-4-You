@@ -129,7 +129,7 @@ export const ChildDetailPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2 text-navy font-heading font-bold text-base">
                 <User className="w-5 h-5 text-navy" />
-                <span>Wearer Profile (Fictional Demo Record)</span>
+                <span>Wearer Profile Record</span>
               </div>
               <span className="text-xs font-mono text-content-muted">ID: {child.id}</span>
             </div>

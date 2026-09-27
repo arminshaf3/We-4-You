@@ -173,7 +173,7 @@ export const PlansConfigPage: React.FC = () => {
     <div>
       <PageHeader
         title="Subscription Plans Configuration"
-        description="Configure duration, demonstration rates, and public visibility for customer registration."
+        description="Configure duration, pricing rates, and public visibility for customer registration."
         actions={
           <Button
             onClick={() => setIsAddModalOpen(true)}
