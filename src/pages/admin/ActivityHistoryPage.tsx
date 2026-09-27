@@ -94,65 +94,93 @@ export const ActivityHistoryPage: React.FC = () => {
       />
 
       {/* KPI Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4.5 bg-white rounded-brand border border-border-subtle shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Total Logged Events
-            </span>
-            <ActivityIcon className="w-4 h-4 text-navy" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Events */}
+        <div className="p-5 bg-white rounded-brand border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-slate-500 truncate">
+                Total Events
+              </span>
+              <div className="w-8 h-8 rounded-full bg-slate-100 text-navy flex items-center justify-center flex-shrink-0">
+                <ActivityIcon className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl sm:text-3xl font-heading font-bold text-navy">
+                {totalCount}
+              </span>
+            </div>
           </div>
-          <span className="text-2xl font-bold font-heading text-navy mt-1.5 block">
-            {totalCount}
-          </span>
-          <span className="text-[11px] text-slate-400 block mt-0.5">
-            System activity records
-          </span>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500">
+            <span>System audit records</span>
+          </div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-brand border border-border-subtle shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-sky-700 uppercase tracking-wider">
-              Registrations
-            </span>
-            <ClipboardList className="w-4 h-4 text-sky-600" />
+        {/* Registrations */}
+        <div className="p-5 bg-white rounded-brand border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-sky-700 truncate">
+                Registrations
+              </span>
+              <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center flex-shrink-0">
+                <ClipboardList className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl sm:text-3xl font-heading font-bold text-sky-950">
+                {regEvents}
+              </span>
+            </div>
           </div>
-          <span className="text-2xl font-bold font-heading text-sky-900 mt-1.5 block">
-            {regEvents}
-          </span>
-          <span className="text-[11px] text-slate-400 block mt-0.5">
-            Submissions &amp; reviews
-          </span>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500">
+            <span>Submissions &amp; reviews</span>
+          </div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-brand border border-border-subtle shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-rose-700 uppercase tracking-wider">
-              Incidents &amp; Support
-            </span>
-            <AlertTriangle className="w-4 h-4 text-rose-600" />
+        {/* Incidents & Support */}
+        <div className="p-5 bg-white rounded-brand border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-rose-700 truncate">
+                Incident Reports
+              </span>
+              <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl sm:text-3xl font-heading font-bold text-rose-950">
+                {incidentEvents}
+              </span>
+            </div>
           </div>
-          <span className="text-2xl font-bold font-heading text-rose-900 mt-1.5 block">
-            {incidentEvents}
-          </span>
-          <span className="text-[11px] text-slate-400 block mt-0.5">
-            Attempts &amp; resolutions
-          </span>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500">
+            <span>Attempts &amp; resolutions</span>
+          </div>
         </div>
 
-        <div className="p-4.5 bg-white rounded-brand border border-border-subtle shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">
-              Payments &amp; Billings
-            </span>
-            <CreditCard className="w-4 h-4 text-emerald-600" />
+        {/* Payments & Billings */}
+        <div className="p-5 bg-white rounded-brand border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-emerald-800 truncate">
+                Payments
+              </span>
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#088F5B] flex items-center justify-center flex-shrink-0">
+                <CreditCard className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl sm:text-3xl font-heading font-bold text-emerald-950">
+                {paymentEvents}
+              </span>
+            </div>
           </div>
-          <span className="text-2xl font-bold font-heading text-emerald-950 mt-1.5 block">
-            {paymentEvents}
-          </span>
-          <span className="text-[11px] text-slate-400 block mt-0.5">
-            Verified transactions
-          </span>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500">
+            <span>Verified transactions</span>
+          </div>
         </div>
       </div>
 
