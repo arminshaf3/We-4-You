@@ -631,4 +631,102 @@ export const supabaseService = {
       return null;
     }
   },
+
+  // --- ATOMIC WORKFLOWS & EDGE RPCs ---
+  async approveRegistration(
+    registrationId: string,
+    adminActor: string = 'Admin Coordinator',
+    reason: string = 'All credentials and band verified.'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('approve_registration_atomic', {
+        p_registration_id: registrationId,
+        p_admin_actor: adminActor,
+        p_reason: reason,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Approval RPC failed' };
+    }
+  },
+
+  async rejectRegistration(
+    registrationId: string,
+    adminActor: string = 'Admin Coordinator',
+    reason: string = 'Verification requirements not met.'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('reject_registration_atomic', {
+        p_registration_id: registrationId,
+        p_admin_actor: adminActor,
+        p_reason: reason,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Rejection RPC failed' };
+    }
+  },
+
+  async verifyDemoPayment(
+    paymentId: string,
+    adminActor: string = 'Admin Coordinator'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('verify_demo_payment_atomic', {
+        p_payment_id: paymentId,
+        p_admin_actor: adminActor,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Payment verification RPC failed' };
+    }
+  },
+
+  async createCommissionRpc(commissionData: {
+    vendorId: string;
+    saleId?: string;
+    registrationRef?: string;
+    type?: string;
+    rate?: number;
+    eligibleAmount: number;
+    status?: string;
+    adminActor?: string;
+  }): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('create_commission_atomic', {
+        p_vendor_id: commissionData.vendorId,
+        p_sale_id: commissionData.saleId || `MAN-${Date.now()}`,
+        p_registration_ref: commissionData.registrationRef || null,
+        p_type: commissionData.type || 'percentage',
+        p_rate: commissionData.rate !== undefined ? Number(commissionData.rate) : null,
+        p_eligible_amount: Number(commissionData.eligibleAmount),
+        p_status: commissionData.status || 'pending',
+        p_admin_actor: commissionData.adminActor || 'Admin Coordinator',
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Commission RPC failed' };
+    }
+  },
 };
+

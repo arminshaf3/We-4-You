@@ -497,10 +497,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRegistrations((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status, statusReason: reason, verifiedBy: adminUser, verifiedAt: timestamp, timeline: updatedTimeline } : r))
     );
-    supabaseService.updateRegistration(id, { status, statusReason: reason, timeline: updatedTimeline });
 
-    // If approved, create official Record, activate Band, and create Subscription & Commission
+    // If approved, trigger atomic backend RPC and update local state
     if (status === 'approved') {
+      supabaseService.approveRegistration(reg.id, adminUser, reason).catch(() => {});
+
       const childId = `CHD-00${childrenRecords.length + 1}`;
       const subId = `SUB-00${subscriptions.length + 1}`;
       const selectedPlan = plans.find((p) => p.id === reg.planId);
@@ -577,7 +578,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       addToast('success', 'Registration Approved', `Wearer ${reg.child.name} is now protected with band ${reg.bandCode}.`);
       logAction('Registration Approved', `Approved registration ${reg.referenceNumber} for wearer ${reg.child.name}.`, 'registration', reg.referenceNumber);
+    } else if (status === 'rejected') {
+      supabaseService.rejectRegistration(reg.id, adminUser, reason || 'Registration rejected by administrator.').catch(() => {});
+      addToast('info', 'Registration Rejected', `Registration ${reg.referenceNumber} has been rejected.`);
+      logAction('Registration Rejected', `Rejected registration ${reg.referenceNumber}. Reason: ${reason}`, 'registration', reg.referenceNumber);
     } else {
+      supabaseService.updateRegistration(id, { status, statusReason: reason, timeline: updatedTimeline });
       addToast('info', 'Status Updated', `Registration ${reg.referenceNumber} marked as ${status.replace('_', ' ')}.`);
       logAction('Registration Status Changed', `Set status of ${reg.referenceNumber} to ${status}.`, 'registration', reg.referenceNumber);
     }
@@ -923,6 +929,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPayments((prev) =>
       prev.map((p) => (p.id === paymentId ? { ...p, status: 'verified' } : p))
     );
+
+    // Call atomic verify RPC in Supabase
+    supabaseService.verifyDemoPayment(paymentId, adminUser).catch(() => {});
 
     // If payment was linked to a pending registration, update registration paymentStatus
     if (pay.registrationId) {
