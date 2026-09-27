@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { FormField, Input, Select } from '../../components/common/FormField';
@@ -23,6 +23,9 @@ import {
   Check,
   Sparkles,
   Layers,
+  CheckCircle,
+  XCircle,
+  Store,
 } from 'lucide-react';
 import { RelationshipType, PaymentMethod } from '../../types';
 
@@ -53,6 +56,80 @@ export const RegisterPage: React.FC = () => {
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
   const [receiptRef, setReceiptRef] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Real-time Inventory Verification Status Helper
+  const bandInventoryStatus = useMemo(() => {
+    const raw = bandCode.trim().replace(/[\s-]/g, '').toUpperCase();
+    if (!raw || raw.length < 2) return null;
+
+    // 1. Check for duplicate active registrations
+    const duplicate = registrations.find(
+      (r) =>
+        r.bandCode.replace(/[\s-]/g, '').toUpperCase() === raw &&
+        (r.status === 'pending_verification' || r.status === 'approved')
+    );
+
+    if (duplicate) {
+      return {
+        isValid: false,
+        status: 'already_registered',
+        title: 'Band Already Registered',
+        message: `Band "${bandCode.toUpperCase()}" already has an active registration submission (#${duplicate.referenceNumber}). Duplicate registrations are not permitted.`,
+      };
+    }
+
+    // 2. Check existence in system bands inventory
+    const existingBand = bands.find(
+      (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === raw
+    );
+
+    if (!existingBand) {
+      return {
+        isValid: false,
+        status: 'not_in_inventory',
+        title: 'Band Not Found in Inventory',
+        message: `Band reference "${bandCode.toUpperCase()}" does not exist in our official inventory. Only pre-issued bands recorded in system inventory can be registered.`,
+      };
+    }
+
+    // 3. Check if already assigned to a wearer
+    if (existingBand.status === 'assigned' || existingBand.childId) {
+      return {
+        isValid: false,
+        status: 'already_assigned',
+        title: 'Band Already Assigned',
+        message: `Band "${existingBand.referenceCode}" is already registered and assigned to an active wearer. Duplicate registration is not permitted.`,
+      };
+    }
+
+    // 4. Check if retired or lost
+    if (existingBand.status === 'retired' || existingBand.status === 'lost' || existingBand.status === 'replaced') {
+      return {
+        isValid: false,
+        status: 'inactive_status',
+        title: `Band Marked as ${existingBand.status.toUpperCase()}`,
+        message: `Band "${existingBand.referenceCode}" has been marked as ${existingBand.status} and cannot be registered. Please contact support.`,
+      };
+    }
+
+    // 5. Check if available
+    if (existingBand.status === 'available') {
+      return {
+        isValid: true,
+        status: 'available',
+        band: existingBand,
+        title: 'Official Band Verified & In Stock',
+        message: `Band "${existingBand.referenceCode}" is verified in inventory and ready for registration.`,
+      };
+    }
+
+    return {
+      isValid: false,
+      status: 'unknown',
+      title: 'Invalid Band Status',
+      message: `Band "${existingBand.referenceCode}" has status "${existingBand.status}" and cannot be registered.`,
+    };
+  }, [bandCode, bands, registrations]);
 
   // Form State - Step 3: Subscription Plan
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
@@ -98,6 +175,16 @@ export const RegisterPage: React.FC = () => {
       setVendorId(activeVendors[0].id);
     }
   }, [activeVendors, vendorId]);
+
+  // Auto-fill vendor if verified inventory band is already associated with a partner shop
+  useEffect(() => {
+    if (bandInventoryStatus?.isValid && bandInventoryStatus.band?.vendorId) {
+      const assignedVendor = activeVendors.find((v) => v.id === bandInventoryStatus.band.vendorId);
+      if (assignedVendor && vendorId !== assignedVendor.id) {
+        setVendorId(assignedVendor.id);
+      }
+    }
+  }, [bandInventoryStatus, activeVendors, vendorId]);
 
   // Check if selected vendor is still active
   useEffect(() => {
@@ -167,27 +254,30 @@ export const RegisterPage: React.FC = () => {
         newErrors.bandCode = 'Printed band reference code is required.';
       } else {
         const formattedCode = bandCode.trim().toUpperCase();
-        
+        const raw = formattedCode.replace(/[\s-]/g, '');
+
         // 1. Check for duplicate pending/approved registrations
         const duplicate = registrations.find(
-          (r) => r.bandCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '') &&
+          (r) => r.bandCode.replace(/[\s-]/g, '').toUpperCase() === raw &&
                  (r.status === 'pending_verification' || r.status === 'approved')
         );
 
         if (duplicate) {
-          newErrors.bandCode = `Band ${formattedCode} already has an active registration submission (#${duplicate.referenceNumber}).`;
+          newErrors.bandCode = `Band "${formattedCode}" already has an active registration submission (#${duplicate.referenceNumber}). Duplicate registrations are not permitted.`;
         } else {
-          // 2. Check band status in inventory
+          // 2. Check band existence in system inventory
           const existingBand = bands.find(
-            (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '')
+            (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === raw
           );
 
-          if (existingBand) {
-            if (existingBand.status === 'assigned') {
-              newErrors.bandCode = 'This band reference is already assigned. If you need a replacement, please contact our office.';
-            } else if (existingBand.status === 'retired' || existingBand.status === 'lost') {
-              newErrors.bandCode = 'This band reference has been retired or reported lost. Please contact our office.';
-            }
+          if (!existingBand) {
+            newErrors.bandCode = `Band reference "${formattedCode}" was not found in our inventory. Only official pre-issued bands recorded in system inventory can be registered.`;
+          } else if (existingBand.status === 'assigned' || existingBand.childId) {
+            newErrors.bandCode = `Band "${existingBand.referenceCode}" is already registered and assigned to an active wearer. Duplicate registration is not permitted.`;
+          } else if (existingBand.status === 'retired' || existingBand.status === 'lost' || existingBand.status === 'replaced') {
+            newErrors.bandCode = `Band "${existingBand.referenceCode}" has been marked as ${existingBand.status} and cannot be registered. Please contact our office.`;
+          } else if (existingBand.status !== 'available') {
+            newErrors.bandCode = `Band "${existingBand.referenceCode}" is not available for registration (status: ${existingBand.status}).`;
           }
         }
       }
@@ -252,64 +342,73 @@ export const RegisterPage: React.FC = () => {
       const isCard = paymentMethod === 'card';
       const txnId = isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined;
 
-      const newRegistration = submitPublicRegistration({
-        guardian: {
-          fullName: guardianName.trim(),
-          relationship,
-          mobile: mobile.trim(),
-          email: email.trim() || undefined,
-          preferredLanguage: language,
-          emergencyContact: hasSecondaryContact
-            ? {
-                fullName: secName.trim(),
-                relationship: secRelationship,
-                telephone: secPhone.trim(),
-              }
-            : undefined,
-        },
-        child: {
-          name: childName.trim(),
-          ageRange,
-          photoUrl: photoPreview || undefined,
-        },
-        bandCode: bandCode.toUpperCase().trim(),
-        vendorId,
-        planId: selectedPlanId,
-        paymentMethod,
-        cardDetails: isCard ? {
-          brand: cardData.brand || 'Visa',
-          last4: cardData.last4 || '4242',
-          cardholderName: cardData.cardholderName.trim() || guardianName.trim(),
-          expMonth: cardData.expiryDate.split('/')[0] || '12',
-          expYear: cardData.expiryDate.split('/')[1] || '28',
-          transactionId: txnId || `TXN-CARD-${Date.now()}`,
-        } : undefined,
-      });
-
-      setIsSubmitting(false);
-
-      navigate('/registration/confirmation', {
-        state: {
-          referenceNumber: newRegistration.referenceNumber,
-          childName: childName.trim(),
+      try {
+        const newRegistration = submitPublicRegistration({
+          guardian: {
+            fullName: guardianName.trim(),
+            relationship,
+            mobile: mobile.trim(),
+            email: email.trim() || undefined,
+            preferredLanguage: language,
+            emergencyContact: hasSecondaryContact
+              ? {
+                  fullName: secName.trim(),
+                  relationship: secRelationship,
+                  telephone: secPhone.trim(),
+                }
+              : undefined,
+          },
+          child: {
+            name: childName.trim(),
+            ageRange,
+            photoUrl: photoPreview || undefined,
+          },
           bandCode: bandCode.toUpperCase().trim(),
-          guardianName: guardianName.trim(),
-          guardianPhone: mobile.trim(),
-          guardianLanguage: language || 'English',
-          vendorName: selectedVendor?.shopName || 'Authorized We 4 You Partner Outlet',
-          durationMonths: selectedPlan?.durationMonths || 12,
-          isCardPaid: isCard,
+          vendorId,
+          planId: selectedPlanId,
           paymentMethod,
-          transactionId: newRegistration.cardDetails?.transactionId || txnId,
-          receiptRef: newRegistration.paymentRef,
-          amountFormatted: selectedPlan?.priceFormatted,
-          amountPaid: selectedPlan?.priceAmount,
-          cardBrand: newRegistration.cardDetails?.brand || cardData.brand,
-          cardLast4: newRegistration.cardDetails?.last4 || cardData.last4,
-          planName: selectedPlan?.name,
-          paymentDate: new Date().toISOString().substring(0, 10),
-        },
-      });
+          cardDetails: isCard ? {
+            brand: cardData.brand || 'Visa',
+            last4: cardData.last4 || '4242',
+            cardholderName: cardData.cardholderName.trim() || guardianName.trim(),
+            expMonth: cardData.expiryDate.split('/')[0] || '12',
+            expYear: cardData.expiryDate.split('/')[1] || '28',
+            transactionId: txnId || `TXN-CARD-${Date.now()}`,
+          } : undefined,
+        });
+
+        setIsSubmitting(false);
+
+        navigate('/registration/confirmation', {
+          state: {
+            referenceNumber: newRegistration.referenceNumber,
+            childName: childName.trim(),
+            bandCode: bandCode.toUpperCase().trim(),
+            guardianName: guardianName.trim(),
+            guardianPhone: mobile.trim(),
+            guardianLanguage: language || 'English',
+            vendorName: selectedVendor?.shopName || 'Authorized We 4 You Partner Outlet',
+            durationMonths: selectedPlan?.durationMonths || 12,
+            isCardPaid: isCard,
+            paymentMethod,
+            transactionId: newRegistration.cardDetails?.transactionId || txnId,
+            receiptRef: newRegistration.paymentRef,
+            amountFormatted: selectedPlan?.priceFormatted,
+            amountPaid: selectedPlan?.priceAmount,
+            cardBrand: newRegistration.cardDetails?.brand || cardData.brand,
+            cardLast4: newRegistration.cardDetails?.last4 || cardData.last4,
+            planName: selectedPlan?.name,
+            paymentDate: new Date().toISOString().substring(0, 10),
+          },
+        });
+      } catch (err: any) {
+        setIsSubmitting(false);
+        setErrors((prev) => ({
+          ...prev,
+          bandCode: err.message || 'Band validation failed. Please check your band reference code.',
+        }));
+        setCurrentStep(2);
+      }
     }, processingDelay);
   };
 
@@ -608,22 +707,58 @@ export const RegisterPage: React.FC = () => {
                 </div>
 
                 {/* Printed Band Reference Code */}
-                <FormField
-                  label="Existing Printed Band Reference"
-                  id="bandCode"
-                  required
-                  hint="Enter the unique code printed on your band (e.g. W4Y-7821-K9)"
-                  error={errors.bandCode}
-                >
-                  <Input
+                <div className="space-y-2">
+                  <FormField
+                    label="Existing Printed Band Reference"
                     id="bandCode"
-                    value={bandCode}
-                    onChange={handleBandCodeChange}
-                    placeholder="W4Y-XXXX-XX"
-                    className="font-mono uppercase font-semibold text-navy tracking-wider"
-                    error={!!errors.bandCode}
-                  />
-                </FormField>
+                    required
+                    hint="Enter the unique code printed on your band (e.g. W4Y-7821-K9)"
+                    error={errors.bandCode}
+                  >
+                    <div className="relative">
+                      <Input
+                        id="bandCode"
+                        value={bandCode}
+                        onChange={handleBandCodeChange}
+                        placeholder="W4Y-XXXX-XX"
+                        className="font-mono uppercase font-semibold text-navy tracking-wider"
+                        error={!!errors.bandCode || (bandInventoryStatus !== null && !bandInventoryStatus.isValid && bandCode.trim().length >= 4)}
+                      />
+                      {bandInventoryStatus?.isValid && (
+                        <div className="absolute right-3.5 top-3 flex items-center text-emerald-600">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        </div>
+                      )}
+                    </div>
+                  </FormField>
+
+                  {/* Real-time Inventory Verification Status Box */}
+                  {bandInventoryStatus && (
+                    <div
+                      className={`p-3.5 rounded-lg border text-xs flex items-start gap-2.5 transition-all ${
+                        bandInventoryStatus.isValid
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                          : bandCode.trim().length >= 3
+                          ? 'bg-rose-50 border-rose-200 text-rose-900'
+                          : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {bandInventoryStatus.isValid ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <span className="font-bold block">
+                          {bandInventoryStatus.title}
+                        </span>
+                        <span className="leading-relaxed block mt-0.5 opacity-90">
+                          {bandInventoryStatus.message}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Vendor Dropdown */}
                 <FormField

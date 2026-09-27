@@ -418,6 +418,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cardDetails?: CardPaymentDetails;
     }
   ): Registration => {
+    // 1. Strict Band Inventory Validation Guard
+    const normCode = data.bandCode.toUpperCase().replace(/[\s-]/g, '').trim();
+    const inventoryBand = bands.find((b) => b.referenceCode.toUpperCase().replace(/[\s-]/g, '') === normCode);
+
+    if (!inventoryBand) {
+      addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" was not found in system inventory. Only official pre-issued bands in inventory can be registered.`);
+      throw new Error(`Band reference "${data.bandCode}" is not present in system inventory.`);
+    }
+
+    if (inventoryBand.status === 'assigned' || inventoryBand.childId) {
+      addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" is already registered and assigned to an active wearer. Duplicate registration is not permitted.`);
+      throw new Error(`Band reference "${data.bandCode}" is already registered.`);
+    }
+
+    if (inventoryBand.status !== 'available') {
+      addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" has status "${inventoryBand.status}" and cannot be registered.`);
+      throw new Error(`Band reference "${data.bandCode}" is not available for registration.`);
+    }
+
+    const duplicateReg = registrations.find(
+      (r) =>
+        r.bandCode.replace(/[\s-]/g, '').toUpperCase() === normCode &&
+        (r.status === 'pending_verification' || r.status === 'approved')
+    );
+    if (duplicateReg) {
+      addToast('error', 'Registration Blocked', `Band "${data.bandCode}" already has an active registration submission (#${duplicateReg.referenceNumber}).`);
+      throw new Error(`Band "${data.bandCode}" already has an active registration submission.`);
+    }
+
     const count = registrations.length + 183;
     const refNumber = `REG-2026-0${count}`;
     const selectedPlan = plans.find((p) => p.id === data.planId);
