@@ -92,7 +92,7 @@ export const IncidentsListPage: React.FC = () => {
       key: 'bandReference',
       header: 'Band Reference',
       render: (inc) => (
-        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2.5 py-1 rounded border border-emerald-300">
+        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2.5 py-1 rounded border border-emerald-300 whitespace-nowrap inline-block shadow-2xs">
           {inc.bandReference}
         </span>
       ),
@@ -101,7 +101,7 @@ export const IncidentsListPage: React.FC = () => {
       key: 'type',
       header: 'Report Type',
       render: (inc) => (
-        <span className="text-xs font-semibold text-slate-700">
+        <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
           {inc.reportType === 'band_found_alone' ? 'Band Found Alone' : 'Person with Finder'}
         </span>
       ),
@@ -110,7 +110,7 @@ export const IncidentsListPage: React.FC = () => {
       key: 'caller',
       header: 'Finder / Location',
       render: (inc) => (
-        <div className="text-xs">
+        <div className="text-xs min-w-[150px]">
           <span className="font-medium text-navy block">{inc.callerName || 'Anonymous caller'}</span>
           <span className="text-content-muted block truncate max-w-xs">{inc.voluntaryLocation || 'Location not reported'}</span>
         </div>
@@ -125,7 +125,7 @@ export const IncidentsListPage: React.FC = () => {
       key: 'attempts',
       header: 'Contact History',
       render: (inc) => (
-        <span className="text-xs font-medium text-slate-700">
+        <span className="text-xs font-medium text-slate-700 whitespace-nowrap">
           {inc.attempts.length} attempt(s)
         </span>
       ),
@@ -137,7 +137,7 @@ export const IncidentsListPage: React.FC = () => {
       render: (inc) => (
         <Link
           to={`/admin/incidents/${inc.id}`}
-          className="px-3 py-1 text-xs font-semibold text-white bg-navy hover:bg-navy-light rounded-brand transition-colors inline-block"
+          className="px-3 py-1 text-xs font-semibold text-white bg-navy hover:bg-navy-light rounded-brand transition-colors whitespace-nowrap inline-block shadow-2xs"
         >
           Manage
         </Link>

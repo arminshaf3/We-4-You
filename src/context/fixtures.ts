@@ -215,13 +215,13 @@ export const initialBands: Band[] = [
 export const initialChildren: ChildRecord[] = [
   {
     id: 'CHD-001',
-    name: 'Lucas Vance (Sample)',
+    name: 'Lucas Vance',
     ageRange: 'Child (4 – 6 years)',
     primaryGuardian: {
       fullName: 'Elena Vance',
       relationship: 'Mother',
       mobile: '+1 (555) 019-2834',
-      email: 'elena.vance@sample.test',
+      email: 'elena.vance@example.com',
       preferredLanguage: 'English',
       emergencyContact: {
         fullName: 'Marcus Vance',
@@ -246,13 +246,13 @@ export const initialChildren: ChildRecord[] = [
   },
   {
     id: 'CHD-002',
-    name: 'Arthur Pendelton (Sample)',
+    name: 'Arthur Pendelton',
     ageRange: 'Senior (78 years, Memory Support)',
     primaryGuardian: {
       fullName: 'Claire Pendelton',
       relationship: 'Son / Daughter',
       mobile: '+1 (555) 018-9921',
-      email: 'claire.pendelton@sample.test',
+      email: 'claire.pendelton@example.com',
       preferredLanguage: 'English',
     },
     secondaryGuardians: [
@@ -272,7 +272,7 @@ export const initialChildren: ChildRecord[] = [
   },
   {
     id: 'CHD-003',
-    name: 'Maya Lin (Sample)',
+    name: 'Maya Lin',
     ageRange: 'Adult (29 years, Outdoor Marathoner)',
     primaryGuardian: {
       fullName: 'David Lin',
@@ -350,7 +350,7 @@ export const initialRegistrations: Registration[] = [
       },
     },
     child: {
-      name: 'Emma Watson (Sample)',
+      name: 'Emma Watson',
       ageRange: 'Child (4 – 6 years)',
     },
     bandCode: 'W4Y-7821-K9',
@@ -375,11 +375,11 @@ export const initialRegistrations: Registration[] = [
       fullName: 'Wei Chen',
       relationship: 'Caregiver / Nurse',
       mobile: '+1 (555) 016-5544',
-      email: 'wei.chen@sample.test',
+      email: 'wei.chen@example.com',
       preferredLanguage: 'English',
     },
     child: {
-      name: 'Eleanor Chen (Sample)',
+      name: 'Eleanor Chen',
       ageRange: 'Senior (74 years)',
     },
     bandCode: 'W4Y-9014-P3',
@@ -409,11 +409,11 @@ export const initialRegistrations: Registration[] = [
       fullName: 'James Miller',
       relationship: 'Spouse / Partner',
       mobile: '+1 (555) 017-3321',
-      email: 'james.miller@sample.test',
+      email: 'james.miller@example.com',
       preferredLanguage: 'English',
     },
     child: {
-      name: 'Aria Miller (Sample)',
+      name: 'Aria Miller',
       ageRange: 'Adult (32 years, Medical Alert)',
     },
     bandCode: 'W4Y-3319-X5',

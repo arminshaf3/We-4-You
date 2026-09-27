@@ -26,8 +26,8 @@ export const ChildrenListPage: React.FC = () => {
       header: 'Wearer / Individual',
       render: (child) => (
         <Link to={`/admin/children/${child.id}`} className="font-semibold text-navy hover:underline text-sm block">
-          {child.name}
-          <span className="text-xs text-content-muted font-normal block">{child.ageRange}</span>
+          <span className="block font-heading font-bold text-navy">{child.name}</span>
+          <span className="text-xs text-content-muted font-normal block mt-0.5">{child.ageRange}</span>
         </Link>
       ),
     },
@@ -35,11 +35,12 @@ export const ChildrenListPage: React.FC = () => {
       key: 'primaryGuardian',
       header: 'Primary Contact',
       render: (child) => (
-        <div className="text-xs">
+        <div className="text-xs space-y-0.5 min-w-[160px]">
           <span className="font-semibold text-navy block">
-            {child.primaryGuardian.fullName} ({child.primaryGuardian.relationship})
+            {child.primaryGuardian.fullName}
+            <span className="text-slate-400 font-normal ml-1">({child.primaryGuardian.relationship})</span>
           </span>
-          <span className="font-mono text-content-muted flex items-center gap-1 mt-0.5">
+          <span className="font-mono text-content-muted flex items-center gap-1">
             <Phone className="w-3 h-3 text-[#088F5B]" />
             {child.primaryGuardian.mobile}
           </span>
@@ -50,10 +51,10 @@ export const ChildrenListPage: React.FC = () => {
       key: 'secondaryGuardians',
       header: 'Emergency Contacts',
       render: (child) => (
-        <span className="text-xs text-content-body">
+        <span className="text-xs text-content-body block min-w-[150px]">
           {child.secondaryGuardians.length > 0
             ? `${child.secondaryGuardians[0].fullName} (${child.secondaryGuardians[0].relationship})`
-            : 'None specified'}
+            : <span className="text-slate-400 italic">None specified</span>}
         </span>
       ),
     },
@@ -61,7 +62,7 @@ export const ChildrenListPage: React.FC = () => {
       key: 'currentBandCode',
       header: 'Current Band',
       render: (child) => (
-        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2 py-0.5 rounded border border-emerald-300">
+        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2.5 py-1 rounded border border-emerald-300 whitespace-nowrap inline-block shadow-2xs">
           {child.currentBandCode}
         </span>
       ),
@@ -72,8 +73,8 @@ export const ChildrenListPage: React.FC = () => {
       render: (child) => {
         const sub = subscriptions.find((s) => s.id === child.subscriptionId);
         return (
-          <span className="text-xs text-content-body">
-            {sub ? `Active (Exp: ${sub.expiryDate})` : 'Pending Link'}
+          <span className="text-xs text-content-body whitespace-nowrap font-medium">
+            {sub ? `Active (Exp: ${sub.expiryDate})` : <span className="text-slate-400">Pending Link</span>}
           </span>
         );
       },
@@ -82,8 +83,8 @@ export const ChildrenListPage: React.FC = () => {
       key: 'incidentsCount',
       header: 'Assistance Reports',
       render: (child) => (
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-          child.incidentsCount > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-600'
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap inline-block ${
+          child.incidentsCount > 0 ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
         }`}>
           {child.incidentsCount} reports
         </span>
@@ -96,9 +97,10 @@ export const ChildrenListPage: React.FC = () => {
       render: (child) => (
         <Link
           to={`/admin/children/${child.id}`}
-          className="text-xs font-semibold text-navy hover:underline"
+          className="text-xs font-semibold text-navy hover:text-[#088F5B] hover:underline whitespace-nowrap inline-flex items-center gap-1 transition-colors"
         >
-          View Profile →
+          <span>View Profile</span>
+          <span>&rarr;</span>
         </Link>
       ),
     },

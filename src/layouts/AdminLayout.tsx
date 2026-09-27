@@ -27,7 +27,7 @@ export const AdminLayout: React.FC = () => {
         <div className="print:hidden">
           <AdminTopbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         </div>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto print:p-0 print:m-0 print:max-w-none">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto print:p-0 print:m-0 print:max-w-none">
           <Outlet />
         </main>
       </div>

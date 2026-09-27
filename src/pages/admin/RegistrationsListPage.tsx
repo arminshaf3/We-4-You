@@ -73,7 +73,7 @@ export const RegistrationsListPage: React.FC = () => {
       key: 'bandCode',
       header: 'Band Code',
       render: (reg) => (
-        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2 py-0.5 rounded border border-emerald-300 inline-block">
+        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2.5 py-1 rounded border border-emerald-300 whitespace-nowrap inline-block shadow-2xs">
           {reg.bandCode}
         </span>
       ),
@@ -107,7 +107,7 @@ export const RegistrationsListPage: React.FC = () => {
       render: (reg) => (
         <Link
           to={`/admin/registrations/${reg.id}`}
-          className="px-3 py-1.5 text-xs font-heading font-semibold text-navy bg-mint-pale hover:bg-mint/40 rounded-brand border border-emerald-300/60 transition-colors inline-block"
+          className="px-3 py-1.5 text-xs font-heading font-semibold text-navy bg-mint-pale hover:bg-mint/40 rounded-brand border border-emerald-300/60 transition-colors whitespace-nowrap inline-block"
         >
           Review
         </Link>

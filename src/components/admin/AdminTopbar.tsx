@@ -27,7 +27,7 @@ export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => 
   return (
     <>
       <header className="h-16 bg-white border-b border-border-subtle sticky top-0 z-20 w-full shadow-xs">
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           
           {/* Left: Mobile Toggle & Sleek Search Action */}
           <div className="flex items-center gap-3">
