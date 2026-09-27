@@ -611,8 +611,8 @@ export const supabaseService = {
     }
   },
 
-  // --- PHOTO UPLOAD TO SUPABASE STORAGE ---
-  async uploadWearerPhoto(file: File): Promise<string | null> {
+  // --- SUPABASE STORAGE (PRIVATE BUCKETS & SECURE SIGNED URLS) ---
+  async uploadPrivatePhoto(file: File): Promise<{ path: string; signedUrl: string | null } | null> {
     if (!isSupabaseConfigured) return null;
     try {
       const fileExt = file.name.split('.').pop();
@@ -625,11 +625,94 @@ export const supabaseService = {
 
       if (uploadError) return null;
 
-      const { data } = supabase.storage.from('wearer-photos').getPublicUrl(filePath);
-      return data.publicUrl;
+      // Generate secure signed URL with 1-hour expiration
+      const { data: signedData } = await supabase.storage
+        .from('wearer-photos')
+        .createSignedUrl(filePath, 3600);
+
+      return {
+        path: filePath,
+        signedUrl: signedData?.signedUrl || null,
+      };
     } catch {
       return null;
     }
+  },
+
+  async uploadWearerPhoto(file: File): Promise<string | null> {
+    const res = await this.uploadPrivatePhoto(file);
+    return res ? res.signedUrl || res.path : null;
+  },
+
+  async getSignedPhotoUrl(filePathOrUrl: string, expiresIn: number = 3600): Promise<string | null> {
+    if (!isSupabaseConfigured || !filePathOrUrl) return null;
+    // If it's already a full data: or blob: URL, return directly
+    if (filePathOrUrl.startsWith('data:') || filePathOrUrl.startsWith('blob:')) {
+      return filePathOrUrl;
+    }
+
+    try {
+      // Extract relative path if a full URL was provided
+      let cleanPath = filePathOrUrl;
+      if (filePathOrUrl.includes('/wearer-photos/')) {
+        cleanPath = filePathOrUrl.split('/wearer-photos/').pop() || filePathOrUrl;
+      }
+
+      const { data, error } = await supabase.storage
+        .from('wearer-photos')
+        .createSignedUrl(cleanPath, expiresIn);
+
+      if (error || !data) return filePathOrUrl;
+      return data.signedUrl;
+    } catch {
+      return filePathOrUrl;
+    }
+  },
+
+  async uploadPrivateReceipt(file: File): Promise<{ path: string; signedUrl: string | null } | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `receipt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const filePath = `receipts/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from('payment-receipts')
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+      if (error) return null;
+
+      const { data: signedData } = await supabase.storage
+        .from('payment-receipts')
+        .createSignedUrl(filePath, 3600);
+
+      return {
+        path: filePath,
+        signedUrl: signedData?.signedUrl || null,
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  async getSignedReceiptUrl(filePath: string, expiresIn: number = 3600): Promise<string | null> {
+    if (!isSupabaseConfigured || !filePath) return null;
+    try {
+      const { data, error } = await supabase.storage
+        .from('payment-receipts')
+        .createSignedUrl(filePath, expiresIn);
+
+      if (error || !data) return null;
+      return data.signedUrl;
+    } catch {
+      return null;
+    }
+  },
+
+  getBrandingAssetUrl(filePath: string): string {
+    if (!isSupabaseConfigured) return '';
+    const { data } = supabase.storage.from('branding-assets').getPublicUrl(filePath);
+    return data.publicUrl;
   },
 
   // --- ATOMIC WORKFLOWS & EDGE RPCs ---
@@ -831,6 +914,95 @@ export const supabaseService = {
       return { success: true, data };
     } catch (err: any) {
       return { success: false, error: err.message || 'Updating incident status failed' };
+    }
+  },
+
+  // --- SUBSCRIPTION REMINDERS & AUTOMATED STATUS SYNC ---
+  async syncSubscriptionStatuses(): Promise<{
+    success: boolean;
+    expiringCount?: number;
+    expiredCount?: number;
+    error?: string;
+  }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('sync_subscription_statuses_atomic');
+      if (error) return { success: false, error: error.message };
+      return {
+        success: true,
+        expiringCount: data?.expiring_soon_count || 0,
+        expiredCount: data?.expired_count || 0,
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Sync failed' };
+    }
+  },
+
+  async sendRenewalReminder(
+    subscriptionId: string,
+    channel: string = 'email',
+    notes?: string,
+    actor: string = 'Support Coordinator'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('send_renewal_reminder_atomic', {
+        p_subscription_id: subscriptionId,
+        p_channel: channel,
+        p_actor: actor,
+        p_notes: notes || null,
+      });
+
+      if (error) return { success: false, error: error.message };
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Sending reminder failed' };
+    }
+  },
+
+  // --- SUPABASE REALTIME SUBSCRIPTIONS ---
+  subscribeToRealtime(callbacks: {
+    onRegistrationChange?: (payload: any) => void;
+    onIncidentChange?: (payload: any) => void;
+    onSubscriptionChange?: (payload: any) => void;
+    onBandChange?: (payload: any) => void;
+    onPaymentChange?: (payload: any) => void;
+  }) {
+    if (!isSupabaseConfigured) return null;
+
+    try {
+      const channel = supabase
+        .channel('we4u-realtime-all')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'registrations' },
+          (payload) => callbacks.onRegistrationChange && callbacks.onRegistrationChange(payload)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'incidents' },
+          (payload) => callbacks.onIncidentChange && callbacks.onIncidentChange(payload)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'subscriptions' },
+          (payload) => callbacks.onSubscriptionChange && callbacks.onSubscriptionChange(payload)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'bands' },
+          (payload) => callbacks.onBandChange && callbacks.onBandChange(payload)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'payments' },
+          (payload) => callbacks.onPaymentChange && callbacks.onPaymentChange(payload)
+        )
+        .subscribe();
+
+      return channel;
+    } catch {
+      return null;
     }
   },
 };

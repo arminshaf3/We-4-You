@@ -98,6 +98,7 @@ interface AppContextType {
   updatePlan: (id: string, updates: Partial<SubscriptionPlan>) => void;
   togglePlanActive: (id: string) => void;
   renewSubscription: (subscriptionId: string, monthsToAdd: number, method?: PaymentMethod, cardDetails?: CardPaymentDetails) => Payment | undefined;
+  sendRenewalReminder: (subscriptionId: string, channel?: string, notes?: string) => Promise<{ success: boolean; message: string }>;
   directSubscribeWithCard: (params: {
     bandCode: string;
     planId: string;
@@ -276,10 +277,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sessionStorage.setItem('we4u_settings', JSON.stringify(settings));
   }, [settings]);
 
-  // Asynchronously synchronize live data from Supabase if configured
+  // Asynchronously synchronize live data from Supabase & attach Realtime listeners
   useEffect(() => {
     if (!supabaseService.isConfigured) return;
 
+    // 1. Sync automated subscription statuses (expiring_soon / expired)
+    supabaseService.syncSubscriptionStatuses().catch(() => {});
+
+    // 2. Fetch live data
     supabaseService.getVendors().then((data) => {
       if (data && data.length > 0) setVendors(data);
     });
@@ -319,6 +324,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     supabaseService.getContactMessages().then((data) => {
       if (data && data.length > 0) setEnquiries(data);
     });
+
+    // 3. Register Supabase Realtime listeners
+    const channel = supabaseService.subscribeToRealtime({
+      onRegistrationChange: (payload) => {
+        supabaseService.getRegistrations().then((data) => data && setRegistrations(data));
+        if (payload.eventType === 'INSERT') {
+          addToast('info', 'New Registration Received', `Reference: ${payload.new?.reference_number || 'Incoming'}`);
+        } else if (payload.eventType === 'UPDATE' && payload.new?.status === 'approved') {
+          addToast('success', 'Registration Approved', `Registration ${payload.new?.reference_number} is now active.`);
+        }
+      },
+      onIncidentChange: (payload) => {
+        supabaseService.getIncidents().then((data) => data && setIncidents(data));
+        if (payload.eventType === 'INSERT') {
+          addToast('warning', 'Incoming Assistance Incident', `Report ID: ${payload.new?.incident_ref || 'Incoming'}`);
+        }
+      },
+      onSubscriptionChange: () => {
+        supabaseService.syncSubscriptionStatuses();
+      },
+      onBandChange: () => {
+        supabaseService.getBands().then((data) => data && setBands(data));
+      },
+      onPaymentChange: () => {
+        supabaseService.getPayments().then((data) => data && setPayments(data));
+      },
+    });
+
+    return () => {
+      if (channel) {
+        channel.unsubscribe();
+      }
+    };
   }, []);
 
   // Active getters
@@ -843,6 +881,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newPay;
   };
 
+  const sendRenewalReminder = async (
+    subscriptionId: string,
+    channel: string = 'email',
+    notes?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const sub = subscriptions.find((s) => s.id === subscriptionId);
+    const child = childrenRecords.find((c) => c.id === sub?.childId);
+    const guardianName = child?.primaryGuardian?.fullName || 'Guardian';
+
+    await supabaseService.sendRenewalReminder(subscriptionId, channel, notes, adminUser);
+
+    logAction(
+      'Renewal Reminder Dispatched',
+      `Sent ${channel} renewal reminder for subscription ${subscriptionId} (${child?.name || 'Wearer'}) to ${guardianName}.`,
+      'subscription',
+      subscriptionId
+    );
+    addToast('success', 'Reminder Dispatched', `Renewal notice dispatched via ${channel} to ${guardianName}.`);
+
+    return { success: true, message: `Renewal notification sent via ${channel} to ${guardianName}.` };
+  };
+
   const directSubscribeWithCard = (params: {
     bandCode: string;
     planId: string;
@@ -1279,6 +1339,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatePlan,
         togglePlanActive,
         renewSubscription,
+        sendRenewalReminder,
         directSubscribeWithCard,
         verifyPayment,
         reversePayment,

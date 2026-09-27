@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { FormField, Input, Select } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
+import { supabaseService } from '../../services/supabaseService';
 import {
   User,
   Shield,
@@ -19,6 +20,8 @@ import {
   Lock,
   ArrowLeft,
   CheckCircle2,
+  Camera,
+  Upload,
 } from 'lucide-react';
 
 export const ChildDetailPage: React.FC = () => {
@@ -29,6 +32,17 @@ export const ChildDetailPage: React.FC = () => {
   const sub = subscriptions.find((s) => s.id === child?.subscriptionId);
   const vendor = vendors.find((v) => v.id === child?.vendorId);
   const childIncidents = incidents.filter((i) => i.bandReference === child?.currentBandCode);
+
+  // Signed URL for private photo
+  const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(child?.photoUrl || null);
+
+  useEffect(() => {
+    if (child?.photoUrl) {
+      supabaseService.getSignedPhotoUrl(child.photoUrl).then((url) => {
+        if (url) setSignedPhotoUrl(url);
+      });
+    }
+  }, [child?.photoUrl]);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -120,18 +134,34 @@ export const ChildDetailPage: React.FC = () => {
               <span className="text-xs font-mono text-content-muted">ID: {child.id}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div>
-                <span className="text-content-muted block mb-0.5">Wearer Full Name</span>
-                <span className="text-base font-bold text-navy">{child.name}</span>
-              </div>
-              <div>
-                <span className="text-content-muted block mb-0.5">Category / Age Group</span>
-                <span className="text-sm font-semibold text-navy">{child.ageRange}</span>
-              </div>
-              <div>
-                <span className="text-content-muted block mb-0.5">Registration Date</span>
-                <span className="text-sm font-semibold text-navy">{child.registeredDate}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {signedPhotoUrl ? (
+                <div className="relative w-20 h-20 rounded-brand overflow-hidden border border-border-subtle flex-shrink-0 bg-slate-100">
+                  <img src={signedPhotoUrl} alt={child.name} className="w-full h-full object-cover" />
+                  <span className="absolute bottom-0 inset-x-0 bg-navy/80 text-[9px] text-center text-white py-0.5 font-medium">
+                    Private
+                  </span>
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-brand border border-border-subtle bg-slate-50 flex flex-col items-center justify-center text-slate-400 flex-shrink-0">
+                  <Camera className="w-6 h-6 mb-1" />
+                  <span className="text-[10px]">No Photo</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs flex-1">
+                <div>
+                  <span className="text-content-muted block mb-0.5">Wearer Full Name</span>
+                  <span className="text-base font-bold text-navy">{child.name}</span>
+                </div>
+                <div>
+                  <span className="text-content-muted block mb-0.5">Category / Age Group</span>
+                  <span className="text-sm font-semibold text-navy">{child.ageRange}</span>
+                </div>
+                <div>
+                  <span className="text-content-muted block mb-0.5">Registration Date</span>
+                  <span className="text-sm font-semibold text-navy">{child.registeredDate}</span>
+                </div>
               </div>
             </div>
           </div>

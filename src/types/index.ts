@@ -244,7 +244,7 @@ export interface AppActivity {
   actor: string;
   actionType: string;
   description: string;
-  entityType: 'vendor' | 'registration' | 'child' | 'band' | 'payment' | 'commission' | 'payout' | 'incident' | 'enquiry' | 'plan' | 'settings';
+  entityType: 'vendor' | 'registration' | 'child' | 'band' | 'subscription' | 'payment' | 'commission' | 'payout' | 'incident' | 'enquiry' | 'plan' | 'settings';
   entityId: string;
 }
 
