@@ -114,14 +114,28 @@ export const RegistrationConfirmationPage: React.FC = () => {
 
             <h1 className="text-2xl sm:text-3xl font-heading font-bold text-navy">
               {isCardPaid
-                ? 'Your Subscription Payment is Confirmed!'
+                ? 'Your Subscription Payment & Registration are Received!'
                 : 'Your Registration is Ready for Office Verification'}
             </h1>
             <p className="text-xs sm:text-sm text-content-body max-w-xl mx-auto">
-              {isCardPaid
-                ? `Official tax receipt and registration certificate generated for ${childName} (Band: ${bandCode}). Active protection is now established.`
-                : 'Your submission has been queued for office verification.'}
+              Registration Reference:{' '}
+              <span className="font-mono font-bold text-navy bg-mint-pale px-2 py-0.5 rounded border border-emerald-300">
+                {referenceNumber}
+              </span>
             </p>
+          </div>
+
+          {/* Verification Notice Banner */}
+          <div className="p-4 bg-amber-50/80 rounded-brand border border-amber-200 text-left text-xs text-amber-950 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-amber-900 block">
+                Administrative Verification Notice
+              </span>
+              <p className="text-amber-800 leading-relaxed">
+                Your registration reference <strong>{referenceNumber}</strong> has been logged with status <strong>Pending Verification</strong>. Our administrative team will review your contact details and band credentials before full system activation.
+              </p>
+            </div>
           </div>
 
           {/* Quick Action Toolbar */}

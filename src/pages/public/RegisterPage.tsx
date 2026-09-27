@@ -29,7 +29,7 @@ import { RelationshipType, PaymentMethod } from '../../types';
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { activeVendors, activePlans, settings, bands, submitPublicRegistration, addToast } = useApp();
+  const { activeVendors, activePlans, settings, bands, registrations, submitPublicRegistration, addToast } = useApp();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,20 +161,21 @@ export const RegisterPage: React.FC = () => {
   // Step Validation
   const validateStep = (step: number): boolean => {
     const newErrors: { [key: string]: string } = {};
+    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
 
     if (step === 1) {
       if (!guardianName.trim()) newErrors.guardianName = 'Contact full name is required.';
       if (!relationship) newErrors.relationship = 'Please select your relationship to the wearer.';
-      if (!mobile.trim() || mobile.trim().length < 7) {
-        newErrors.mobile = 'A valid primary mobile telephone number is required.';
+      if (!mobile.trim() || !phoneRegex.test(mobile.trim())) {
+        newErrors.mobile = 'A valid primary mobile telephone number is required (7-20 digits).';
       }
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         newErrors.email = 'Please provide a valid email format or leave empty.';
       }
       if (hasSecondaryContact) {
         if (!secName.trim()) newErrors.secName = 'Secondary contact name is required when enabled.';
-        if (!secPhone.trim() || secPhone.trim().length < 7) {
-          newErrors.secPhone = 'Secondary contact phone number is required.';
+        if (!secPhone.trim() || !phoneRegex.test(secPhone.trim())) {
+          newErrors.secPhone = 'A valid secondary contact phone number is required.';
         }
       }
     }
@@ -185,15 +186,27 @@ export const RegisterPage: React.FC = () => {
         newErrors.bandCode = 'Printed band reference code is required.';
       } else {
         const formattedCode = bandCode.trim().toUpperCase();
-        const existingBand = bands.find(
-          (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '')
+        
+        // 1. Check for duplicate pending/approved registrations
+        const duplicate = registrations.find(
+          (r) => r.bandCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '') &&
+                 (r.status === 'pending_verification' || r.status === 'approved')
         );
 
-        if (existingBand) {
-          if (existingBand.status === 'assigned') {
-            newErrors.bandCode = 'This band reference is already registered. If you need a replacement or re-assignment, please contact our office.';
-          } else if (existingBand.status === 'retired' || existingBand.status === 'lost') {
-            newErrors.bandCode = 'This band reference has been retired or reported lost. Please contact our office.';
+        if (duplicate) {
+          newErrors.bandCode = `Band ${formattedCode} already has an active registration submission (#${duplicate.referenceNumber}).`;
+        } else {
+          // 2. Check band status in inventory
+          const existingBand = bands.find(
+            (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === formattedCode.replace(/[\s-]/g, '')
+          );
+
+          if (existingBand) {
+            if (existingBand.status === 'assigned') {
+              newErrors.bandCode = 'This band reference is already assigned. If you need a replacement, please contact our office.';
+            } else if (existingBand.status === 'retired' || existingBand.status === 'lost') {
+              newErrors.bandCode = 'This band reference has been retired or reported lost. Please contact our office.';
+            }
           }
         }
       }
@@ -208,6 +221,8 @@ export const RegisterPage: React.FC = () => {
     if (step === 3) {
       if (!selectedPlanId) {
         newErrors.planId = 'Please select a subscription plan.';
+      } else if (!activePlans.some((p) => p.id === selectedPlanId)) {
+        newErrors.planId = 'The selected plan is currently inactive. Please choose an active plan.';
       }
     }
 
@@ -220,7 +235,7 @@ export const RegisterPage: React.FC = () => {
 
     if (step === 5) {
       if (!authorityConfirmed) {
-        newErrors.authority = 'You must confirm that you are authorized to register for this individual.';
+        newErrors.authority = 'You must confirm authorization and consent to proceed with registration.';
       }
     }
 
