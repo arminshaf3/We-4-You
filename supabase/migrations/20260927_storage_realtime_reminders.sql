@@ -15,8 +15,7 @@ ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- 2. STORAGE RLS POLICIES
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Note: storage.objects already has RLS enabled by Supabase Storage by default.
 
 -- Allow public read ONLY on branding-assets
 DROP POLICY IF EXISTS "Public can read branding assets" ON storage.objects;
