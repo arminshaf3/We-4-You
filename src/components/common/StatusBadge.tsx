@@ -42,6 +42,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'approved':
       case 'verified':
       case 'resolved':
+      case 'reunited':
       case 'available':
       case 'assigned':
         // High contrast dark green text on pale mint background (meets accessibility)
@@ -65,6 +66,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       case 'lost':
       case 'expired':
       case 'reversed':
+      case 'false_alarm':
         return 'bg-rose-50 text-rose-900 border border-rose-200 font-medium';
 
       case 'retired':

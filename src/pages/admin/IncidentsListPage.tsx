@@ -5,10 +5,11 @@ import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import { BandLookupModal } from '../../components/admin/BandLookupModal';
 import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Incident, IncidentReportType } from '../../types';
-import { AlertTriangle, Plus, PhoneCall, Radio, User, MapPin, Search } from 'lucide-react';
+import { AlertTriangle, Plus, PhoneCall, Radio, User, MapPin, Search, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const IncidentsListPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,7 @@ export const IncidentsListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  const [isLookupModalOpen, setIsLookupModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [bandRef, setBandRef] = useState('');
   const [reportType, setReportType] = useState<IncidentReportType>('child_found');
@@ -24,8 +26,8 @@ export const IncidentsListPage: React.FC = () => {
   const [locationStr, setLocationStr] = useState('');
   const [incidentNotes, setIncidentNotes] = useState('');
 
-  const openCount = incidents.filter(i => i.status === 'open' || i.status === 'contacting_guardian').length;
-  const resolvedCount = incidents.filter(i => i.status === 'resolved').length;
+  const openCount = incidents.filter(i => i.status === 'open' || i.status === 'contacting_guardian' || i.status === 'awaiting_confirmation').length;
+  const reunitedCount = incidents.filter(i => i.status === 'reunited' || i.status === 'resolved').length;
   const totalAttempts = incidents.reduce((sum, i) => sum + i.attempts.length, 0);
 
   const filteredIncidents = incidents.filter((inc) => {
@@ -39,7 +41,8 @@ export const IncidentsListPage: React.FC = () => {
     const matchesStatus =
       statusFilter === 'ALL' ||
       inc.status === statusFilter ||
-      (statusFilter === 'ACTIVE' && (inc.status === 'open' || inc.status === 'contacting_guardian'));
+      (statusFilter === 'ACTIVE' && (inc.status === 'open' || inc.status === 'contacting_guardian' || inc.status === 'awaiting_confirmation')) ||
+      (statusFilter === 'REUNITED' && (inc.status === 'reunited' || inc.status === 'resolved'));
 
     return matchesSearch && matchesStatus;
   });
@@ -64,7 +67,7 @@ export const IncidentsListPage: React.FC = () => {
       callerContact: callerContact.trim() || undefined,
       voluntaryLocation: locationStr.trim() || undefined,
       notes: incidentNotes.trim(),
-      assignedStaff: 'Staff Coordinator (Morgan)',
+      assignedStaff: 'Support Dispatcher',
     });
 
     setIsNewModalOpen(false);
@@ -89,7 +92,7 @@ export const IncidentsListPage: React.FC = () => {
       key: 'bandReference',
       header: 'Band Reference',
       render: (inc) => (
-        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2 py-0.5 rounded border border-emerald-300">
+        <span className="font-mono font-bold text-xs bg-mint-pale text-navy px-2.5 py-1 rounded border border-emerald-300">
           {inc.bandReference}
         </span>
       ),
@@ -105,7 +108,7 @@ export const IncidentsListPage: React.FC = () => {
     },
     {
       key: 'caller',
-      header: 'Caller / Location',
+      header: 'Finder / Location',
       render: (inc) => (
         <div className="text-xs">
           <span className="font-medium text-navy block">{inc.callerName || 'Anonymous caller'}</span>
@@ -120,9 +123,9 @@ export const IncidentsListPage: React.FC = () => {
     },
     {
       key: 'attempts',
-      header: 'Contact Attempts',
+      header: 'Contact History',
       render: (inc) => (
-        <span className="text-xs text-content-body">
+        <span className="text-xs font-medium text-slate-700">
           {inc.attempts.length} attempt(s)
         </span>
       ),
@@ -134,7 +137,7 @@ export const IncidentsListPage: React.FC = () => {
       render: (inc) => (
         <Link
           to={`/admin/incidents/${inc.id}`}
-          className="px-3 py-1 text-xs font-semibold text-white bg-navy hover:bg-navy-light rounded-brand transition-colors"
+          className="px-3 py-1 text-xs font-semibold text-white bg-navy hover:bg-navy-light rounded-brand transition-colors inline-block"
         >
           Manage
         </Link>
@@ -145,17 +148,27 @@ export const IncidentsListPage: React.FC = () => {
   return (
     <div>
       <PageHeader
-        title="Office Assistance Incidents"
-        description="Active office telephone reports, finder intake, and emergency contact reconnection coordination."
+        title="Safety &amp; Assistance Incidents"
+        description="Active office helpline reports, finder submissions, and emergency contact reconnection coordination."
         actions={
-          <Button
-            onClick={() => setIsNewModalOpen(true)}
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
-            Log Office Report
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsLookupModalOpen(true)}
+              variant="outline"
+              size="sm"
+              leftIcon={<Search className="w-4 h-4 text-navy" />}
+            >
+              Band Code Lookup
+            </Button>
+            <Button
+              onClick={() => setIsNewModalOpen(true)}
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4 text-mint" />}
+            >
+              Log Assistance Incident
+            </Button>
+          </div>
         }
       />
 
@@ -169,19 +182,19 @@ export const IncidentsListPage: React.FC = () => {
             {openCount}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Requiring urgent office coordination
+            Currently being coordinated
           </span>
         </div>
 
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Confirmed Reconnected
+            Confirmed Reunited
           </span>
           <span className="text-2xl font-heading font-bold text-[#088F5B] block mt-1">
-            {resolvedCount}
+            {reunitedCount}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Wearer safely back with emergency contacts
+            Safely reconnected with guardians
           </span>
         </div>
 
@@ -193,19 +206,19 @@ export const IncidentsListPage: React.FC = () => {
             {totalAttempts}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            Verified staff calls &amp; relays
+            Verified phone &amp; SMS relays
           </span>
         </div>
 
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Total Incident History
+            Total Logged Reports
           </span>
           <span className="text-2xl font-heading font-bold text-slate-700 block mt-1">
             {incidents.length}
           </span>
           <span className="text-[11px] text-content-muted mt-0.5 block">
-            All logged telephone intakes
+            Helpline &amp; web finder intakes
           </span>
         </div>
       </div>
@@ -241,28 +254,42 @@ export const IncidentsListPage: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setStatusFilter('resolved')}
+          onClick={() => setStatusFilter('REUNITED')}
           className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            statusFilter === 'resolved'
+            statusFilter === 'REUNITED'
               ? 'bg-[#088F5B] text-white shadow-sm'
               : 'bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200'
           }`}
         >
-          <span>Resolved</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'resolved' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
-            {resolvedCount}
+          <span>Reunited &bull; Resolved</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'REUNITED' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
+            {reunitedCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('false_alarm')}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+            statusFilter === 'false_alarm'
+              ? 'bg-slate-800 text-white shadow-sm'
+              : 'bg-white text-slate-700 hover:bg-slate-50 border border-border-subtle'
+          }`}
+        >
+          <span>False Alarm</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 text-slate-600">
+            {incidents.filter(i => i.status === 'false_alarm').length}
           </span>
         </button>
       </div>
 
       {/* Search Bar */}
       <div className="bg-white p-4 rounded-brand border border-border-subtle shadow-subtle mb-6 max-w-md relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by incident ID, band code, caller, or location..."
+          placeholder="Search by incident ID, band code, finder, or location..."
           className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
         />
       </div>
@@ -272,15 +299,21 @@ export const IncidentsListPage: React.FC = () => {
         data={filteredIncidents}
         keyExtractor={(item) => item.id}
         emptyTitle="No Incidents Match Filters"
-        emptyDescription="Adjust your search keywords or toggle queue tabs."
+        emptyDescription="Adjust your search keywords or toggle queue filter tabs."
+      />
+
+      {/* Modal: Quick Band Lookup */}
+      <BandLookupModal
+        isOpen={isLookupModalOpen}
+        onClose={() => setIsLookupModalOpen(false)}
       />
 
       {/* Modal: Log New Office Report */}
       <Modal
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
-        title="Log Incoming Office Assistance Report"
-        description="Record telephone details from a person who found someone wearing a band or a lost band."
+        title="Log Incoming Assistance Incident"
+        description="Record telephone details from a finder or emergency service about a wearer or lost band."
       >
         <form onSubmit={handleCreateIncident} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -289,7 +322,7 @@ export const IncidentsListPage: React.FC = () => {
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value as IncidentReportType)}
               >
-                <option value="child_found">Person Found with Band</option>
+                <option value="child_found">Wearer Found with Band</option>
                 <option value="band_found_alone">Band Found Alone (Lost Property)</option>
               </Select>
             </FormField>
@@ -319,7 +352,7 @@ export const IncidentsListPage: React.FC = () => {
                 type="tel"
                 value={callerContact}
                 onChange={(e) => setCallerContact(e.target.value)}
-                placeholder="e.g. +1 (555) 789-0112"
+                placeholder="e.g. +94 77 123 4567"
               />
             </FormField>
           </div>

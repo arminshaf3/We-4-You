@@ -11,6 +11,8 @@ import {
   Commission,
   Payout,
   Incident,
+  IncidentReportType,
+  IncidentStatus,
   Enquiry,
   AppActivity,
   AppSettings,
@@ -115,7 +117,16 @@ interface AppContextType {
 
   // Incident workflows
   logIncident: (data: Omit<Incident, 'id' | 'incidentRef' | 'createdAt' | 'attempts' | 'status'>) => Incident;
+  submitPublicFoundReport: (report: {
+    bandCode: string;
+    callerName?: string;
+    callerContact: string;
+    voluntaryLocation?: string;
+    notes: string;
+    reportType?: IncidentReportType;
+  }) => Promise<{ success: boolean; incidentRef: string; message: string }>;
   addContactAttempt: (incidentId: string, attempt: Omit<ContactAttempt, 'id' | 'timestamp' | 'staffName'>) => void;
+  updateIncidentStatus: (incidentId: string, status: IncidentStatus, outcomeSummary?: string, notes?: string) => void;
   resolveIncident: (incidentId: string, outcomeSummary: string) => void;
 
   // Enquiry workflows
@@ -1035,6 +1046,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newInc;
   };
 
+  const submitPublicFoundReport = async (report: {
+    bandCode: string;
+    callerName?: string;
+    callerContact: string;
+    voluntaryLocation?: string;
+    notes: string;
+    reportType?: IncidentReportType;
+  }): Promise<{ success: boolean; incidentRef: string; message: string }> => {
+    const ref = `INC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newInc: Incident = {
+      id: `INC-${Date.now()}`,
+      incidentRef: ref,
+      bandReference: report.bandCode.toUpperCase().trim(),
+      reportType: report.reportType || 'child_found',
+      callerName: report.callerName || 'Anonymous Finder',
+      callerContact: report.callerContact,
+      voluntaryLocation: report.voluntaryLocation || 'Location not specified',
+      notes: report.notes,
+      status: 'open',
+      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      assignedStaff: 'Emergency Support Dispatcher',
+      attempts: [],
+    };
+
+    setIncidents((prev) => [newInc, ...prev]);
+
+    // Backend atomic submission RPC
+    const res = await supabaseService.submitPublicFoundReport(report);
+    if (res.success && res.data?.incident_ref) {
+      newInc.incidentRef = res.data.incident_ref;
+    } else {
+      supabaseService.insertIncident(newInc);
+    }
+
+    logAction('Public Found Child Reported', `Public reported band ${report.bandCode} at ${report.voluntaryLocation || 'unknown location'}.`, 'incident', newInc.id);
+
+    return {
+      success: true,
+      incidentRef: newInc.incidentRef,
+      message: 'Emergency assistance report received. Our emergency coordinators have been notified and are reaching out to the registered guardian.',
+    };
+  };
+
   const addContactAttempt = (
     incidentId: string,
     attempt: Omit<ContactAttempt, 'id' | 'timestamp' | 'staffName'>
@@ -1049,7 +1103,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let updatedAttempts: ContactAttempt[] = [];
     setIncidents((prev) =>
       prev.map((inc) => {
-        if (inc.id === incidentId) {
+        if (inc.id === incidentId || inc.incidentRef === incidentId) {
           updatedAttempts = [...inc.attempts, newAttempt];
           return {
             ...inc,
@@ -1060,34 +1114,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return inc;
       })
     );
-    supabaseService.updateIncident(incidentId, { status: 'contacting_guardian', attempts: updatedAttempts });
+
+    supabaseService.logGuardianContactAttempt(incidentId, {
+      method: attempt.method,
+      contactTarget: attempt.contactTarget,
+      outcome: attempt.outcome,
+      notes: attempt.notes,
+      actor: adminUser,
+    }).catch(() => {
+      supabaseService.updateIncident(incidentId, { status: 'contacting_guardian', attempts: updatedAttempts });
+    });
 
     logAction(
       'Contact Attempt Recorded',
-      `Recorded ${attempt.method.replace('_', ' ')} attempt for incident ${incidentId}.`,
+      `Recorded ${attempt.method.replace('_', ' ')} attempt to "${attempt.contactTarget}" for incident ${incidentId}. Outcome: ${attempt.outcome}`,
       'incident',
       incidentId
     );
     addToast('info', 'Attempt Logged', 'Contact attempt saved to incident history.');
   };
 
-  const resolveIncident = (incidentId: string, outcomeSummary: string) => {
+  const updateIncidentStatus = (
+    incidentId: string,
+    status: IncidentStatus,
+    outcomeSummary?: string,
+    notes?: string
+  ) => {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
     setIncidents((prev) =>
       prev.map((inc) =>
-        inc.id === incidentId
+        inc.id === incidentId || inc.incidentRef === incidentId
           ? {
               ...inc,
-              status: 'resolved',
-              resolvedAt: timestamp,
-              outcomeSummary,
+              status,
+              resolvedAt: (status === 'resolved' || status === 'reunited' || status === 'false_alarm') ? timestamp : inc.resolvedAt,
+              outcomeSummary: outcomeSummary || inc.outcomeSummary,
             }
           : inc
       )
     );
-    supabaseService.updateIncident(incidentId, { status: 'resolved', resolvedAt: timestamp, outcomeSummary });
-    logAction('Incident Resolved', `Incident ${incidentId} resolved: "${outcomeSummary}".`, 'incident', incidentId);
-    addToast('success', 'Incident Resolved', 'Incident marked resolved with recorded outcome.');
+
+    supabaseService.updateIncidentStatusAtomic(incidentId, status, outcomeSummary, notes, adminUser).catch(() => {
+      supabaseService.updateIncident(incidentId, {
+        status,
+        resolvedAt: (status === 'resolved' || status === 'reunited' || status === 'false_alarm') ? timestamp : undefined,
+        outcomeSummary,
+      });
+    });
+
+    logAction('Incident Status Updated', `Incident ${incidentId} marked as ${status.replace('_', ' ')}. ${outcomeSummary ? `Outcome: ${outcomeSummary}` : ''}`, 'incident', incidentId);
+    addToast('success', 'Incident Updated', `Status updated to ${status.replace('_', ' ')}.`);
+  };
+
+  const resolveIncident = (incidentId: string, outcomeSummary: string) => {
+    updateIncidentStatus(incidentId, 'resolved', outcomeSummary);
   };
 
   // 10. Enquiries
@@ -1205,7 +1285,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         approveCommission,
         createSimulatedPayout,
         logIncident,
+        submitPublicFoundReport,
         addContactAttempt,
+        updateIncidentStatus,
         resolveIncident,
         submitPublicEnquiry,
         updateEnquiryStatus,

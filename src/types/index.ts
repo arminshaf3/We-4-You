@@ -195,7 +195,7 @@ export interface Payout {
 }
 
 export type IncidentReportType = 'person_found' | 'child_found' | 'band_found_alone';
-export type IncidentStatus = 'open' | 'contacting_guardian' | 'awaiting_confirmation' | 'resolved';
+export type IncidentStatus = 'open' | 'contacting_guardian' | 'awaiting_confirmation' | 'reunited' | 'resolved' | 'false_alarm';
 
 export interface ContactAttempt {
   id: string;

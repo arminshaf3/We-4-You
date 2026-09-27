@@ -728,5 +728,110 @@ export const supabaseService = {
       return { success: false, error: err.message || 'Commission RPC failed' };
     }
   },
+
+  // --- SAFETY INCIDENTS & SECURE BAND LOOKUP ---
+  async submitPublicFoundReport(report: {
+    bandCode: string;
+    callerName?: string;
+    callerContact: string;
+    voluntaryLocation?: string;
+    notes: string;
+    reportType?: string;
+  }): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('submit_found_child_report', {
+        p_band_code: report.bandCode,
+        p_caller_name: report.callerName || 'Anonymous Finder',
+        p_caller_contact: report.callerContact,
+        p_location: report.voluntaryLocation || 'Location not specified',
+        p_notes: report.notes,
+        p_report_type: report.reportType || 'child_found',
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Public report submission failed' };
+    }
+  },
+
+  async secureBandLookup(
+    bandCode: string,
+    actor: string = 'Support Staff'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('lookup_band_guardian_secure', {
+        p_band_code: bandCode,
+        p_actor: actor,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Secure band lookup failed' };
+    }
+  },
+
+  async logGuardianContactAttempt(
+    incidentId: string,
+    attempt: {
+      method: string;
+      contactTarget: string;
+      outcome: string;
+      notes?: string;
+      actor?: string;
+    }
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('log_guardian_contact_attempt', {
+        p_incident_id: incidentId,
+        p_actor: attempt.actor || 'Support Staff',
+        p_method: attempt.method,
+        p_contact_target: attempt.contactTarget,
+        p_outcome: attempt.outcome,
+        p_notes: attempt.notes || null,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Logging contact attempt failed' };
+    }
+  },
+
+  async updateIncidentStatusAtomic(
+    incidentId: string,
+    status: string,
+    outcomeSummary?: string,
+    notes?: string,
+    actor: string = 'Support Staff'
+  ): Promise<{ success: boolean; error?: string; data?: any }> {
+    if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+    try {
+      const { data, error } = await supabase.rpc('update_incident_status_atomic', {
+        p_incident_id: incidentId,
+        p_actor: actor,
+        p_status: status,
+        p_outcome_summary: outcomeSummary || null,
+        p_notes: notes || null,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true, data };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Updating incident status failed' };
+    }
+  },
 };
 
