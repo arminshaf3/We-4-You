@@ -17,6 +17,7 @@ import {
   BarChart3,
   Settings,
   History,
+  UserCheck,
   ExternalLink,
   X,
 } from 'lucide-react';
@@ -85,6 +86,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
           badge: newEnquiries > 0 ? newEnquiries : undefined,
           badgeColor: 'bg-sky-400 text-navy font-bold',
         },
+        { to: '/admin/staff', label: 'Staff & Team', icon: <UserCheck className="w-4 h-4" /> },
         { to: '/admin/reports', label: 'Reports & Summaries', icon: <BarChart3 className="w-4 h-4" /> },
         { to: '/admin/activity', label: 'Activity Log', icon: <History className="w-4 h-4" /> },
         { to: '/admin/settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },

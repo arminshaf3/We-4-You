@@ -46,6 +46,7 @@ import { EnquiriesListPage } from './pages/admin/EnquiriesListPage';
 import { ReportsPage } from './pages/admin/ReportsPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { ActivityHistoryPage } from './pages/admin/ActivityHistoryPage';
+import { StaffListPage } from './pages/admin/StaffListPage';
 
 export const App: React.FC = () => {
   return (
@@ -101,6 +102,7 @@ export const App: React.FC = () => {
               <Route path="incidents" element={<IncidentsListPage />} />
               <Route path="incidents/:id" element={<IncidentDetailPage />} />
               <Route path="enquiries" element={<EnquiriesListPage />} />
+              <Route path="staff" element={<StaffListPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="activity" element={<ActivityHistoryPage />} />
