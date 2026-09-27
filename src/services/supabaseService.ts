@@ -114,11 +114,51 @@ export const supabaseService = {
         priceFormatted: p.price_formatted || `$${p.price || 0}.00 / yr`,
         currency: 'USD',
         isActive: p.is_active ?? true,
-        isProvisional: false,
+        isProvisional: p.is_provisional ?? false,
         features: p.features || ['Emergency call center routing', 'Confidential emergency contacts', 'Waterproof identification band'],
       }));
     } catch {
       return null;
+    }
+  },
+
+  async insertPlan(plan: SubscriptionPlan): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const { error } = await supabase.from('plans').insert({
+        id: plan.id,
+        name: plan.name,
+        duration_months: plan.durationMonths,
+        price: plan.priceAmount,
+        price_formatted: plan.priceFormatted,
+        description: plan.description,
+        features: plan.features,
+        is_active: plan.isActive,
+        is_provisional: plan.isProvisional,
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  async updatePlan(id: string, updates: Partial<SubscriptionPlan>): Promise<boolean> {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const payload: any = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.durationMonths !== undefined) payload.duration_months = updates.durationMonths;
+      if (updates.priceAmount !== undefined) payload.price = updates.priceAmount;
+      if (updates.priceFormatted !== undefined) payload.price_formatted = updates.priceFormatted;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.features !== undefined) payload.features = updates.features;
+      if (updates.isActive !== undefined) payload.is_active = updates.isActive;
+      if (updates.isProvisional !== undefined) payload.is_provisional = updates.isProvisional;
+
+      const { error } = await supabase.from('plans').update(payload).eq('id', id);
+      return !error;
+    } catch {
+      return false;
     }
   },
 

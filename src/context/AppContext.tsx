@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   Vendor,
   Band,
+  BandStatus,
   ChildRecord,
   SubscriptionPlan,
   Subscription,
@@ -82,6 +83,8 @@ interface AppContextType {
 
   // Band workflows
   assignBandToChild: (bandCode: string, childId: string) => boolean;
+  updateBandStatus: (bandCode: string, status: BandStatus, notes?: string) => void;
+  markBandLost: (bandCode: string, notes?: string) => void;
   replaceBand: (childId: string, oldBandCode: string, newBandCode: string, reason: string) => boolean;
   addBandToInventory: (code: string) => Band;
 
@@ -89,7 +92,9 @@ interface AppContextType {
   updateChildRecord: (childId: string, updates: Partial<ChildRecord>) => void;
 
   // Plan & Subscription workflows
+  addPlan: (plan: Omit<SubscriptionPlan, 'id'>) => SubscriptionPlan;
   updatePlan: (id: string, updates: Partial<SubscriptionPlan>) => void;
+  togglePlanActive: (id: string) => void;
   renewSubscription: (subscriptionId: string, monthsToAdd: number, method?: PaymentMethod, cardDetails?: CardPaymentDetails) => Payment | undefined;
   directSubscribeWithCard: (params: {
     bandCode: string;
@@ -635,6 +640,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
+  const updateBandStatus = (bandCode: string, status: BandStatus, notes?: string) => {
+    setBands((prev) =>
+      prev.map((b) =>
+        b.referenceCode.toUpperCase() === bandCode.toUpperCase()
+          ? { ...b, status, replacementNotes: notes || b.replacementNotes }
+          : b
+      )
+    );
+    supabaseService.updateBand(bandCode, { status, replacementNotes: notes });
+    logAction('Band Status Updated', `Updated status of band ${bandCode} to ${status}.`, 'band', bandCode);
+    addToast('info', 'Band Updated', `Band ${bandCode} status changed to ${status}.`);
+  };
+
+  const markBandLost = (bandCode: string, notes?: string) => {
+    updateBandStatus(bandCode, 'lost', notes || 'Reported lost by wearer/guardian');
+  };
+
   const replaceBand = (childId: string, oldBandCode: string, newBandCode: string, reason: string): boolean => {
     const newBand = bands.find((b) => b.referenceCode.toUpperCase() === newBandCode.toUpperCase());
     if (!newBand || newBand.status !== 'available') return false;
@@ -709,12 +731,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // 6. Plan & Subscription Handlers
+  const addPlan = (planData: Omit<SubscriptionPlan, 'id'>): SubscriptionPlan => {
+    const id = `PLAN-${Date.now().toString(36).toUpperCase()}`;
+    const newPlan: SubscriptionPlan = {
+      ...planData,
+      id,
+    };
+    setPlans((prev) => [...prev, newPlan]);
+    supabaseService.insertPlan(newPlan);
+    logAction('Plan Created', `Created subscription tier "${newPlan.name}".`, 'plan', id);
+    addToast('success', 'Plan Created', `${newPlan.name} created successfully.`);
+    return newPlan;
+  };
+
   const updatePlan = (id: string, updates: Partial<SubscriptionPlan>) => {
     setPlans((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
+    supabaseService.updatePlan(id, updates);
     logAction('Plan Configured', `Updated subscription plan ${id}.`, 'plan', id);
     addToast('success', 'Plan Updated', 'Subscription plan configuration saved.');
+  };
+
+  const togglePlanActive = (id: string) => {
+    const plan = plans.find((p) => p.id === id);
+    if (!plan) return;
+    const newActive = !plan.isActive;
+    updatePlan(id, { isActive: newActive });
   };
 
   const renewSubscription = (
@@ -1138,10 +1181,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateVendor,
         toggleVendorActive,
         assignBandToChild,
+        updateBandStatus,
+        markBandLost,
         replaceBand,
         addBandToInventory,
         updateChildRecord,
+        addPlan,
         updatePlan,
+        togglePlanActive,
         renewSubscription,
         directSubscribeWithCard,
         verifyPayment,

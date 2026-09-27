@@ -4,13 +4,22 @@ import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { FormField, Input, Select } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Band, BandStatus } from '../../types';
-import { Radio, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { Radio, Plus, RefreshCw, Search, ShieldCheck, AlertOctagon, UserPlus, Edit3 } from 'lucide-react';
 
 export const BandsListPage: React.FC = () => {
-  const { bands, childrenRecords, vendors, addBandToInventory, replaceBand, addToast } = useApp();
+  const {
+    bands,
+    childrenRecords,
+    vendors,
+    addBandToInventory,
+    assignBandToChild,
+    replaceBand,
+    updateBandStatus,
+    markBandLost,
+  } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -18,6 +27,10 @@ export const BandsListPage: React.FC = () => {
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+
+  // Form states
   const [newBandCode, setNewBandCode] = useState('');
   const [selectedChildForReplace, setSelectedChildForReplace] = useState('');
   const [replacementOldBand, setReplacementOldBand] = useState('');
@@ -25,13 +38,24 @@ export const BandsListPage: React.FC = () => {
   const [replacementReason, setReplacementReason] = useState('');
   const [replaceError, setReplaceError] = useState('');
 
+  // Status Edit State
+  const [selectedBandForStatus, setSelectedBandForStatus] = useState<Band | null>(null);
+  const [newStatus, setNewStatus] = useState<BandStatus>('available');
+  const [statusNotes, setStatusNotes] = useState('');
+
+  // Quick Assign State
+  const [selectedBandForAssign, setSelectedBandForAssign] = useState<Band | null>(null);
+  const [selectedWearerId, setSelectedWearerId] = useState('');
+
   const filteredBands = useMemo(() => {
     return bands.filter((b) => {
-      const matchesSearch = b.referenceCode.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        b.referenceCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (b.childId && childrenRecords.find(c => c.id === b.childId)?.name.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [bands, searchTerm, statusFilter]);
+  }, [bands, searchTerm, statusFilter, childrenRecords]);
 
   const availableBands = bands.filter((b) => b.status === 'available');
 
@@ -70,6 +94,33 @@ export const BandsListPage: React.FC = () => {
     } else {
       setReplaceError('Could not perform band replacement.');
     }
+  };
+
+  const handleOpenAssign = (band: Band) => {
+    setSelectedBandForAssign(band);
+    setSelectedWearerId(childrenRecords[0]?.id || '');
+    setIsAssignModalOpen(true);
+  };
+
+  const handleConfirmAssign = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBandForAssign || !selectedWearerId) return;
+    assignBandToChild(selectedBandForAssign.referenceCode, selectedWearerId);
+    setIsAssignModalOpen(false);
+  };
+
+  const handleOpenStatusModal = (band: Band) => {
+    setSelectedBandForStatus(band);
+    setNewStatus(band.status);
+    setStatusNotes(band.replacementNotes || '');
+    setIsStatusModalOpen(true);
+  };
+
+  const handleConfirmStatusChange = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBandForStatus) return;
+    updateBandStatus(selectedBandForStatus.referenceCode, newStatus, statusNotes);
+    setIsStatusModalOpen(false);
   };
 
   const columns: Column<Band>[] = [
@@ -129,20 +180,48 @@ export const BandsListPage: React.FC = () => {
     },
     {
       key: 'actions',
-      header: 'Action',
+      header: 'Actions',
       className: 'text-right',
       render: (band) => {
-        if (band.status === 'assigned') {
-          return (
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            {band.status === 'available' && (
+              <button
+                onClick={() => handleOpenAssign(band)}
+                className="px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors"
+                title="Assign to registered wearer"
+              >
+                Assign
+              </button>
+            )}
+
+            {band.status === 'assigned' && (
+              <>
+                <button
+                  onClick={() => handleOpenReplace(band)}
+                  className="px-2.5 py-1 text-xs font-semibold text-navy bg-neutral-soft hover:bg-slate-200 rounded border border-border-subtle transition-colors"
+                >
+                  Replace
+                </button>
+                <button
+                  onClick={() => markBandLost(band.referenceCode)}
+                  className="px-2.5 py-1 text-xs font-semibold text-rose-800 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200 transition-colors"
+                  title="Mark band as lost"
+                >
+                  Lost
+                </button>
+              </>
+            )}
+
             <button
-              onClick={() => handleOpenReplace(band)}
-              className="px-3 py-1 text-xs font-semibold text-navy bg-neutral-soft hover:bg-slate-200 rounded-brand border border-border-subtle transition-colors"
+              onClick={() => handleOpenStatusModal(band)}
+              className="p-1 text-slate-500 hover:text-navy hover:bg-slate-100 rounded transition-colors"
+              title="Edit status and notes"
             >
-              Replace Band
+              <Edit3 className="w-3.5 h-3.5" />
             </button>
-          );
-        }
-        return <span className="text-xs text-slate-400">—</span>;
+          </div>
+        );
       },
     },
   ];
@@ -209,7 +288,7 @@ export const BandsListPage: React.FC = () => {
 
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Retired / Replaced
+            Retired / Lost
           </span>
           <span className="text-2xl font-heading font-bold text-slate-500 block mt-1">
             {retiredCount + lostCount}
@@ -228,7 +307,7 @@ export const BandsListPage: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search band reference (e.g. W4Y-7821-K9)..."
+            placeholder="Search band code or wearer name (e.g. W4Y-7821-K9)..."
             className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm font-mono uppercase rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
           />
         </div>
@@ -254,7 +333,7 @@ export const BandsListPage: React.FC = () => {
         data={filteredBands}
         keyExtractor={(item) => item.id}
         emptyTitle="No Bands Match Criteria"
-        emptyDescription="Add new bands to stock or clear filters."
+        emptyDescription="Add new bands to stock or clear search filters."
       />
 
       {/* Modal: Add Band to Inventory */}
@@ -280,6 +359,79 @@ export const BandsListPage: React.FC = () => {
             </Button>
             <Button type="submit" variant="primary" size="md">
               Add Band to Inventory
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Assign Band to Wearer */}
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        title={`Assign Band ${selectedBandForAssign?.referenceCode}`}
+        description="Link this available band directly to a registered wearer."
+      >
+        <form onSubmit={handleConfirmAssign} className="space-y-4">
+          <FormField label="Select Wearer" required>
+            <Select
+              value={selectedWearerId}
+              onChange={(e) => setSelectedWearerId(e.target.value)}
+              required
+            >
+              {childrenRecords.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.ageRange}) — Current Band: {c.currentBandCode || 'None'}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setIsAssignModalOpen(false)} variant="outline" size="md">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="md">
+              Confirm Assignment
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Edit Band Status */}
+      <Modal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        title={`Update Band: ${selectedBandForStatus?.referenceCode}`}
+      >
+        <form onSubmit={handleConfirmStatusChange} className="space-y-4">
+          <FormField label="Status" required>
+            <Select
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value as BandStatus)}
+              required
+            >
+              <option value="available">Available (in stock)</option>
+              <option value="assigned">Assigned (active protection)</option>
+              <option value="lost">Lost (reported missing)</option>
+              <option value="retired">Retired (damaged / decommissioned)</option>
+              <option value="replaced">Replaced (superseded by new band)</option>
+            </Select>
+          </FormField>
+
+          <FormField label="Status Notes / Reason">
+            <Textarea
+              value={statusNotes}
+              onChange={(e) => setStatusNotes(e.target.value)}
+              placeholder="e.g. Broken clip, returned from field..."
+              rows={3}
+            />
+          </FormField>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button onClick={() => setIsStatusModalOpen(false)} variant="outline" size="md">
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="md">
+              Update Band
             </Button>
           </div>
         </form>
@@ -351,3 +503,5 @@ export const BandsListPage: React.FC = () => {
     </div>
   );
 };
+
+export default BandsListPage;

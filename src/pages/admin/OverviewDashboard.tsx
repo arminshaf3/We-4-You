@@ -25,7 +25,9 @@ export const OverviewDashboard: React.FC = () => {
   const { registrations, incidents, subscriptions, commissions, activity, bands, childrenRecords } = useApp();
   const [isLookupOpen, setIsLookupOpen] = useState(false);
 
-  // Derived Metrics
+  // Derived Metrics from live Supabase data
+  const totalWearers = childrenRecords.length;
+  const activeSubscriptions = subscriptions.filter((s) => s.status === 'active');
   const pendingRegistrations = registrations.filter((r) => r.status === 'pending_verification');
   const openIncidents = incidents.filter((i) => i.status === 'open' || i.status === 'contacting_guardian');
   const expiringSubscriptions = subscriptions.filter((s) => s.status === 'expiring_soon');
@@ -36,7 +38,7 @@ export const OverviewDashboard: React.FC = () => {
     <div className="space-y-8">
       <PageHeader
         title="Operations Overview"
-        description="Monitor priority review queues, incoming assistance incidents, and operational metrics."
+        description="Live operational hub for protected wearers, subscription renewals, review queues, and incident response."
         actions={
           <Button
             onClick={() => setIsLookupOpen(true)}
@@ -49,122 +51,162 @@ export const OverviewDashboard: React.FC = () => {
         }
       />
 
-      {/* 4 Key Priority Summary Cards - Enterprise Aligned Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 6 Key Operational KPI Cards Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         
-        {/* Pending Registrations */}
+        {/* Total Children / Wearers */}
         <Link
-          to="/admin/registrations"
-          className="p-5 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+          to="/admin/children"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-slate-500">
-                Pending Registrations
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+                Total Wearers
               </span>
-              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <ClipboardList className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-full bg-blue-50 text-navy flex items-center justify-center group-hover:scale-105 transition-transform">
+                <User className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-heading font-bold text-navy">
-                {pendingRegistrations.length}
-              </span>
-              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
-                Needs Review
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-navy">
+                {totalWearers}
               </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Contact &amp; band checks</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Protected Profiles</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </Link>
+
+        {/* Active Subscriptions */}
+        <Link
+          to="/admin/subscriptions"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+                Active Plans
+              </span>
+              <div className="w-7 h-7 rounded-full bg-emerald-50 text-[#088F5B] flex items-center justify-center group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-[#088F5B]">
+                {activeSubscriptions.length}
+              </span>
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Active Coverage</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </Link>
+
+        {/* Pending Registrations */}
+        <Link
+          to="/admin/registrations"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+                Pending Regs
+              </span>
+              <div className="w-7 h-7 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <ClipboardList className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-navy">
+                {pendingRegistrations.length}
+              </span>
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Needs Review</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
 
         {/* Active Assistance Incidents */}
         <Link
           to="/admin/incidents"
-          className="p-5 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-slate-500">
-                Active Incidents
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+                Open Incidents
               </span>
-              <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <AlertTriangle className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <AlertTriangle className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-heading font-bold text-navy">
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-rose-600">
                 {openIncidents.length}
-              </span>
-              <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200/60">
-                Requires Follow-up
               </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Person / band reports</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Needs Follow-up</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
 
         {/* Expiring Subscriptions */}
         <Link
           to="/admin/subscriptions"
-          className="p-5 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
                 Expiring Soon
               </span>
-              <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <CreditCard className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-full bg-orange-50 text-orange-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <CreditCard className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-heading font-bold text-navy">
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-navy">
                 {expiringSubscriptions.length}
-              </span>
-              <span className="text-xs font-semibold text-orange-800 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200/60">
-                Within 30 Days
               </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Renewals &amp; extensions</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Within 30 Days</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
 
         {/* Pending Commissions */}
         <Link
           to="/admin/commissions"
-          className="p-5 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
+          className="p-4 rounded-brand bg-white border border-slate-200/90 shadow-xs hover:shadow-subtle hover:border-slate-300 transition-all group flex flex-col justify-between"
         >
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-heading font-semibold uppercase tracking-wider text-slate-500">
-                Commissions Queue
+              <span className="text-[10px] font-heading font-semibold uppercase tracking-wider text-slate-500">
+                Commissions
               </span>
-              <div className="w-8 h-8 rounded-full bg-mint-pale text-mint-darker flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Banknote className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-full bg-mint-pale text-mint-darker flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Banknote className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-heading font-bold text-navy">
+            <div className="mt-2.5">
+              <span className="text-2xl font-heading font-bold text-navy">
                 {pendingCommissions.length}
-              </span>
-              <span className="text-xs font-semibold text-mint-darker bg-mint-pale px-2 py-0.5 rounded-full border border-emerald-300/50">
-                Pending Approval
               </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Vendor attribution sales</span>
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
+          <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span>Pending Payout</span>
+            <ArrowRight className="w-3 h-3 text-slate-400 group-hover:text-navy group-hover:translate-x-0.5 transition-all" />
           </div>
         </Link>
 
