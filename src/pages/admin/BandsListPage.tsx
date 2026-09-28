@@ -32,6 +32,7 @@ export const BandsListPage: React.FC = () => {
 
   // Form states
   const [newBandCode, setNewBandCode] = useState('');
+  const [addError, setAddError] = useState('');
   const [selectedChildForReplace, setSelectedChildForReplace] = useState('');
   const [replacementOldBand, setReplacementOldBand] = useState('');
   const [replacementNewBand, setReplacementNewBand] = useState('');
@@ -59,12 +60,25 @@ export const BandsListPage: React.FC = () => {
 
   const availableBands = bands.filter((b) => b.status === 'available');
 
+  const normNewBandCode = newBandCode.toUpperCase().replace(/[\s-]/g, '').trim();
+  const duplicateExistingBand = useMemo(() => {
+    if (!normNewBandCode) return null;
+    return bands.find((b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === normNewBandCode) || null;
+  }, [bands, normNewBandCode]);
+
   const handleAddBand = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBandCode.trim()) return;
-    addBandToInventory(newBandCode.trim());
-    setIsAddModalOpen(false);
-    setNewBandCode('');
+    if (duplicateExistingBand) {
+      setAddError(`Band reference code "${newBandCode.trim()}" already exists in inventory (Status: ${duplicateExistingBand.status}). Every band must have a unique reference code.`);
+      return;
+    }
+    const result = addBandToInventory(newBandCode.trim());
+    if (result) {
+      setIsAddModalOpen(false);
+      setNewBandCode('');
+      setAddError('');
+    }
   };
 
   const handleOpenReplace = (band: Band) => {
@@ -339,25 +353,62 @@ export const BandsListPage: React.FC = () => {
       {/* Modal: Add Band to Inventory */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setAddError('');
+        }}
         title="Add Serialized Band to Stock"
         description="Add a new physical band code to available stock."
       >
         <form onSubmit={handleAddBand} className="space-y-4">
+          {duplicateExistingBand && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-brand text-xs text-amber-900 flex items-start gap-2">
+              <AlertOctagon className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold">Duplicate Reference Code</p>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  Band code <span className="font-mono font-bold">{duplicateExistingBand.referenceCode}</span> is already in the system (Status: <span className="capitalize font-semibold">{duplicateExistingBand.status}</span>). Each band must have a globally unique serial code.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {addError && !duplicateExistingBand && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-brand text-xs text-rose-800">
+              {addError}
+            </div>
+          )}
+
           <FormField label="Band Reference Code" required hint="Format: W4Y-XXXX-XX">
             <Input
               value={newBandCode}
-              onChange={(e) => setNewBandCode(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setNewBandCode(e.target.value.toUpperCase());
+                if (addError) setAddError('');
+              }}
               placeholder="e.g. W4Y-9941-T8"
               className="font-mono uppercase font-semibold"
               required
             />
           </FormField>
           <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setIsAddModalOpen(false)} variant="outline" size="md">
+            <Button
+              type="button"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                setAddError('');
+              }}
+              variant="outline"
+              size="md"
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="md">
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              disabled={Boolean(duplicateExistingBand) || !newBandCode.trim()}
+            >
               Add Band to Inventory
             </Button>
           </div>

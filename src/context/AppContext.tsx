@@ -88,7 +88,7 @@ interface AppContextType {
   updateBandStatus: (bandCode: string, status: BandStatus, notes?: string) => void;
   markBandLost: (bandCode: string, notes?: string) => void;
   replaceBand: (childId: string, oldBandCode: string, newBandCode: string, reason: string) => boolean;
-  addBandToInventory: (code: string) => Band;
+  addBandToInventory: (code: string) => Band | null;
 
   // Child and Guardian workflows
   updateChildRecord: (childId: string, updates: Partial<ChildRecord>) => void;
@@ -148,6 +148,26 @@ interface AppContextType {
   };
 }
 
+// Helper to guarantee unique band reference codes across inventory
+const deduplicateBands = (bandList: Band[]): Band[] => {
+  const map = new Map<string, Band>();
+  bandList.forEach((b) => {
+    const key = b.referenceCode.replace(/[\s-]/g, '').toUpperCase();
+    if (!map.has(key)) {
+      map.set(key, b);
+    } else {
+      const existing = map.get(key)!;
+      // If one duplicate has an assigned child or is active, keep the assigned record
+      if (existing.status === 'available' && b.status !== 'available') {
+        map.set(key, b);
+      } else if (!existing.childId && b.childId) {
+        map.set(key, b);
+      }
+    }
+  });
+  return Array.from(map.values());
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -164,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [bands, setBands] = useState<Band[]>(() => {
     const saved = sessionStorage.getItem('we4u_bands');
-    return saved ? JSON.parse(saved) : initialBands;
+    return deduplicateBands(saved ? JSON.parse(saved) : initialBands);
   });
 
   const [childrenRecords, setChildrenRecords] = useState<ChildRecord[]>(() => {
@@ -860,17 +880,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const addBandToInventory = (code: string): Band => {
+  const addBandToInventory = (code: string): Band | null => {
+    const normCode = code.toUpperCase().replace(/[\s-]/g, '').trim();
+    if (!normCode) return null;
+    const existing = bands.find((b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === normCode);
+    if (existing) {
+      addToast(
+        'error',
+        'Duplicate Band Code',
+        `Band reference "${code.toUpperCase()}" already exists in inventory (Status: ${existing.status}). Every band must have a unique reference code.`
+      );
+      return null;
+    }
     const id = `BND-00${bands.length + 1}`;
+    const formattedCode = code.toUpperCase().trim();
     const newBand: Band = {
       id,
-      referenceCode: code.toUpperCase().trim(),
+      referenceCode: formattedCode,
       status: 'available',
     };
-    setBands((prev) => [...prev, newBand]);
-    supabaseService.insertBand(code.toUpperCase().trim());
-    logAction('Band Added', `Added band ${code} to available inventory.`, 'band', id);
-    addToast('success', 'Band Added', `${code} is now available in inventory.`);
+    setBands((prev) => deduplicateBands([...prev, newBand]));
+    supabaseService.insertBand(formattedCode);
+    logAction('Band Added', `Added band ${formattedCode} to available inventory.`, 'band', id);
+    addToast('success', 'Band Added', `${formattedCode} is now available in inventory.`);
     return newBand;
   };
 

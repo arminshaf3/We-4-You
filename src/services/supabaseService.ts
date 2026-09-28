@@ -187,9 +187,27 @@ export const supabaseService = {
   async insertBand(code: string): Promise<Band | null> {
     if (!isSupabaseConfigured) return null;
     try {
+      const normCode = code.toUpperCase().trim();
+      // Check if band already exists to prevent duplicate insertion
+      const { data: existing } = await supabase
+        .from('bands')
+        .select('*')
+        .eq('reference_code', normCode)
+        .maybeSingle();
+
+      if (existing) {
+        return {
+          id: existing.id,
+          referenceCode: existing.reference_code,
+          status: existing.status,
+          childId: existing.child_id || undefined,
+          vendorId: existing.vendor_id || undefined,
+        };
+      }
+
       const { data, error } = await supabase
         .from('bands')
-        .insert({ reference_code: code, status: 'available' })
+        .insert({ reference_code: normCode, status: 'available' })
         .select()
         .single();
       if (error || !data) return null;
