@@ -64,8 +64,10 @@ export const BandsListPage: React.FC = () => {
         (assignedChild && assignedChild.name.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const effectiveStatus: BandStatus =
-        (b.status === 'assigned' || Boolean(assignedChild)) && b.status !== 'lost' && b.status !== 'retired' && b.status !== 'replaced'
+        Boolean(assignedChild) && b.status !== 'lost' && b.status !== 'retired' && b.status !== 'replaced'
           ? 'assigned'
+          : b.status === 'assigned' && !assignedChild
+          ? 'available'
           : b.status;
       const matchesStatus = statusFilter === 'ALL' || effectiveStatus === statusFilter;
       return matchesSearch && matchesStatus;
@@ -74,7 +76,7 @@ export const BandsListPage: React.FC = () => {
 
   const availableBands = bands.filter((b) => {
     const hasChild = Boolean(findAssignedChild(b));
-    return b.status === 'available' && !hasChild;
+    return !hasChild && b.status !== 'lost' && b.status !== 'retired' && b.status !== 'replaced';
   });
 
   // Only wearers who do NOT have an active connected band yet
@@ -184,8 +186,10 @@ export const BandsListPage: React.FC = () => {
       render: (band) => {
         const child = findAssignedChild(band);
         const effectiveStatus: BandStatus =
-          (band.status === 'assigned' || Boolean(child)) && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced'
+          Boolean(child) && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced'
             ? 'assigned'
+            : band.status === 'assigned' && !child
+            ? 'available'
             : band.status;
         return <StatusBadge status={effectiveStatus} />;
       },
@@ -208,7 +212,7 @@ export const BandsListPage: React.FC = () => {
             </span>
           </div>
         ) : (
-          <span className="text-xs text-content-muted italic">Unassigned</span>
+          <span className="text-xs text-content-muted italic">Unassigned (In Stock)</span>
         );
       },
     },
@@ -244,11 +248,13 @@ export const BandsListPage: React.FC = () => {
       className: 'text-right',
       render: (band) => {
         const child = findAssignedChild(band);
-        const isAssigned = (band.status === 'assigned' || Boolean(child)) && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced';
+        const hasWearer = Boolean(child);
+        const isAssigned = hasWearer && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced';
+        const canAssign = !hasWearer && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced';
 
         return (
           <div className="flex items-center justify-end gap-1.5">
-            {!isAssigned && band.status === 'available' && (
+            {canAssign && (
               <button
                 onClick={() => handleOpenAssign(band)}
                 className="px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors"
@@ -291,15 +297,15 @@ export const BandsListPage: React.FC = () => {
 
   const assignedCount = useMemo(() => {
     return bands.filter((b) => {
-      const isAssigned = b.status === 'assigned' || Boolean(findAssignedChild(b));
+      const isAssigned = Boolean(findAssignedChild(b));
       return isAssigned && b.status !== 'lost' && b.status !== 'retired';
     }).length;
   }, [bands, childrenRecords]);
 
   const availableCount = useMemo(() => {
     return bands.filter((b) => {
-      const isAssigned = b.status === 'assigned' || Boolean(findAssignedChild(b));
-      return b.status === 'available' && !isAssigned;
+      const isAssigned = Boolean(findAssignedChild(b));
+      return !isAssigned && b.status !== 'lost' && b.status !== 'retired';
     }).length;
   }, [bands, childrenRecords]);
 
