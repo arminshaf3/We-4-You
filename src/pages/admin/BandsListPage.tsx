@@ -77,6 +77,19 @@ export const BandsListPage: React.FC = () => {
     return b.status === 'available' && !hasChild;
   });
 
+  // Only wearers who do NOT have an active connected band yet
+  const unassignedWearers = useMemo(() => {
+    return childrenRecords.filter((child) => {
+      if (!child.currentBandCode || child.currentBandCode.trim() === '' || child.currentBandCode === 'None') {
+        return true;
+      }
+      const currentBand = bands.find(
+        (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === child.currentBandCode.replace(/[\s-]/g, '').toUpperCase()
+      );
+      return !currentBand || currentBand.status === 'retired' || currentBand.status === 'lost';
+    });
+  }, [childrenRecords, bands]);
+
   const normNewBandCode = newBandCode.toUpperCase().replace(/[\s-]/g, '').trim();
   const duplicateExistingBand = useMemo(() => {
     if (!normNewBandCode) return null;
@@ -130,7 +143,7 @@ export const BandsListPage: React.FC = () => {
 
   const handleOpenAssign = (band: Band) => {
     setSelectedBandForAssign(band);
-    setSelectedWearerId(childrenRecords[0]?.id || '');
+    setSelectedWearerId(unassignedWearers[0]?.id || '');
     setIsAssignModalOpen(true);
   };
 
@@ -471,59 +484,63 @@ export const BandsListPage: React.FC = () => {
         description="Link this available band directly to a registered wearer."
       >
         <form onSubmit={handleConfirmAssign} className="space-y-4">
-          {(() => {
-            const selectedWearer = childrenRecords.find((c) => c.id === selectedWearerId);
-            if (!selectedWearer) return null;
-
-            if (selectedWearer.currentBandCode) {
-              return (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-brand text-xs text-amber-900 flex items-start gap-2.5">
-                  <AlertOctagon className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-amber-950">Wearer Already Has an Active Band</p>
-                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                      <strong>{selectedWearer.name}</strong> is currently assigned to band <span className="font-mono font-bold">{selectedWearer.currentBandCode}</span>.
-                      Assigning <span className="font-mono font-bold text-navy">{selectedBandForAssign?.referenceCode}</span> will reassign them to this band and safely retire their previous band.
-                    </p>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
+          {unassignedWearers.length > 0 ? (
+            <>
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-brand text-xs text-emerald-900 flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-semibold text-emerald-950">New Wearer Protection</p>
+                  <p className="font-semibold text-emerald-950">Wearers Awaiting Band Connection</p>
                   <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
-                    <strong>{selectedWearer.name}</strong> has no active band. Band <span className="font-mono font-bold text-navy">{selectedBandForAssign?.referenceCode}</span> will be activated as their primary emergency band.
+                    Showing only registered wearers who do not have an active band connected yet.
                   </p>
                 </div>
               </div>
-            );
-          })()}
 
-          <FormField label="Select Wearer" required>
-            <Select
-              value={selectedWearerId}
-              onChange={(e) => setSelectedWearerId(e.target.value)}
-              required
-            >
-              {childrenRecords.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.ageRange}) {c.currentBandCode ? `— Active Band: ${c.currentBandCode} (Will Replace)` : '— (No Active Band)'}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setIsAssignModalOpen(false)} variant="outline" size="md">
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="md">
-              Confirm Assignment
-            </Button>
-          </div>
+              <FormField label="Select Wearer (Unassigned Only)" required>
+                <Select
+                  value={selectedWearerId}
+                  onChange={(e) => setSelectedWearerId(e.target.value)}
+                  required
+                >
+                  {unassignedWearers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.ageRange}) — Guardian: {c.primaryGuardian?.fullName || 'Registered'}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button onClick={() => setIsAssignModalOpen(false)} variant="outline" size="md">
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="md" disabled={!selectedWearerId}>
+                  Confirm Assignment
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="py-3 text-center space-y-3">
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-brand text-left space-y-2">
+                <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
+                  <AlertOctagon className="w-4 h-4 text-slate-500" />
+                  <span>No Unconnected Wearers Found</span>
+                </div>
+                <p className="text-xs text-content-muted leading-relaxed">
+                  All registered wearers are already connected to active bands.
+                </p>
+                <p className="text-[11px] text-content-muted border-t border-slate-200 pt-2">
+                  To swap or upgrade a band for an existing wearer, click the <strong className="text-navy">"Replace"</strong> button next to their active band in the inventory table.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button onClick={() => setIsAssignModalOpen(false)} variant="primary" size="md">
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </form>
       </Modal>
 
