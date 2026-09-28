@@ -471,6 +471,38 @@ export const BandsListPage: React.FC = () => {
         description="Link this available band directly to a registered wearer."
       >
         <form onSubmit={handleConfirmAssign} className="space-y-4">
+          {(() => {
+            const selectedWearer = childrenRecords.find((c) => c.id === selectedWearerId);
+            if (!selectedWearer) return null;
+
+            if (selectedWearer.currentBandCode) {
+              return (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-brand text-xs text-amber-900 flex items-start gap-2.5">
+                  <AlertOctagon className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-amber-950">Wearer Already Has an Active Band</p>
+                    <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                      <strong>{selectedWearer.name}</strong> is currently assigned to band <span className="font-mono font-bold">{selectedWearer.currentBandCode}</span>.
+                      Assigning <span className="font-mono font-bold text-navy">{selectedBandForAssign?.referenceCode}</span> will reassign them to this band and safely retire their previous band.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-brand text-xs text-emerald-900 flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold text-emerald-950">New Wearer Protection</p>
+                  <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                    <strong>{selectedWearer.name}</strong> has no active band. Band <span className="font-mono font-bold text-navy">{selectedBandForAssign?.referenceCode}</span> will be activated as their primary emergency band.
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+
           <FormField label="Select Wearer" required>
             <Select
               value={selectedWearerId}
@@ -479,7 +511,7 @@ export const BandsListPage: React.FC = () => {
             >
               {childrenRecords.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.ageRange}) — Current Band: {c.currentBandCode || 'None'}
+                  {c.name} ({c.ageRange}) {c.currentBandCode ? `— Active Band: ${c.currentBandCode} (Will Replace)` : '— (No Active Band)'}
                 </option>
               ))}
             </Select>

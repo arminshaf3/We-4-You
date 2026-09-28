@@ -826,22 +826,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 4. Band Handlers
   const assignBandToChild = (bandCode: string, childId: string): boolean => {
-    const band = bands.find((b) => b.referenceCode.toUpperCase() === bandCode.toUpperCase());
+    const normCode = bandCode.toUpperCase().replace(/[\s-]/g, '');
+    const band = bands.find((b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === normCode);
     if (!band || band.status !== 'available') return false;
 
+    const today = new Date().toISOString().substring(0, 10);
+    const targetChild = childrenRecords.find((c) => c.id === childId);
+    const prevBandCode = targetChild?.currentBandCode;
+
+    // 1. Update bands: assign new band and retire previous band if one was assigned
     setBands((prev) =>
-      prev.map((b) =>
-        b.id === band.id
-          ? { ...b, status: 'assigned', childId, assignedDate: new Date().toISOString().substring(0, 10) }
-          : b
-      )
+      prev.map((b) => {
+        const bNorm = b.referenceCode.replace(/[\s-]/g, '').toUpperCase();
+        if (bNorm === normCode) {
+          return {
+            ...b,
+            status: 'assigned',
+            childId,
+            assignedDate: today,
+          };
+        }
+        if (prevBandCode && bNorm === prevBandCode.replace(/[\s-]/g, '').toUpperCase()) {
+          return {
+            ...b,
+            status: 'retired',
+            retiredDate: today,
+            replacedByCode: band.referenceCode,
+            replacementNotes: `Replaced by ${band.referenceCode} on ${today}`,
+          };
+        }
+        return b;
+      })
     );
+
+    // 2. Update Wearer Record
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, currentBandCode: band.referenceCode } : c))
     );
-    supabaseService.updateBand(band.referenceCode, { status: 'assigned', childId, assignedDate: new Date().toISOString().substring(0, 10) });
+
+    // 3. Update Supabase
+    supabaseService.updateBand(band.referenceCode, { status: 'assigned', childId, assignedDate: today });
+    if (prevBandCode && prevBandCode.toUpperCase() !== band.referenceCode.toUpperCase()) {
+      supabaseService.updateBand(prevBandCode, {
+        status: 'retired',
+        retiredDate: today,
+        replacedByCode: band.referenceCode,
+        replacementNotes: `Replaced by ${band.referenceCode} on ${today}`,
+      });
+    }
     supabaseService.updateWearer(childId, { currentBandCode: band.referenceCode });
-    logAction('Band Assigned', `Assigned band ${band.referenceCode} to wearer ${childId}.`, 'band', band.id);
+
+    logAction(
+      'Band Assigned',
+      `Assigned band ${band.referenceCode} to wearer "${targetChild?.name || childId}"${prevBandCode ? ` (superseding ${prevBandCode})` : ''}.`,
+      'band',
+      band.id
+    );
+    addToast(
+      'success',
+      'Band Assigned',
+      `Band ${band.referenceCode} is now assigned to ${targetChild?.name || 'wearer'}.`
+    );
     return true;
   };
 
