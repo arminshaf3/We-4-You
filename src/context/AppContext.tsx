@@ -284,7 +284,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 1. Sync automated subscription statuses (expiring_soon / expired)
     supabaseService.syncSubscriptionStatuses().catch(() => {});
 
-    // 2. Fetch live data
+    // 2. Fetch live data with smart merge
+    const syncRegistrations = () => {
+      supabaseService.getRegistrations().then((data) => {
+        if (data && data.length > 0) {
+          setRegistrations((prev) => {
+            const map = new Map<string, Registration>();
+            prev.forEach((r) => map.set(r.id, r));
+            data.forEach((r) => map.set(r.id, r));
+            return Array.from(map.values()).sort((a, b) => (b.submissionDate || '').localeCompare(a.submissionDate || ''));
+          });
+        }
+      });
+    };
+
+    const syncIncidents = () => {
+      supabaseService.getIncidents().then((data) => {
+        if (data && data.length > 0) {
+          setIncidents((prev) => {
+            const map = new Map<string, Incident>();
+            prev.forEach((i) => map.set(i.id, i));
+            data.forEach((i) => map.set(i.id, i));
+            return Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+          });
+        }
+      });
+    };
+
     supabaseService.getVendors().then((data) => {
       if (data && data.length > 0) setVendors(data);
     });
@@ -301,13 +327,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data && data.length > 0) setChildrenRecords(data);
     });
 
-    supabaseService.getRegistrations().then((data) => {
-      if (data && data.length > 0) setRegistrations(data);
-    });
-
-    supabaseService.getIncidents().then((data) => {
-      if (data && data.length > 0) setIncidents(data);
-    });
+    syncRegistrations();
+    syncIncidents();
 
     supabaseService.getPayments().then((data) => {
       if (data && data.length > 0) setPayments(data);
@@ -325,10 +346,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data && data.length > 0) setEnquiries(data);
     });
 
+    // Set background polling timer every 8 seconds for multi-device cross-sync
+    const pollInterval = setInterval(() => {
+      syncRegistrations();
+      syncIncidents();
+    }, 8000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncRegistrations();
+        syncIncidents();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // 3. Register Supabase Realtime listeners
     const channel = supabaseService.subscribeToRealtime({
       onRegistrationChange: (payload) => {
-        supabaseService.getRegistrations().then((data) => data && setRegistrations(data));
+        syncRegistrations();
         if (payload.eventType === 'INSERT') {
           addToast('info', 'New Registration Received', `Reference: ${payload.new?.reference_number || 'Incoming'}`);
         } else if (payload.eventType === 'UPDATE' && payload.new?.status === 'approved') {
@@ -336,7 +371,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       },
       onIncidentChange: (payload) => {
-        supabaseService.getIncidents().then((data) => data && setIncidents(data));
+        syncIncidents();
         if (payload.eventType === 'INSERT') {
           addToast('warning', 'Incoming Assistance Incident', `Report ID: ${payload.new?.incident_ref || 'Incoming'}`);
         }
@@ -353,6 +388,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (channel) {
         channel.unsubscribe();
       }

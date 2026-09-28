@@ -312,15 +312,42 @@ export const supabaseService = {
   async getRegistrations(): Promise<Registration[] | null> {
     if (!isSupabaseConfigured) return null;
     try {
-      const { data, error } = await supabase.from('registrations').select('*').order('submission_date', { ascending: false });
-      if (error || !data) return null;
+      const { data, error } = await supabase
+        .from('registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.warn('Supabase getRegistrations query returned error, falling back:', error.message);
+        // Retry ordering by submission_date if created_at is not indexed
+        const fallback = await supabase.from('registrations').select('*');
+        if (fallback.error || !fallback.data) return null;
+        return fallback.data.map((r: any) => ({
+          id: r.id,
+          referenceNumber: r.reference_number,
+          child: r.wearer_data,
+          guardian: r.contact_data,
+          bandCode: r.band_code,
+          vendorId: r.vendor_id || 'DIRECT',
+          planId: r.plan_id,
+          status: r.status,
+          statusReason: r.status_reason || undefined,
+          paymentStatus: r.payment_status,
+          paymentRef: r.payment_ref || undefined,
+          cardDetails: r.card_details || undefined,
+          timeline: r.timeline || [],
+          submissionDate: r.submission_date ? r.submission_date.substring(0, 16).replace('T', ' ') : new Date().toISOString().substring(0, 16).replace('T', ' '),
+        }));
+      }
+
+      if (!data) return [];
       return data.map((r: any) => ({
         id: r.id,
         referenceNumber: r.reference_number,
         child: r.wearer_data,
         guardian: r.contact_data,
         bandCode: r.band_code,
-        vendorId: r.vendor_id || 'central',
+        vendorId: r.vendor_id || 'DIRECT',
         planId: r.plan_id,
         status: r.status,
         statusReason: r.status_reason || undefined,
@@ -328,9 +355,10 @@ export const supabaseService = {
         paymentRef: r.payment_ref || undefined,
         cardDetails: r.card_details || undefined,
         timeline: r.timeline || [],
-        submissionDate: r.submission_date ? r.submission_date.substring(0, 10) : new Date().toISOString().substring(0, 10),
+        submissionDate: r.submission_date ? r.submission_date.substring(0, 16).replace('T', ' ') : new Date().toISOString().substring(0, 16).replace('T', ' '),
       }));
-    } catch {
+    } catch (err) {
+      console.error('Supabase getRegistrations exception:', err);
       return null;
     }
   },
@@ -338,23 +366,38 @@ export const supabaseService = {
   async insertRegistration(reg: Registration): Promise<boolean> {
     if (!isSupabaseConfigured) return false;
     try {
+      // Validate vendorId: If vendor is DIRECT, central, or not a valid UUID/id in DB, pass null to prevent foreign key violation
+      const validVendorId =
+        reg.vendorId &&
+        reg.vendorId !== 'DIRECT' &&
+        reg.vendorId !== 'central' &&
+        reg.vendorId.startsWith('VND-')
+          ? reg.vendorId
+          : null;
+
       const { error } = await supabase.from('registrations').insert({
         id: reg.id,
         reference_number: reg.referenceNumber,
         wearer_data: reg.child,
         contact_data: reg.guardian,
-        band_code: reg.bandCode,
-        vendor_id: reg.vendorId === 'central' ? null : reg.vendorId,
-        plan_id: reg.planId,
-        status: reg.status,
+        band_code: reg.bandCode.toUpperCase().trim(),
+        vendor_id: validVendorId,
+        plan_id: reg.planId || null,
+        status: reg.status || 'pending_verification',
         status_reason: reg.statusReason || null,
-        payment_status: reg.paymentStatus,
+        payment_status: reg.paymentStatus || 'pending',
         payment_ref: reg.paymentRef || null,
         card_details: reg.cardDetails || null,
-        timeline: reg.timeline,
+        timeline: reg.timeline || [],
       });
-      return !error;
-    } catch {
+
+      if (error) {
+        console.error('Supabase insertRegistration error:', error.message, error.details);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Supabase insertRegistration exception:', err);
       return false;
     }
   },
