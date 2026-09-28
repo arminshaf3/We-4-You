@@ -29,9 +29,13 @@ export const RegistrationConfirmationPage: React.FC = () => {
   const state = location.state as {
     referenceNumber?: string;
     childName?: string;
+    childBirthDate?: string;
+    childAge?: string;
+    childBloodGroup?: string;
     bandCode?: string;
     guardianName?: string;
     guardianPhone?: string;
+    guardianAddress?: string;
     guardianLanguage?: string;
     vendorName?: string;
     durationMonths?: number;
@@ -53,8 +57,12 @@ export const RegistrationConfirmationPage: React.FC = () => {
   const referenceNumber = state?.referenceNumber || latestReg?.referenceNumber || 'REG-2026-0186';
   const bandCode = state?.bandCode || latestReg?.bandCode || 'W4Y-7821-K9';
   const childName = state?.childName || latestReg?.child?.name || 'Leo Vance';
+  const childBirthDate = state?.childBirthDate || latestReg?.child?.birthDate;
+  const childAge = state?.childAge || latestReg?.child?.calculatedAge || latestReg?.child?.ageRange;
+  const childBloodGroup = state?.childBloodGroup || latestReg?.child?.bloodGroup;
   const guardianName = state?.guardianName || latestReg?.guardian?.fullName || 'Elena Vance';
   const guardianPhone = state?.guardianPhone || latestReg?.guardian?.mobile || '+1 (555) 234-5678';
+  const guardianAddress = state?.guardianAddress || latestReg?.guardian?.address;
   const guardianLanguage = state?.guardianLanguage || latestReg?.guardian?.preferredLanguage || 'English';
   const vendorName = state?.vendorName || 'Downtown Pharmacy & Care Supplies';
   const durationMonths = state?.durationMonths || 24;
@@ -193,8 +201,12 @@ export const RegistrationConfirmationPage: React.FC = () => {
             referenceNumber={referenceNumber}
             bandCode={bandCode}
             childName={childName}
+            childBirthDate={childBirthDate}
+            childAge={childAge}
+            childBloodGroup={childBloodGroup}
             guardianName={guardianName}
             guardianPhone={guardianPhone}
+            guardianAddress={guardianAddress}
             guardianLanguage={guardianLanguage}
             vendorName={vendorName}
             planName={planName}

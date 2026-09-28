@@ -4,9 +4,10 @@ import { PageHeader } from '../../components/admin/PageHeader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { FormField, Input, Select } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { supabaseService } from '../../services/supabaseService';
+import { calculateDetailedAge, BLOOD_GROUPS, GENDER_OPTIONS } from '../../utils/ageCalculator';
 import {
   User,
   Shield,
@@ -22,6 +23,10 @@ import {
   CheckCircle2,
   Camera,
   Upload,
+  HeartPulse,
+  MapPin,
+  Calendar,
+  AlertCircle,
 } from 'lucide-react';
 
 export const ChildDetailPage: React.FC = () => {
@@ -47,9 +52,20 @@ export const ChildDetailPage: React.FC = () => {
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState(child?.name || '');
-  const [editAge, setEditAge] = useState(child?.ageRange || '');
+  const [editBirthDate, setEditBirthDate] = useState(child?.birthDate || '');
+  const [editCalculatedAge, setEditCalculatedAge] = useState(child?.calculatedAge || '');
+  const [editAgeRange, setEditAgeRange] = useState(child?.ageRange || '');
+  const [editGender, setEditGender] = useState(child?.gender || '');
+  const [editBloodGroup, setEditBloodGroup] = useState(child?.bloodGroup || '');
+  const [editNationalId, setEditNationalId] = useState(child?.nationalId || '');
+  const [editMedicalNotes, setEditMedicalNotes] = useState(child?.medicalNotes || '');
+  
   const [editGuardianName, setEditGuardianName] = useState(child?.primaryGuardian.fullName || '');
   const [editMobile, setEditMobile] = useState(child?.primaryGuardian.mobile || '');
+  const [editSecondaryPhone, setEditSecondaryPhone] = useState(child?.primaryGuardian.secondaryPhone || '');
+  const [editAddress, setEditAddress] = useState(child?.primaryGuardian.address || '');
+  const [editGuardianNationalId, setEditGuardianNationalId] = useState(child?.primaryGuardian.nationalId || '');
+
   const [changeReason, setChangeReason] = useState('');
   const [changeVerified, setChangeVerified] = useState(false);
   const [editError, setEditError] = useState('');
@@ -65,13 +81,35 @@ export const ChildDetailPage: React.FC = () => {
 
   const handleOpenEdit = () => {
     setEditName(child.name);
-    setEditAge(child.ageRange);
+    setEditBirthDate(child.birthDate || '');
+    setEditCalculatedAge(child.calculatedAge || '');
+    setEditAgeRange(child.ageRange);
+    setEditGender(child.gender || '');
+    setEditBloodGroup(child.bloodGroup || '');
+    setEditNationalId(child.nationalId || '');
+    setEditMedicalNotes(child.medicalNotes || '');
+
     setEditGuardianName(child.primaryGuardian.fullName);
     setEditMobile(child.primaryGuardian.mobile);
+    setEditSecondaryPhone(child.primaryGuardian.secondaryPhone || '');
+    setEditAddress(child.primaryGuardian.address || '');
+    setEditGuardianNationalId(child.primaryGuardian.nationalId || '');
+
     setChangeReason('');
     setChangeVerified(false);
     setEditError('');
     setIsEditModalOpen(true);
+  };
+
+  const handleBirthDateChange = (val: string) => {
+    setEditBirthDate(val);
+    if (val) {
+      const detailed = calculateDetailedAge(val);
+      setEditCalculatedAge(detailed.formattedAge);
+      if (detailed.suggestedCategory) {
+        setEditAgeRange(detailed.suggestedCategory);
+      }
+    }
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
@@ -88,11 +126,20 @@ export const ChildDetailPage: React.FC = () => {
 
     updateChildRecord(child.id, {
       name: editName.trim(),
-      ageRange: editAge.trim(),
+      birthDate: editBirthDate || undefined,
+      calculatedAge: editCalculatedAge || undefined,
+      ageRange: editAgeRange.trim(),
+      gender: editGender || undefined,
+      bloodGroup: editBloodGroup || undefined,
+      nationalId: editNationalId.trim() || undefined,
+      medicalNotes: editMedicalNotes.trim() || undefined,
       primaryGuardian: {
         ...child.primaryGuardian,
         fullName: editGuardianName.trim(),
         mobile: editMobile.trim(),
+        secondaryPhone: editSecondaryPhone.trim() || undefined,
+        address: editAddress.trim() || undefined,
+        nationalId: editGuardianNationalId.trim() || undefined,
       },
     });
 
@@ -134,36 +181,82 @@ export const ChildDetailPage: React.FC = () => {
               <span className="text-xs font-mono text-content-muted">ID: {child.id}</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row gap-5 items-start">
               {signedPhotoUrl ? (
-                <div className="relative w-20 h-20 rounded-brand overflow-hidden border border-border-subtle flex-shrink-0 bg-slate-100">
+                <div className="relative w-24 h-24 rounded-brand-lg overflow-hidden border border-border-subtle flex-shrink-0 bg-slate-100 shadow-sm">
                   <img src={signedPhotoUrl} alt={child.name} className="w-full h-full object-cover" />
                   <span className="absolute bottom-0 inset-x-0 bg-navy/80 text-[9px] text-center text-white py-0.5 font-medium">
                     Private
                   </span>
                 </div>
               ) : (
-                <div className="w-20 h-20 rounded-brand border border-border-subtle bg-slate-50 flex flex-col items-center justify-center text-slate-400 flex-shrink-0">
-                  <Camera className="w-6 h-6 mb-1" />
+                <div className="w-24 h-24 rounded-brand-lg border border-border-subtle bg-slate-50 flex flex-col items-center justify-center text-slate-400 flex-shrink-0">
+                  <Camera className="w-8 h-8 mb-1" />
                   <span className="text-[10px]">No Photo</span>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs flex-1">
                 <div>
                   <span className="text-content-muted block mb-0.5">Wearer Full Name</span>
-                  <span className="text-base font-bold text-navy">{child.name}</span>
+                  <span className="text-base font-bold text-navy block">{child.name}</span>
+                  <span className="text-content-muted text-[11px] block mt-0.5">
+                    Category: <strong className="text-slate-700">{child.ageRange}</strong>
+                  </span>
                 </div>
+
                 <div>
-                  <span className="text-content-muted block mb-0.5">Category / Age Group</span>
-                  <span className="text-sm font-semibold text-navy">{child.ageRange}</span>
+                  <span className="text-content-muted block mb-0.5">Date of Birth &amp; Computed Age</span>
+                  {child.birthDate ? (
+                    <div>
+                      <span className="text-sm font-semibold text-navy block">{child.birthDate}</span>
+                      <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-300">
+                        {child.calculatedAge || 'Age computed'}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-semibold text-navy">{child.ageRange}</span>
+                  )}
                 </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Blood Group</span>
+                  {child.bloodGroup && child.bloodGroup !== 'Unknown' ? (
+                    <span className="inline-block px-2.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold border border-rose-200">
+                      {child.bloodGroup}
+                    </span>
+                  ) : (
+                    <span className="text-content-muted">Unknown / Unrecorded</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Gender</span>
+                  <span className="font-semibold text-slate-800">{child.gender || 'Not specified'}</span>
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">National / Student ID</span>
+                  <span className="font-mono text-slate-800">{child.nationalId || 'None recorded'}</span>
+                </div>
+
                 <div>
                   <span className="text-content-muted block mb-0.5">Registration Date</span>
                   <span className="text-sm font-semibold text-navy">{child.registeredDate}</span>
                 </div>
               </div>
             </div>
+
+            {/* Medical / Allergy Banner if present */}
+            {child.medicalNotes && (
+              <div className="p-3.5 bg-amber-50/80 rounded-brand border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-amber-900 block mb-0.5">Emergency Medical &amp; Special Care Notes:</span>
+                  <p className="text-amber-900 leading-relaxed">{child.medicalNotes}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Linked Emergency Contacts & Contact Priority */}
@@ -194,19 +287,44 @@ export const ChildDetailPage: React.FC = () => {
                 </div>
                 <span className="text-xs font-bold text-navy bg-white px-2 py-0.5 rounded border">Primary</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-                <div>
-                  <span className="text-content-muted block">Mobile Telephone:</span>
-                  <span className="font-mono text-sm font-bold text-[#088F5B] flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5" />
-                    {child.primaryGuardian.mobile}
-                  </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-content-muted block">Primary Mobile Phone:</span>
+                    <span className="font-mono text-sm font-bold text-[#088F5B] flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5" />
+                      {child.primaryGuardian.mobile}
+                    </span>
+                  </div>
+                  {child.primaryGuardian.secondaryPhone && (
+                    <div>
+                      <span className="text-content-muted block">Secondary Telephone:</span>
+                      <span className="font-mono text-slate-700 font-medium">{child.primaryGuardian.secondaryPhone}</span>
+                    </div>
+                  )}
+                  {child.primaryGuardian.nationalId && (
+                    <div>
+                      <span className="text-content-muted block">Guardian ID / Passport:</span>
+                      <span className="font-mono text-slate-700">{child.primaryGuardian.nationalId}</span>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <span className="text-content-muted block">Language / Email:</span>
-                  <span className="text-content-body">
-                    {child.primaryGuardian.preferredLanguage} &bull; {child.primaryGuardian.email || 'No email provided'}
-                  </span>
+
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-content-muted block">Language / Email:</span>
+                    <span className="text-content-body">
+                      {child.primaryGuardian.preferredLanguage} &bull; {child.primaryGuardian.email || 'No email provided'}
+                    </span>
+                  </div>
+                  {child.primaryGuardian.address && (
+                    <div className="pt-1">
+                      <span className="text-content-muted block">Residential Address:</span>
+                      <span className="text-slate-800 leading-tight block bg-white p-2 rounded border border-border-subtle">
+                        {child.primaryGuardian.address}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -373,39 +491,146 @@ export const ChildDetailPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Wearer Full Name" required>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                required
-              />
-            </FormField>
+          {/* Wearer Details Section */}
+          <div className="space-y-3 pb-3 border-b border-border-subtle">
+            <h4 className="font-heading font-bold text-xs text-navy uppercase tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-navy" />
+              <span>Wearer Identification &amp; Demographics</span>
+            </h4>
 
-            <FormField label="Category / Age Group" required>
-              <Input
-                value={editAge}
-                onChange={(e) => setEditAge(e.target.value)}
-                required
-              />
-            </FormField>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Wearer Full Name" required>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField
+                label="Date of Birth (Birthdate)"
+                hint={
+                  editCalculatedAge ? (
+                    <span className="font-semibold text-emerald-700">Calculated: {editCalculatedAge}</span>
+                  ) : undefined
+                }
+              >
+                <Input
+                  type="date"
+                  value={editBirthDate}
+                  onChange={(e) => handleBirthDateChange(e.target.value)}
+                  max={new Date().toISOString().substring(0, 10)}
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <FormField label="Blood Group">
+                <Select
+                  value={editBloodGroup}
+                  onChange={(e) => setEditBloodGroup(e.target.value)}
+                >
+                  <option value="">Select blood group...</option>
+                  {BLOOD_GROUPS.map((bg) => (
+                    <option key={bg} value={bg}>
+                      {bg}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Gender">
+                <Select
+                  value={editGender}
+                  onChange={(e) => setEditGender(e.target.value)}
+                >
+                  <option value="">Select gender...</option>
+                  {GENDER_OPTIONS.map((g) => (
+                    <option key={g.value} value={g.value}>
+                      {g.label}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+
+              <FormField label="Category / Age Group" required>
+                <Input
+                  value={editAgeRange}
+                  onChange={(e) => setEditAgeRange(e.target.value)}
+                  required
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Wearer National / Student ID (Optional)">
+                <Input
+                  value={editNationalId}
+                  onChange={(e) => setEditNationalId(e.target.value)}
+                  placeholder="e.g. STU-10293 or Passport #"
+                />
+              </FormField>
+
+              <FormField label="Emergency Medical Notes / Allergies (Optional)">
+                <Input
+                  value={editMedicalNotes}
+                  onChange={(e) => setEditMedicalNotes(e.target.value)}
+                  placeholder="e.g. Asthmatic, Penicillin allergy, Diabetic"
+                />
+              </FormField>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Primary Contact Name" required>
-              <Input
-                value={editGuardianName}
-                onChange={(e) => setEditGuardianName(e.target.value)}
-                required
-              />
-            </FormField>
+          {/* Guardian Details Section */}
+          <div className="space-y-3 pt-1">
+            <h4 className="font-heading font-bold text-xs text-navy uppercase tracking-wider flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-navy" />
+              <span>Primary Guardian &amp; Address</span>
+            </h4>
 
-            <FormField label="Primary Contact Mobile Telephone" required hint="Sensitive contact field">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Primary Contact Name" required>
+                <Input
+                  value={editGuardianName}
+                  onChange={(e) => setEditGuardianName(e.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField label="Primary Contact Mobile Phone" required hint="Sensitive contact field">
+                <Input
+                  type="tel"
+                  value={editMobile}
+                  onChange={(e) => setEditMobile(e.target.value)}
+                  required
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Alternative / Secondary Phone (Optional)">
+                <Input
+                  type="tel"
+                  value={editSecondaryPhone}
+                  onChange={(e) => setEditSecondaryPhone(e.target.value)}
+                  placeholder="e.g. +1 (555) 987-6543"
+                />
+              </FormField>
+
+              <FormField label="Guardian National ID / Passport # (Optional)">
+                <Input
+                  value={editGuardianNationalId}
+                  onChange={(e) => setEditGuardianNationalId(e.target.value)}
+                  placeholder="e.g. ID-8849201"
+                />
+              </FormField>
+            </div>
+
+            <FormField label="Residential / Postal Address (Optional)">
               <Input
-                type="tel"
-                value={editMobile}
-                onChange={(e) => setEditMobile(e.target.value)}
-                required
+                value={editAddress}
+                onChange={(e) => setEditAddress(e.target.value)}
+                placeholder="e.g. 123 Maple Street, City, State, ZIP"
               />
             </FormField>
           </div>

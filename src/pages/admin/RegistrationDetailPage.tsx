@@ -186,30 +186,87 @@ export const RegistrationDetailPage: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
               <div className="flex items-center gap-2 text-navy font-heading font-bold text-base">
                 <User className="w-5 h-5 text-navy" />
-                <span>Wearer &amp; Band Details</span>
+                <span>Wearer Profile &amp; Band Details</span>
               </div>
-              <span className="text-xs text-content-muted">Sample Record</span>
+              <span className="text-xs text-content-muted">Reference: {reg.referenceNumber}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-content-muted block mb-0.5">Wearer's Name</span>
-                <span className="text-base font-bold text-navy">{reg.child.name}</span>
-                <span className="text-content-muted block mt-0.5">Category / Age Group: {reg.child.ageRange || 'Not provided'}</span>
-              </div>
+            <div className="flex flex-col sm:flex-row gap-5 items-start">
+              {/* Photo */}
+              {reg.child.photoUrl ? (
+                <div className="w-24 h-24 rounded-brand-lg overflow-hidden border-2 border-emerald-500/30 flex-shrink-0 shadow-sm bg-slate-100">
+                  <img src={reg.child.photoUrl} alt="Wearer photo" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-brand-lg border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 bg-slate-50 flex-shrink-0">
+                  <User className="w-8 h-8 text-slate-300 mb-1" />
+                  <span className="text-[10px]">No Photo</span>
+                </div>
+              )}
 
-              <div>
-                <span className="text-content-muted block mb-0.5">Printed Band Reference</span>
-                <span className="text-base font-mono font-bold text-navy bg-mint-pale px-2.5 py-1 rounded border border-emerald-300 inline-block">
-                  {reg.bandCode}
-                </span>
+              {/* Core Wearer Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs flex-1">
+                <div>
+                  <span className="text-content-muted block mb-0.5">Wearer's Full Name</span>
+                  <span className="text-base font-bold text-navy block">{reg.child.name}</span>
+                  <span className="text-content-muted text-[11px] block mt-0.5">
+                    Category: <strong className="text-slate-700">{reg.child.ageRange || 'Not specified'}</strong>
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Date of Birth &amp; Calculated Age</span>
+                  {reg.child.birthDate ? (
+                    <div>
+                      <span className="text-sm font-semibold text-navy block">{reg.child.birthDate}</span>
+                      <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-300">
+                        {reg.child.calculatedAge || 'Age computed'}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400 italic">Not recorded</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Printed Band Reference</span>
+                  <span className="text-sm font-mono font-bold text-navy bg-mint-pale px-2.5 py-1 rounded border border-emerald-300 inline-block">
+                    {reg.bandCode}
+                  </span>
+                </div>
+
+                {/* Additional Demographics */}
+                <div>
+                  <span className="text-content-muted block mb-0.5">Blood Group</span>
+                  {reg.child.bloodGroup && reg.child.bloodGroup !== 'Unknown' ? (
+                    <span className="inline-block px-2.5 py-0.5 rounded bg-rose-50 text-rose-700 font-bold border border-rose-200">
+                      {reg.child.bloodGroup}
+                    </span>
+                  ) : (
+                    <span className="text-content-muted">Unknown / Unspecified</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Gender</span>
+                  <span className="font-semibold text-slate-800">{reg.child.gender || 'Not specified'}</span>
+                </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Wearer National / Student ID</span>
+                  <span className="font-mono text-slate-800">{reg.child.nationalId || 'None provided'}</span>
+                </div>
               </div>
             </div>
 
-            {reg.child.photoUrl && (
-              <div className="pt-2">
-                <span className="text-xs text-content-muted block mb-1.5">Submitted Photo</span>
-                <img src={reg.child.photoUrl} alt="Submitted wearer preview" className="w-24 h-24 rounded-brand object-cover border" />
+            {/* Medical / Allergy Notes if present */}
+            {reg.child.medicalNotes && (
+              <div className="p-3.5 bg-amber-50/80 rounded-brand border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-amber-900 block mb-0.5">Important Medical &amp; Emergency Notes:</span>
+                  <p className="text-amber-900 leading-relaxed">{reg.child.medicalNotes}</p>
+                </div>
               </div>
             )}
           </div>
@@ -218,40 +275,81 @@ export const RegistrationDetailPage: React.FC = () => {
           <div className="bg-white p-6 rounded-brand border border-border-subtle shadow-subtle space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border-subtle text-navy font-heading font-bold text-base">
               <ShieldCheck className="w-5 h-5 text-navy" />
-              <span>Registered Contact Information</span>
+              <span>Registered Guardian &amp; Emergency Contact</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-content-muted block mb-0.5">Primary Contact</span>
-                <span className="text-sm font-semibold text-navy block">
-                  {reg.guardian.fullName} ({reg.guardian.relationship})
-                </span>
-                <span className="font-mono text-navy font-medium block mt-1">
-                  {reg.guardian.mobile}
-                </span>
-                {reg.guardian.email && (
-                  <span className="text-content-muted block">{reg.guardian.email}</span>
-                )}
-                <span className="text-content-muted block mt-1">
-                  Language: {reg.guardian.preferredLanguage}
-                </span>
-              </div>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-content-muted block mb-0.5">Primary Contact / Guardian</span>
+                  <span className="text-sm font-semibold text-navy block">
+                    {reg.guardian.fullName} ({reg.guardian.relationship})
+                  </span>
+                </div>
 
-              <div>
-                <span className="text-content-muted block mb-0.5">Secondary Emergency Contact</span>
-                {reg.guardian.emergencyContact ? (
+                <div>
+                  <span className="text-content-muted block mb-0.5">Primary Mobile Phone</span>
+                  <span className="font-mono text-sm font-bold text-[#088F5B] block">
+                    {reg.guardian.mobile}
+                  </span>
+                </div>
+
+                {reg.guardian.secondaryPhone && (
                   <div>
-                    <span className="text-sm font-semibold text-navy block">
-                      {reg.guardian.emergencyContact.fullName} ({reg.guardian.emergencyContact.relationship})
-                    </span>
-                    <span className="font-mono text-navy font-medium block mt-1">
-                      {reg.guardian.emergencyContact.telephone}
+                    <span className="text-content-muted block mb-0.5">Alternative / Daytime Telephone</span>
+                    <span className="font-mono font-medium text-slate-700 block">
+                      {reg.guardian.secondaryPhone}
                     </span>
                   </div>
-                ) : (
-                  <span className="text-content-muted italic">No secondary contact provided</span>
                 )}
+
+                {reg.guardian.email && (
+                  <div>
+                    <span className="text-content-muted block mb-0.5">Email Address</span>
+                    <span className="text-slate-700 block">{reg.guardian.email}</span>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Preferred Language</span>
+                  <span className="text-slate-700 font-medium">{reg.guardian.preferredLanguage}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {reg.guardian.address && (
+                  <div>
+                    <span className="text-content-muted block mb-0.5">Residential / Postal Address</span>
+                    <span className="text-slate-800 leading-relaxed block bg-neutral-soft p-2.5 rounded border border-border-subtle">
+                      {reg.guardian.address}
+                    </span>
+                  </div>
+                )}
+
+                {reg.guardian.nationalId && (
+                  <div>
+                    <span className="text-content-muted block mb-0.5">Guardian National ID / Passport #</span>
+                    <span className="font-mono text-slate-800 block bg-slate-50 px-2 py-1 rounded border inline-block">
+                      {reg.guardian.nationalId}
+                    </span>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Secondary Emergency Backup Contact</span>
+                  {reg.guardian.emergencyContact ? (
+                    <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                      <span className="text-sm font-semibold text-navy block">
+                        {reg.guardian.emergencyContact.fullName} ({reg.guardian.emergencyContact.relationship})
+                      </span>
+                      <span className="font-mono text-navy font-bold block mt-1">
+                        {reg.guardian.emergencyContact.telephone}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-content-muted italic">No secondary contact provided</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

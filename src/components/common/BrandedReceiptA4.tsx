@@ -15,8 +15,12 @@ export interface BrandedReceiptA4Props {
   referenceNumber: string;
   bandCode: string;
   childName: string;
+  childBirthDate?: string;
+  childAge?: string;
+  childBloodGroup?: string;
   guardianName: string;
   guardianPhone: string;
+  guardianAddress?: string;
   guardianLanguage?: string;
   vendorName?: string;
   planName: string;
@@ -34,8 +38,12 @@ export const BrandedReceiptA4: React.FC<BrandedReceiptA4Props> = ({
   referenceNumber,
   bandCode,
   childName,
+  childBirthDate,
+  childAge,
+  childBloodGroup,
   guardianName,
   guardianPhone,
+  guardianAddress,
   guardianLanguage = 'English',
   vendorName = 'Official We 4 You Partner Outlet',
   planName,
@@ -176,6 +184,16 @@ export const BrandedReceiptA4: React.FC<BrandedReceiptA4Props> = ({
             <p className="flex items-center gap-1.5">
               <span className="text-slate-400 font-medium">Wearer Name:</span>
               <span className="font-semibold text-[#0f2942]">{childName || 'Lucas Vance'}</span>
+              {childAge && (
+                <span className="text-[11px] text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                  {childAge}
+                </span>
+              )}
+              {childBloodGroup && childBloodGroup !== 'Unknown' && (
+                <span className="text-[11px] text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200 font-bold">
+                  {childBloodGroup}
+                </span>
+              )}
             </p>
             <p className="flex items-center gap-1.5">
               <span className="text-slate-400 font-medium">Band Reference:</span>
@@ -187,6 +205,12 @@ export const BrandedReceiptA4: React.FC<BrandedReceiptA4Props> = ({
               <span className="text-slate-400 font-medium">Registered Phone:</span>
               <span>{guardianPhone || '+1 (555) 019-2834'}</span>
             </p>
+            {guardianAddress && (
+              <p className="flex items-center gap-1.5">
+                <span className="text-slate-400 font-medium">Address:</span>
+                <span className="text-slate-700">{guardianAddress}</span>
+              </p>
+            )}
             <p className="flex items-center gap-1.5">
               <span className="text-slate-400 font-medium">Retail Partner:</span>
               <span>{vendorName}</span>

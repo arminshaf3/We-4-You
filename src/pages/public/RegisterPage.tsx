@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
-import { FormField, Input, Select } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { CardPaymentForm, CardFormData, validateCardData } from '../../components/common/CardPaymentForm';
 import { useApp } from '../../context/AppContext';
+import { supabaseService } from '../../services/supabaseService';
+import { calculateDetailedAge, BLOOD_GROUPS, GENDER_OPTIONS } from '../../utils/ageCalculator';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -23,6 +25,16 @@ import {
   Store,
   ChevronDown,
   ChevronUp,
+  Calendar,
+  Heart,
+  Camera,
+  Upload,
+  Trash2,
+  MapPin,
+  FileText,
+  Activity,
+  AlertTriangle,
+  Info,
 } from 'lucide-react';
 import { RelationshipType, PaymentMethod } from '../../types';
 
@@ -35,20 +47,38 @@ export const RegisterPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvancedContact, setShowAdvancedContact] = useState(false);
+  const [showMedicalSection, setShowMedicalSection] = useState(false);
 
-  // Form State - Contact Details
+  // Form State - Primary Contact & Guardian Details
   const [guardianName, setGuardianName] = useState('');
-  const [relationship, setRelationship] = useState<RelationshipType>('Self (Wearer)');
+  const [relationship, setRelationship] = useState<RelationshipType>('Parent / Guardian');
   const [mobile, setMobile] = useState('');
+  const [secondaryPhone, setSecondaryPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [guardianNationalId, setGuardianNationalId] = useState('');
   const [language, setLanguage] = useState(settings.availableLanguages[0] || 'English');
+
+  // Backup Emergency Contact (Secondary)
   const [secName, setSecName] = useState('');
   const [secRelationship, setSecRelationship] = useState('Spouse / Partner');
   const [secPhone, setSecPhone] = useState('');
 
-  // Form State - Wearer & Band Details
+  // Form State - Wearer Details
   const [childName, setChildName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [calculatedAge, setCalculatedAge] = useState('');
   const [ageRange, setAgeRange] = useState('Child (0 – 12 years)');
+  const [bloodGroup, setBloodGroup] = useState<string>('Unknown / Not Tested');
+  const [gender, setGender] = useState<string>('prefer_not_to_say');
+  const [wearerNationalId, setWearerNationalId] = useState('');
+  const [medicalNotes, setMedicalNotes] = useState('');
+  const [specialNeeds, setSpecialNeeds] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Band & Retail Attribution
   const [bandCode, setBandCode] = useState(() => {
     return searchParams.get('code') || searchParams.get('band') || '';
   });
@@ -101,6 +131,58 @@ export const RegisterPage: React.FC = () => {
       }
     }
   }, [activeVendors, vendorId]);
+
+  // Live Auto-Calculate Age whenever birthdate changes
+  const handleBirthDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setBirthDate(val);
+    if (!val) {
+      setCalculatedAge('');
+      return;
+    }
+    const result = calculateDetailedAge(val);
+    if (result.isValid) {
+      setCalculatedAge(result.formattedAge);
+      setAgeRange(result.suggestedCategory);
+      if (errors.birthDate) {
+        setErrors((prev) => ({ ...prev, birthDate: '' }));
+      }
+    } else {
+      setCalculatedAge(result.formattedAge || 'Invalid date');
+    }
+  };
+
+  // Photo Upload Handler with live local preview & Supabase upload
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    setIsUploadingPhoto(true);
+    try {
+      const uploadedUrl = await supabaseService.uploadWearerPhoto(file);
+      if (uploadedUrl) {
+        setPhotoUrl(uploadedUrl);
+        addToast('success', 'Photo Attached', 'Wearer photo saved for recovery identification.');
+      } else {
+        setPhotoUrl(URL.createObjectURL(file));
+      }
+    } catch {
+      setPhotoUrl(URL.createObjectURL(file));
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl('');
+    setPhotoPreview(null);
+  };
 
   // Normalize Band Reference: format with hyphens uppercase
   const normalizeBandCode = (input: string) => {
@@ -242,13 +324,27 @@ export const RegisterPage: React.FC = () => {
       newErrors.childName = 'Wearer’s full name is required.';
     }
 
+    // Birth date validation (Required to compute age)
+    if (!birthDate.trim()) {
+      newErrors.birthDate = 'Date of birth is required.';
+    } else {
+      const dateCheck = calculateDetailedAge(birthDate);
+      if (!dateCheck.isValid) {
+        newErrors.birthDate = 'Please select a valid past date of birth.';
+      }
+    }
+
     // Contact person validation
     if (!guardianName.trim()) {
-      newErrors.guardianName = 'Emergency contact full name is required.';
+      newErrors.guardianName = 'Primary contact full name is required.';
     }
 
     if (!mobile.trim() || !phoneRegex.test(mobile.trim())) {
-      newErrors.mobile = 'A valid mobile telephone number is required (7-20 digits).';
+      newErrors.mobile = 'A valid primary mobile phone number is required (7-20 digits).';
+    }
+
+    if (secondaryPhone.trim() && !phoneRegex.test(secondaryPhone.trim())) {
+      newErrors.secondaryPhone = 'Please provide a valid secondary telephone number or leave empty.';
     }
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -318,7 +414,10 @@ export const RegisterPage: React.FC = () => {
             fullName: guardianName.trim(),
             relationship,
             mobile: mobile.trim(),
+            secondaryPhone: secondaryPhone.trim() || undefined,
             email: email.trim() || undefined,
+            address: address.trim() || undefined,
+            nationalId: guardianNationalId.trim() || undefined,
             preferredLanguage: language,
             emergencyContact: showAdvancedContact && secName.trim()
               ? {
@@ -330,7 +429,15 @@ export const RegisterPage: React.FC = () => {
           },
           child: {
             name: childName.trim(),
+            birthDate: birthDate.trim() || undefined,
+            calculatedAge: calculatedAge.trim() || undefined,
             ageRange,
+            gender: gender || 'prefer_not_to_say',
+            bloodGroup: bloodGroup || 'Unknown / Not Tested',
+            nationalId: wearerNationalId.trim() || undefined,
+            medicalNotes: medicalNotes.trim() || undefined,
+            specialNeeds: specialNeeds.trim() || undefined,
+            photoUrl: photoUrl || photoPreview || undefined,
           },
           bandCode: bandCode.toUpperCase().trim(),
           vendorId: vendorId || 'DIRECT',
@@ -352,9 +459,16 @@ export const RegisterPage: React.FC = () => {
           state: {
             referenceNumber: newRegistration.referenceNumber,
             childName: childName.trim(),
+            childBirthDate: birthDate.trim(),
+            childAge: calculatedAge.trim(),
+            childBloodGroup: bloodGroup,
+            birthDate: birthDate.trim(),
+            calculatedAge: calculatedAge.trim(),
+            bloodGroup,
             bandCode: bandCode.toUpperCase().trim(),
             guardianName: guardianName.trim(),
             guardianPhone: mobile.trim(),
+            guardianAddress: address.trim(),
             guardianLanguage: language || 'English',
             vendorName: selectedVendor?.shopName || 'Authorized We 4 You Partner Outlet',
             durationMonths: selectedPlan?.durationMonths || 12,
@@ -531,20 +645,73 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Wearer & Emergency Contact Details */}
-            <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-5 sm:p-6 space-y-4">
-              <div className="flex items-center gap-2.5 pb-3 border-b border-border-subtle">
-                <div className="w-8 h-8 rounded-lg bg-navy/5 text-navy flex items-center justify-center">
-                  <User className="w-4 h-4 text-navy" />
+            {/* Card 2: Wearer Profile & Vital Safety Details */}
+            <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-5 sm:p-6 space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-navy/5 text-navy flex items-center justify-center">
+                    <User className="w-4 h-4 text-navy" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-heading font-bold text-navy">2. Wearer Identification &amp; Demographics</h2>
+                    <p className="text-2xs text-content-muted">Details for the individual who will wear the band</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-sm font-heading font-bold text-navy">2. Wearer &amp; Emergency Contact</h2>
-                  <p className="text-2xs text-content-muted">Who wears the band and who will be notified in an emergency</p>
+                <span className="text-2xs font-semibold text-brand-navy bg-slate-100 px-2.5 py-0.5 rounded-full">
+                  Emergency Recovery Profile
+                </span>
+              </div>
+
+              {/* Photo Upload Section */}
+              <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 bg-white flex items-center justify-center flex-shrink-0 shadow-2xs">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Wearer preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center p-2 text-slate-400">
+                      <Camera className="w-6 h-6 mx-auto mb-0.5 text-slate-400" />
+                      <span className="text-[10px] font-medium block">Add Photo</span>
+                    </div>
+                  )}
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-[10px] font-medium">
+                      Uploading...
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 text-center sm:text-left space-y-1.5">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-subtle text-navy text-xs font-semibold hover:bg-slate-50 shadow-2xs transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{photoPreview ? 'Change Photo' : 'Upload Wearer Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {photoPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-700 hover:bg-rose-50 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Remove</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-content-muted leading-relaxed">
+                    Optional portrait photo helps emergency responders quickly identify and reassure the wearer when found.
+                  </p>
                 </div>
               </div>
 
+              {/* Name and Date of Birth */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Wearer’s Full Name" required error={errors.childName} hint="Name of the person wearing the band">
+                <FormField label="Wearer’s Full Name" required error={errors.childName} hint="First and last name of the wearer">
                   <Input
                     value={childName}
                     onChange={(e) => setChildName(e.target.value)}
@@ -553,7 +720,49 @@ export const RegisterPage: React.FC = () => {
                   />
                 </FormField>
 
-                <FormField label="Age Group / Category" hint="Helps responders identify wearer">
+                <div>
+                  <FormField label="Date of Birth" required error={errors.birthDate} hint="Calculates age automatically">
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        max={new Date().toISOString().substring(0, 10)}
+                        value={birthDate}
+                        onChange={handleBirthDateChange}
+                        error={!!errors.birthDate}
+                        className="w-full"
+                      />
+                    </div>
+                  </FormField>
+                  
+                  {/* Live Age Badge */}
+                  {calculatedAge && (
+                    <div className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold shadow-2xs animate-in fade-in">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Live Age: <strong>{calculatedAge}</strong> • {ageRange}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Demographics: Blood Group, Gender, Age Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <FormField label="Blood Group (Optional)" hint="Emergency medical reference">
+                  <Select value={bloodGroup} onChange={(e) => setBloodGroup(e.target.value)}>
+                    {BLOOD_GROUPS.map((bg) => (
+                      <option key={bg} value={bg}>{bg}</option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                <FormField label="Gender / Identity (Optional)">
+                  <Select value={gender} onChange={(e) => setGender(e.target.value)}>
+                    {GENDER_OPTIONS.map((g) => (
+                      <option key={g.value} value={g.value}>{g.label}</option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                <FormField label="Age Category" hint="Target safety group">
                   <Select value={ageRange} onChange={(e) => setAgeRange(e.target.value)}>
                     <option value="Child (0 – 12 years)">Child (0 – 12 years)</option>
                     <option value="Teen (13 – 17 years)">Teen (13 – 17 years)</option>
@@ -565,40 +774,14 @@ export const RegisterPage: React.FC = () => {
                 </FormField>
               </div>
 
-              <div className="pt-2 border-t border-slate-100">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField label="Primary Contact Full Name" required error={errors.guardianName} hint="Parent, spouse, or guardian">
-                    <Input
-                      value={guardianName}
-                      onChange={(e) => setGuardianName(e.target.value)}
-                      placeholder="e.g. Elena Vance"
-                      error={!!errors.guardianName}
-                    />
-                  </FormField>
-
-                  <FormField label="Primary Emergency Phone" required error={errors.mobile} hint="Called immediately upon scan">
-                    <Input
-                      type="tel"
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
-                      placeholder="+1 (555) 012-7819"
-                      error={!!errors.mobile}
-                    />
-                  </FormField>
-                </div>
-              </div>
-
+              {/* National ID / Student ID */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField label="Relationship to Wearer">
-                  <Select value={relationship} onChange={(e) => setRelationship(e.target.value as RelationshipType)}>
-                    <option value="Mother">Mother</option>
-                    <option value="Father">Father</option>
-                    <option value="Spouse / Partner">Spouse / Partner</option>
-                    <option value="Legal Guardian">Legal Guardian</option>
-                    <option value="Caregiver / Nurse">Caregiver / Nurse</option>
-                    <option value="Self (Wearer)">Self (Wearer)</option>
-                    <option value="Other Authorized">Other Authorized Contact</option>
-                  </Select>
+                <FormField label="Wearer ID / Student / Passport No. (Optional)" hint="Official identifier if available">
+                  <Input
+                    value={wearerNationalId}
+                    onChange={(e) => setWearerNationalId(e.target.value)}
+                    placeholder="e.g. STU-89210 or ID-49201"
+                  />
                 </FormField>
 
                 <FormField label="Purchased From (Store / Office)" hint="Retail store or direct purchase">
@@ -615,15 +798,139 @@ export const RegisterPage: React.FC = () => {
                 </FormField>
               </div>
 
-              {/* Optional Advanced Contact Toggle */}
-              <div className="pt-2">
+              {/* Expandable Emergency Medical Notes */}
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowMedicalSection(!showMedicalSection)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-navy hover:underline focus:outline-none"
+                >
+                  {showMedicalSection ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  <span>{showMedicalSection ? 'Hide medical & care instructions' : '+ Add Emergency Medical Notes & Care Instructions (Optional)'}</span>
+                </button>
+
+                {showMedicalSection && (
+                  <div className="mt-3 p-4 rounded-xl bg-amber-50/60 border border-amber-200/80 space-y-3 animate-in fade-in">
+                    <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <span>Confidential Emergency Medical Notes</span>
+                    </div>
+
+                    <FormField label="Allergies, Medications or Conditions" hint="e.g. Severe peanut allergy, Asthma inhaler in bag, Diabetic, Autism spectrum">
+                      <Input
+                        value={medicalNotes}
+                        onChange={(e) => setMedicalNotes(e.target.value)}
+                        placeholder="e.g. Asthma, carry inhaler; allergic to penicillin"
+                      />
+                    </FormField>
+
+                    <FormField label="Special Behavioral or Communication Notes" hint="e.g. Non-verbal, sensitive to loud sounds, wears glasses">
+                      <Input
+                        value={specialNeeds}
+                        onChange={(e) => setSpecialNeeds(e.target.value)}
+                        placeholder="e.g. Non-verbal, responds well to written notes"
+                      />
+                    </FormField>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Card 3: Full Primary Guardian & Emergency Contacts */}
+            <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-5 sm:p-6 space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-navy/5 text-navy flex items-center justify-center">
+                    <ShieldCheck className="w-4 h-4 text-navy" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-heading font-bold text-navy">3. Full Guardian &amp; Emergency Contact Details</h2>
+                    <p className="text-2xs text-content-muted">Primary guardians called immediately during an emergency incident</p>
+                  </div>
+                </div>
+                <span className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                  Primary Responder
+                </span>
+              </div>
+
+              {/* Primary Contact Name & Relationship */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Primary Guardian Full Name" required error={errors.guardianName} hint="Parent, spouse, or authorized guardian">
+                  <Input
+                    value={guardianName}
+                    onChange={(e) => setGuardianName(e.target.value)}
+                    placeholder="e.g. Elena Vance"
+                    error={!!errors.guardianName}
+                  />
+                </FormField>
+
+                <FormField label="Relationship to Wearer" required>
+                  <Select value={relationship} onChange={(e) => setRelationship(e.target.value as RelationshipType)}>
+                    <option value="Parent / Guardian">Parent / Guardian</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Father">Father</option>
+                    <option value="Spouse / Partner">Spouse / Partner</option>
+                    <option value="Legal Guardian">Legal Guardian</option>
+                    <option value="Caregiver / Nurse">Caregiver / Nurse</option>
+                    <option value="Grandparent">Grandparent</option>
+                    <option value="Son / Daughter">Son / Daughter</option>
+                    <option value="Self (Wearer)">Self (Wearer)</option>
+                    <option value="Other Authorized Contact">Other Authorized Contact</option>
+                  </Select>
+                </FormField>
+              </div>
+
+              {/* Phone Numbers: Primary & Secondary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Primary Emergency Mobile" required error={errors.mobile} hint="Called immediately upon band scan">
+                  <Input
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="+1 (555) 012-7819"
+                    error={!!errors.mobile}
+                  />
+                </FormField>
+
+                <FormField label="Secondary / Alternative Phone (Optional)" error={errors.secondaryPhone} hint="Work or alternate mobile">
+                  <Input
+                    type="tel"
+                    value={secondaryPhone}
+                    onChange={(e) => setSecondaryPhone(e.target.value)}
+                    placeholder="+1 (555) 012-7820"
+                    error={!!errors.secondaryPhone}
+                  />
+                </FormField>
+              </div>
+
+              {/* Address and Guardian National ID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="Full Residential Address (Optional)" hint="Street, City, State, Postal Code">
+                  <Input
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="e.g. 742 Evergreen Terrace, Springfield, OR"
+                  />
+                </FormField>
+
+                <FormField label="Guardian National ID / Passport No. (Optional)" hint="For identity verification">
+                  <Input
+                    value={guardianNationalId}
+                    onChange={(e) => setGuardianNationalId(e.target.value)}
+                    placeholder="e.g. ID-892182"
+                  />
+                </FormField>
+              </div>
+
+              {/* Optional Email & Backup Contact Toggle */}
+              <div className="pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAdvancedContact(!showAdvancedContact)}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-navy hover:underline focus:outline-none"
                 >
                   {showAdvancedContact ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{showAdvancedContact ? 'Hide additional contact fields' : '+ Add Email & Backup Emergency Contact (Optional)'}</span>
+                  <span>{showAdvancedContact ? 'Hide backup contact fields' : '+ Add Email & Secondary Backup Emergency Contact'}</span>
                 </button>
 
                 {showAdvancedContact && (
@@ -649,7 +956,7 @@ export const RegisterPage: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
-                      <FormField label="Secondary Contact Name" hint="Backup contact person">
+                      <FormField label="Secondary Backup Contact Name" hint="Grandparent, relative, neighbor">
                         <Input
                           value={secName}
                           onChange={(e) => setSecName(e.target.value)}
@@ -657,12 +964,12 @@ export const RegisterPage: React.FC = () => {
                         />
                       </FormField>
 
-                      <FormField label="Secondary Emergency Phone" error={errors.secPhone} hint="Backup telephone">
+                      <FormField label="Secondary Contact Phone" error={errors.secPhone} hint="Backup telephone">
                         <Input
                           type="tel"
                           value={secPhone}
                           onChange={(e) => setSecPhone(e.target.value)}
-                          placeholder="+1 (555) 012-7820"
+                          placeholder="+1 (555) 012-7825"
                           error={!!errors.secPhone}
                         />
                       </FormField>

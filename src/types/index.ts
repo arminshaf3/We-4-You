@@ -23,14 +23,24 @@ export interface GuardianData {
   fullName: string;
   relationship: RelationshipType | string;
   mobile: string;
+  secondaryPhone?: string;
   email?: string;
+  address?: string;
+  nationalId?: string;
   preferredLanguage: string;
   emergencyContact?: EmergencyContact;
 }
 
 export interface ChildData {
   name: string;
+  birthDate?: string;
+  calculatedAge?: string;
   ageRange?: string;
+  gender?: string;
+  bloodGroup?: string;
+  nationalId?: string;
+  medicalNotes?: string;
+  specialNeeds?: string;
   photoUrl?: string;
 }
 
@@ -108,7 +118,14 @@ export interface Registration {
 export interface ChildRecord {
   id: string;
   name: string;
+  birthDate?: string;
+  calculatedAge?: string;
   ageRange: string;
+  gender?: string;
+  bloodGroup?: string;
+  nationalId?: string;
+  medicalNotes?: string;
+  specialNeeds?: string;
   photoUrl?: string;
   primaryGuardian: GuardianData;
   secondaryGuardians: EmergencyContact[];

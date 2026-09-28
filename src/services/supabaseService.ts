@@ -268,6 +268,13 @@ export const supabaseService = {
         id: w.id,
         name: w.name,
         ageRange: w.age_range,
+        birthDate: w.birth_date || undefined,
+        calculatedAge: w.calculated_age || undefined,
+        gender: w.gender || undefined,
+        bloodGroup: w.blood_group || undefined,
+        nationalId: w.national_id || undefined,
+        medicalNotes: w.medical_notes || undefined,
+        specialNeeds: w.special_needs || undefined,
         photoUrl: w.photo_url || undefined,
         primaryGuardian: w.primary_contact,
         secondaryGuardians: w.secondary_contacts || [],
@@ -292,6 +299,13 @@ export const supabaseService = {
         .insert({
           name: wearer.name,
           age_range: wearer.ageRange,
+          birth_date: wearer.birthDate || null,
+          calculated_age: wearer.calculatedAge || null,
+          gender: wearer.gender || null,
+          blood_group: wearer.bloodGroup || null,
+          national_id: wearer.nationalId || null,
+          medical_notes: wearer.medicalNotes || null,
+          special_needs: wearer.specialNeeds || null,
           photo_url: wearer.photoUrl,
           primary_contact: wearer.primaryGuardian,
           secondary_contacts: wearer.secondaryGuardians,
@@ -309,6 +323,13 @@ export const supabaseService = {
         id: data.id,
         name: data.name,
         ageRange: data.age_range,
+        birthDate: data.birth_date || undefined,
+        calculatedAge: data.calculated_age || undefined,
+        gender: data.gender || undefined,
+        bloodGroup: data.blood_group || undefined,
+        nationalId: data.national_id || undefined,
+        medicalNotes: data.medical_notes || undefined,
+        specialNeeds: data.special_needs || undefined,
         photoUrl: data.photo_url,
         primaryGuardian: data.primary_contact,
         secondaryGuardians: data.secondary_contacts || [],
@@ -331,6 +352,13 @@ export const supabaseService = {
       const payload: any = {};
       if (updates.name !== undefined) payload.name = updates.name;
       if (updates.ageRange !== undefined) payload.age_range = updates.ageRange;
+      if (updates.birthDate !== undefined) payload.birth_date = updates.birthDate;
+      if (updates.calculatedAge !== undefined) payload.calculated_age = updates.calculatedAge;
+      if (updates.gender !== undefined) payload.gender = updates.gender;
+      if (updates.bloodGroup !== undefined) payload.blood_group = updates.bloodGroup;
+      if (updates.nationalId !== undefined) payload.national_id = updates.nationalId;
+      if (updates.medicalNotes !== undefined) payload.medical_notes = updates.medicalNotes;
+      if (updates.specialNeeds !== undefined) payload.special_needs = updates.specialNeeds;
       if (updates.photoUrl !== undefined) payload.photo_url = updates.photoUrl;
       if (updates.primaryGuardian !== undefined) payload.primary_contact = updates.primaryGuardian;
       if (updates.secondaryGuardians !== undefined) payload.secondary_contacts = updates.secondaryGuardians;
