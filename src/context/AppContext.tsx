@@ -590,7 +590,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 2. Update Registration Status (Approve, Reject, Request Info)
   const updateRegistrationStatus = (id: string, status: RegistrationStatus, reason?: string) => {
-    const reg = registrations.find((r) => r.id === id);
+    const reg = registrations.find((r) => r.id === id || r.referenceNumber === id);
     if (!reg) return;
 
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
@@ -609,13 +609,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
     ];
 
+    const regId = reg.id;
+    const refNum = reg.referenceNumber;
+
+    // 1. Update local registrations state
     setRegistrations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status, statusReason: reason, verifiedBy: adminUser, verifiedAt: timestamp, timeline: updatedTimeline } : r))
+      prev.map((r) =>
+        r.id === regId || r.referenceNumber === refNum || r.id === id || r.referenceNumber === id
+          ? {
+              ...r,
+              status,
+              statusReason: reason,
+              paymentStatus: status === 'approved' ? 'verified' : r.paymentStatus,
+              verifiedBy: adminUser,
+              verifiedAt: timestamp,
+              timeline: updatedTimeline,
+            }
+          : r
+      )
     );
 
-    // If approved, trigger atomic backend RPC and update local state
+    // 2. Direct Supabase Database Update
+    supabaseService.updateRegistration(regId, {
+      status,
+      statusReason: reason,
+      paymentStatus: status === 'approved' ? 'verified' : undefined,
+      timeline: updatedTimeline,
+    }).then((ok) => {
+      if (ok) console.log(`Registration ${refNum} status updated to ${status} in Supabase DB`);
+    }).catch(() => {});
+
+    // If approved, create records and update band
     if (status === 'approved') {
-      supabaseService.approveRegistration(reg.id, adminUser, reason).catch(() => {});
+      supabaseService.approveRegistration(regId, adminUser, reason).catch(() => {});
 
       const childId = `CHD-00${childrenRecords.length + 1}`;
       const subId = `SUB-00${subscriptions.length + 1}`;
@@ -644,6 +670,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         incidentsCount: 0,
       };
       setChildrenRecords((prev) => [...prev, newChild]);
+      supabaseService.insertWearer(newChild).catch(() => {});
 
       // Create Subscription
       const newSub: Subscription = {
@@ -666,6 +693,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             : b
         )
       );
+      supabaseService.updateBand(reg.bandCode, {
+        status: 'assigned',
+        childId,
+        vendorId: reg.vendorId === 'DIRECT' ? undefined : reg.vendorId,
+        assignedDate: startDate,
+      }).catch(() => {});
 
       // Check if commission should be created for the attributed vendor
       const vendor = vendors.find((v) => v.id === reg.vendorId);
@@ -689,16 +722,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           createdAt: startDate,
         };
         setCommissions((prev) => [...prev, newComm]);
+        supabaseService.insertCommission(newComm).catch(() => {});
       }
 
       addToast('success', 'Registration Approved', `Wearer ${reg.child.name} is now protected with band ${reg.bandCode}.`);
       logAction('Registration Approved', `Approved registration ${reg.referenceNumber} for wearer ${reg.child.name}.`, 'registration', reg.referenceNumber);
     } else if (status === 'rejected') {
-      supabaseService.rejectRegistration(reg.id, adminUser, reason || 'Registration rejected by administrator.').catch(() => {});
+      supabaseService.rejectRegistration(regId, adminUser, reason || 'Registration rejected by administrator.').catch(() => {});
       addToast('info', 'Registration Rejected', `Registration ${reg.referenceNumber} has been rejected.`);
       logAction('Registration Rejected', `Rejected registration ${reg.referenceNumber}. Reason: ${reason}`, 'registration', reg.referenceNumber);
     } else {
-      supabaseService.updateRegistration(id, { status, statusReason: reason, timeline: updatedTimeline });
       addToast('info', 'Status Updated', `Registration ${reg.referenceNumber} marked as ${status.replace('_', ' ')}.`);
       logAction('Registration Status Changed', `Set status of ${reg.referenceNumber} to ${status}.`, 'registration', reg.referenceNumber);
     }

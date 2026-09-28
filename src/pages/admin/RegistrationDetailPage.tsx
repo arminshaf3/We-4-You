@@ -142,12 +142,35 @@ export const RegistrationDetailPage: React.FC = () => {
       </div>
 
       {/* Rejection / Update Reason Notice if present */}
-      {reg.statusReason && (
+      {reg.statusReason && reg.status !== 'approved' && (
         <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs text-amber-900 mb-6 flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div>
             <span className="font-bold block">Status Note:</span>
             <span>{reg.statusReason}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Approved Banner */}
+      {reg.status === 'approved' && (
+        <div className="p-4 bg-emerald-50 rounded-brand border border-emerald-200 text-xs text-emerald-900 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <div>
+              <span className="font-bold text-sm text-emerald-950 block">Registration Approved &amp; Wearer Activated</span>
+              <span className="text-emerald-800">
+                Band <strong>{reg.bandCode}</strong> is now assigned to wearer <strong>{reg.child.name}</strong> with active 24/7 emergency protection.
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button to="/admin/registrations" variant="outline" size="sm">
+              Back to Queue
+            </Button>
+            <Button to="/admin/children" variant="primary" size="sm">
+              View Wearer Directory
+            </Button>
           </div>
         </div>
       )}

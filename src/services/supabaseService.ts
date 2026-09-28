@@ -411,10 +411,20 @@ export const supabaseService = {
       if (updates.paymentStatus !== undefined) payload.payment_status = updates.paymentStatus;
       if (updates.paymentRef !== undefined) payload.payment_ref = updates.paymentRef;
       if (updates.timeline !== undefined) payload.timeline = updates.timeline;
+      payload.updated_at = new Date().toISOString();
 
-      const { error } = await supabase.from('registrations').update(payload).eq('id', id);
-      return !error;
-    } catch {
+      const { error } = await supabase
+        .from('registrations')
+        .update(payload)
+        .or(`id.eq.${id},reference_number.eq.${id}`);
+
+      if (error) {
+        console.error('Supabase updateRegistration error:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Supabase updateRegistration exception:', err);
       return false;
     }
   },
