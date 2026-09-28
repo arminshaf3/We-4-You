@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -48,17 +49,33 @@ export const BandsListPage: React.FC = () => {
   const [selectedBandForAssign, setSelectedBandForAssign] = useState<Band | null>(null);
   const [selectedWearerId, setSelectedWearerId] = useState('');
 
+  const findAssignedChild = (band: Band) => {
+    const norm = band.referenceCode.replace(/[\s-]/g, '').toUpperCase();
+    return childrenRecords.find(
+      (c) => c.id === band.childId || (c.currentBandCode && c.currentBandCode.replace(/[\s-]/g, '').toUpperCase() === norm)
+    );
+  };
+
   const filteredBands = useMemo(() => {
     return bands.filter((b) => {
+      const assignedChild = findAssignedChild(b);
       const matchesSearch =
         b.referenceCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (b.childId && childrenRecords.find(c => c.id === b.childId)?.name.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = statusFilter === 'ALL' || b.status === statusFilter;
+        (assignedChild && assignedChild.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const effectiveStatus: BandStatus =
+        (b.status === 'assigned' || Boolean(assignedChild)) && b.status !== 'lost' && b.status !== 'retired' && b.status !== 'replaced'
+          ? 'assigned'
+          : b.status;
+      const matchesStatus = statusFilter === 'ALL' || effectiveStatus === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [bands, searchTerm, statusFilter, childrenRecords]);
 
-  const availableBands = bands.filter((b) => b.status === 'available');
+  const availableBands = bands.filter((b) => {
+    const hasChild = Boolean(findAssignedChild(b));
+    return b.status === 'available' && !hasChild;
+  });
 
   const normNewBandCode = newBandCode.toUpperCase().replace(/[\s-]/g, '').trim();
   const duplicateExistingBand = useMemo(() => {
@@ -82,8 +99,9 @@ export const BandsListPage: React.FC = () => {
   };
 
   const handleOpenReplace = (band: Band) => {
-    if (!band.childId) return;
-    setSelectedChildForReplace(band.childId);
+    const child = findAssignedChild(band);
+    if (!child && !band.childId) return;
+    setSelectedChildForReplace(child?.id || band.childId || '');
     setReplacementOldBand(band.referenceCode);
     setReplacementNewBand(availableBands[0]?.referenceCode || '');
     setReplacementReason('Band clip worn during sports activities');
@@ -142,7 +160,7 @@ export const BandsListPage: React.FC = () => {
       key: 'referenceCode',
       header: 'Reference Code',
       render: (band) => (
-        <span className="font-mono font-bold text-sm text-navy bg-mint-pale px-2.5 py-1 rounded border border-emerald-300 inline-block">
+        <span className="font-mono font-bold text-sm text-navy bg-mint-pale px-2.5 py-1 rounded border border-emerald-300 inline-block shadow-2xs">
           {band.referenceCode}
         </span>
       ),
@@ -150,17 +168,32 @@ export const BandsListPage: React.FC = () => {
     {
       key: 'status',
       header: 'Inventory Status',
-      render: (band) => <StatusBadge status={band.status} />,
+      render: (band) => {
+        const child = findAssignedChild(band);
+        const effectiveStatus: BandStatus =
+          (band.status === 'assigned' || Boolean(child)) && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced'
+            ? 'assigned'
+            : band.status;
+        return <StatusBadge status={effectiveStatus} />;
+      },
     },
     {
       key: 'child',
       header: 'Assigned Wearer',
       render: (band) => {
-        const child = childrenRecords.find((c) => c.id === band.childId);
+        const child = findAssignedChild(band);
         return child ? (
-          <span className="font-semibold text-navy text-xs sm:text-sm block">
-            {child.name}
-          </span>
+          <div>
+            <Link
+              to={`/admin/children/${child.id}`}
+              className="font-semibold text-navy hover:text-[#088F5B] hover:underline text-xs sm:text-sm block"
+            >
+              {child.name}
+            </Link>
+            <span className="text-[11px] text-content-muted block">
+              {child.primaryGuardian?.fullName ? `Guardian: ${child.primaryGuardian.fullName}` : child.ageRange}
+            </span>
+          </div>
         ) : (
           <span className="text-xs text-content-muted italic">Unassigned</span>
         );
@@ -197,9 +230,12 @@ export const BandsListPage: React.FC = () => {
       header: 'Actions',
       className: 'text-right',
       render: (band) => {
+        const child = findAssignedChild(band);
+        const isAssigned = (band.status === 'assigned' || Boolean(child)) && band.status !== 'lost' && band.status !== 'retired' && band.status !== 'replaced';
+
         return (
           <div className="flex items-center justify-end gap-1.5">
-            {band.status === 'available' && (
+            {!isAssigned && band.status === 'available' && (
               <button
                 onClick={() => handleOpenAssign(band)}
                 className="px-2.5 py-1 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded border border-emerald-200 transition-colors"
@@ -209,7 +245,7 @@ export const BandsListPage: React.FC = () => {
               </button>
             )}
 
-            {band.status === 'assigned' && (
+            {isAssigned && (
               <>
                 <button
                   onClick={() => handleOpenReplace(band)}
@@ -240,10 +276,22 @@ export const BandsListPage: React.FC = () => {
     },
   ];
 
-  const availableCount = useMemo(() => bands.filter(b => b.status === 'available').length, [bands]);
-  const assignedCount = useMemo(() => bands.filter(b => b.status === 'assigned').length, [bands]);
-  const lostCount = useMemo(() => bands.filter(b => b.status === 'lost').length, [bands]);
-  const retiredCount = useMemo(() => bands.filter(b => b.status === 'retired').length, [bands]);
+  const assignedCount = useMemo(() => {
+    return bands.filter((b) => {
+      const isAssigned = b.status === 'assigned' || Boolean(findAssignedChild(b));
+      return isAssigned && b.status !== 'lost' && b.status !== 'retired';
+    }).length;
+  }, [bands, childrenRecords]);
+
+  const availableCount = useMemo(() => {
+    return bands.filter((b) => {
+      const isAssigned = b.status === 'assigned' || Boolean(findAssignedChild(b));
+      return b.status === 'available' && !isAssigned;
+    }).length;
+  }, [bands, childrenRecords]);
+
+  const lostCount = useMemo(() => bands.filter((b) => b.status === 'lost').length, [bands]);
+  const retiredCount = useMemo(() => bands.filter((b) => b.status === 'retired').length, [bands]);
 
   return (
     <div>

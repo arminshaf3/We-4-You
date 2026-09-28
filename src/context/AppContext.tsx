@@ -673,7 +673,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expiry.setMonth(expiry.getMonth() + duration);
       const expiryDate = expiry.toISOString().substring(0, 10);
 
-      // Create Record
+      // 1. Create Record
       const newChild: ChildRecord = {
         id: childId,
         name: reg.child.name,
@@ -690,9 +690,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         incidentsCount: 0,
       };
       setChildrenRecords((prev) => [...prev, newChild]);
-      supabaseService.insertWearer(newChild).catch(() => {});
 
-      // Create Subscription
+      // 2. Create Subscription
       const newSub: Subscription = {
         id: subId,
         childId,
@@ -705,20 +704,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setSubscriptions((prev) => [...prev, newSub]);
 
-      // Update Band status to 'assigned'
-      setBands((prev) =>
-        prev.map((b) =>
-          b.referenceCode.toUpperCase() === reg.bandCode.toUpperCase()
-            ? { ...b, status: 'assigned', childId, vendorId: reg.vendorId, assignedDate: startDate }
-            : b
-        )
-      );
-      supabaseService.updateBand(reg.bandCode, {
-        status: 'assigned',
-        childId,
-        vendorId: reg.vendorId === 'DIRECT' ? undefined : reg.vendorId,
-        assignedDate: startDate,
-      }).catch(() => {});
+      // 3. Update Band status to 'assigned' in local inventory state
+      const normRegBand = reg.bandCode.replace(/[\s-]/g, '').toUpperCase();
+      setBands((prev) => {
+        const index = prev.findIndex(
+          (b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === normRegBand
+        );
+        if (index >= 0) {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            status: 'assigned',
+            childId,
+            vendorId: reg.vendorId === 'DIRECT' ? undefined : (reg.vendorId || updated[index].vendorId),
+            assignedDate: startDate,
+          };
+          return deduplicateBands(updated);
+        } else {
+          const newBand: Band = {
+            id: `BND-00${prev.length + 1}`,
+            referenceCode: reg.bandCode.toUpperCase().trim(),
+            status: 'assigned',
+            childId,
+            vendorId: reg.vendorId === 'DIRECT' ? undefined : reg.vendorId,
+            assignedDate: startDate,
+          };
+          return deduplicateBands([...prev, newBand]);
+        }
+      });
+
+      // 4. Persist wearer and band assignment to Supabase DB
+      supabaseService.insertWearer(newChild).then((inserted) => {
+        const finalChildId = inserted?.id || childId;
+        supabaseService.updateBand(reg.bandCode, {
+          status: 'assigned',
+          childId: finalChildId,
+          vendorId: reg.vendorId === 'DIRECT' ? undefined : reg.vendorId,
+          assignedDate: startDate,
+        });
+      }).catch(() => {
+        supabaseService.updateBand(reg.bandCode, {
+          status: 'assigned',
+          childId,
+          vendorId: reg.vendorId === 'DIRECT' ? undefined : reg.vendorId,
+          assignedDate: startDate,
+        });
+      });
 
       // Check if commission should be created for the attributed vendor
       const vendor = vendors.find((v) => v.id === reg.vendorId);

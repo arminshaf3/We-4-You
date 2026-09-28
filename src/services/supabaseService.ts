@@ -224,6 +224,7 @@ export const supabaseService = {
   async updateBand(code: string, updates: Partial<Band>): Promise<boolean> {
     if (!isSupabaseConfigured) return false;
     try {
+      const normCode = code.toUpperCase().trim();
       const payload: any = {};
       if (updates.status !== undefined) payload.status = updates.status;
       if (updates.vendorId !== undefined) payload.vendor_id = updates.vendorId;
@@ -233,7 +234,24 @@ export const supabaseService = {
       if (updates.replacedByCode !== undefined) payload.replaced_by_code = updates.replacedByCode;
       if (updates.retiredDate !== undefined) payload.retired_date = updates.retiredDate;
 
-      const { error } = await supabase.from('bands').update(payload).eq('reference_code', code);
+      const { data, error } = await supabase
+        .from('bands')
+        .update(payload)
+        .or(`reference_code.eq.${normCode},reference_code.ilike.${normCode}`)
+        .select();
+
+      // If band did not exist in DB yet, insert it with the updated payload
+      if (!error && (!data || data.length === 0)) {
+        await supabase.from('bands').insert({
+          reference_code: normCode,
+          status: updates.status || 'assigned',
+          child_id: updates.childId || null,
+          vendor_id: updates.vendorId || null,
+          assigned_date: updates.assignedDate || new Date().toISOString().substring(0, 10),
+          replacement_notes: updates.replacementNotes || null,
+        });
+      }
+
       return !error;
     } catch {
       return false;
