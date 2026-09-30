@@ -17,7 +17,7 @@ export const LoginPage: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname || (role === 'admin' || role === 'support' ? '/admin' : '/');
 
-  // If already authenticated, redirect
+  // If already authenticated on initial mount, redirect
   React.useEffect(() => {
     if (isAuthenticated) {
       if (role === 'admin' || role === 'support') {
@@ -26,7 +26,7 @@ export const LoginPage: React.FC = () => {
         navigate('/', { replace: true });
       }
     }
-  }, [isAuthenticated, role, navigate]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -64,7 +64,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user) {
-          await loadUserProfile(newSession.user.id);
+          setProfile((prevProfile) => {
+            if (prevProfile && prevProfile.id === newSession.user.id) {
+              return prevProfile;
+            }
+            loadUserProfile(newSession.user.id);
+            return prevProfile;
+          });
         } else {
           setProfile(null);
         }
@@ -80,26 +86,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpParent = async (params: SignUpParentParams) => {
     setIsLoading(true);
     const result = await authService.signUpParent(params);
-    setIsLoading(false);
     if (result.error) {
+      setIsLoading(false);
       return { success: false, error: result.error };
     }
     if (result.profile) {
       setProfile(result.profile);
     }
+    setIsLoading(false);
     return { success: true };
   };
 
   const signIn = async (params: SignInParams) => {
     setIsLoading(true);
     const result = await authService.signIn(params);
-    setIsLoading(false);
-    if (result.error) {
-      return { success: false, error: result.error };
+    if (result.error || !result.user) {
+      setIsLoading(false);
+      return { success: false, error: result.error || 'Authentication failed.' };
     }
+    setUser(result.user);
     if (result.profile) {
       setProfile(result.profile);
     }
+    setIsLoading(false);
     return { success: true, role: result.profile?.role };
   };
 

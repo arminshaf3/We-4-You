@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../services/authService';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from './Button';
@@ -17,21 +18,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo,
 }) => {
   const { isAuthenticated, isLoading, role, user, signOut } = useAuth();
+  const { isAdminLoggedIn } = useApp();
   const location = useLocation();
 
-  // 1. Show loading indicator while session/profile resolves
-  if (isLoading) {
+  // 1. Show loading indicator only on cold initial boot if no session/auth has loaded yet
+  if (isLoading && !user && !isAdminLoggedIn) {
     return (
-      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-6 text-center">
         <Loader2 className="w-10 h-10 text-mint animate-spin mb-4" />
-        <p className="text-navy font-semibold text-base">Verifying authorization...</p>
-        <p className="text-xs text-content-muted mt-1">Checking secure session and role permissions</p>
+        <p className="text-white font-semibold text-base">Verifying authorization...</p>
+        <p className="text-xs text-slate-300 mt-1">Checking secure session and role permissions</p>
       </div>
     );
   }
 
-  // 2. If not logged in, redirect to login page
-  if (!isAuthenticated || !user) {
+  // 2. Check if user is authenticated
+  const isAuth = isAuthenticated || isAdminLoggedIn;
+  if (!isAuth) {
     const defaultRedirect = location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
     return <Navigate to={redirectTo || defaultRedirect} state={{ from: location }} replace />;
   }
@@ -39,7 +42,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 3. If role is restricted and user does not have permission
   if (allowedRoles && allowedRoles.length > 0) {
     const userRole = role as UserRole;
-    if (!allowedRoles.includes(userRole)) {
+    const hasRole = allowedRoles.includes(userRole) || (isAdminLoggedIn && (allowedRoles.includes('admin') || allowedRoles.includes('support')));
+    if (!hasRole) {
       return (
         <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">
           <div className="bg-white p-8 rounded-brand-lg shadow-card border border-border-subtle max-w-md w-full">

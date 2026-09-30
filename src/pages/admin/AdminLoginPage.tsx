@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
 
 export const AdminLoginPage: React.FC = () => {
-  const { loginAdmin } = useApp();
+  const { loginAdmin, isAdminLoggedIn } = useApp();
   const { signIn, isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,12 +19,12 @@ export const AdminLoginPage: React.FC = () => {
 
   const from = (location.state as any)?.from?.pathname || '/admin';
 
-  // Redirect if already authenticated as admin/support
+  // Only redirect on initial page mount if already authenticated
   React.useEffect(() => {
-    if (isAuthenticated && (role === 'admin' || role === 'support')) {
+    if (isAdminLoggedIn || (isAuthenticated && (role === 'admin' || role === 'support'))) {
       navigate('/admin', { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, []);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +37,21 @@ export const AdminLoginPage: React.FC = () => {
 
     setIsSubmitting(true);
     const result = await signIn({ email, password });
-    setIsSubmitting(false);
 
     if (!result.success) {
+      setIsSubmitting(false);
       setErrorMessage(result.error || 'Authentication failed.');
       return;
     }
 
     if (result.role !== 'admin' && result.role !== 'support') {
+      setIsSubmitting(false);
       setErrorMessage('Your account does not have Admin or Support privileges.');
       return;
     }
 
     loginAdmin(email);
+    setIsSubmitting(false);
     navigate(from, { replace: true });
   };
 

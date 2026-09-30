@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 // Layouts
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 // Public Pages
 import { HomePage } from './pages/public/HomePage';
@@ -53,6 +54,7 @@ export const App: React.FC = () => {
     <AuthProvider>
       <AppProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             {/* Public Website Routes with Shared PublicLayout */}
             <Route element={<PublicLayout />}>
