@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../hooks/useAuth';
 import { BandLookupModal } from './BandLookupModal';
 import {
   Menu,
@@ -15,13 +16,15 @@ interface AdminTopbarProps {
 
 export const AdminTopbar: React.FC<AdminTopbarProps> = ({ onToggleSidebar }) => {
   const { adminUser, logoutAdmin } = useApp();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const [isLookupOpen, setIsLookupOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logoutAdmin();
-    navigate('/admin/login');
+    await signOut();
+    navigate('/admin/login', { replace: true });
   };
 
   return (
