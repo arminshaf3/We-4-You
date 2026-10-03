@@ -891,6 +891,24 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Quick Save Visuals Banner */}
+            <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl">
+              <div className="flex items-center gap-2 text-xs text-slate-600">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>Changes will update the public website immediately upon saving.</span>
+              </div>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => handleSave()}
+                leftIcon={isSavedRecently ? <CheckCircle2 className="w-4 h-4 text-brand-mint" /> : <Save className="w-4 h-4" />}
+                className="w-full sm:w-auto font-heading font-bold"
+              >
+                {isSavedRecently ? 'Visuals Saved!' : 'Save Visuals Live'}
+              </Button>
+            </div>
           </div>
 
           {/* Section 2: Subscription Plans & Pricing Rates */}

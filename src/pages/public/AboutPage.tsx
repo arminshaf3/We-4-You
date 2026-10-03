@@ -2,8 +2,19 @@ import React from 'react';
 import { Button } from '../../components/common/Button';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { ShieldCheck, PhoneCall, Lock, Heart, CheckCircle2 } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 
 export const AboutPage: React.FC = () => {
+  const { settings } = useApp();
+
+  const aboutHeadline = settings.aboutHeadline || 'Care starts with connection.';
+  const aboutText =
+    settings.aboutText ||
+    'We 4 You brings families and caring people closer through simple identification bands and an office contact service.';
+  const aboutImage =
+    settings.aboutImageUrl ||
+    'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1200&q=80';
+
   return (
     <div className="py-10 sm:py-16 bg-white">
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,19 +27,23 @@ export const AboutPage: React.FC = () => {
             About We 4 You
           </span>
           <h1 className="text-4xl sm:text-5xl font-heading font-bold text-navy leading-tight tracking-tight">
-            Care starts with connection.
+            {aboutHeadline}
           </h1>
           <p className="text-xl text-content-body mt-4 leading-relaxed font-body">
-            We 4 You brings families and caring people closer through simple identification bands and an office contact service.
+            {aboutText}
           </p>
         </div>
 
         {/* Warm Image Banner */}
         <div className="rounded-brand-lg overflow-hidden border border-border-subtle shadow-card mb-16 max-h-[440px]">
           <img
-            src="https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1200&q=80"
-            alt="Warm family moment outdoors in sunlight"
+            src={aboutImage}
+            alt="About We 4 You purpose banner"
             className="w-full h-full object-cover object-center"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1200&q=80';
+            }}
           />
         </div>
 

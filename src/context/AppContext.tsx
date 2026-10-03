@@ -171,134 +171,93 @@ const deduplicateBands = (bandList: Band[]): Band[] => {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Safe storage persistence helper
+const loadPersisted = <T,>(key: string, fallback: T): T => {
+  try {
+    const item = localStorage.getItem(key) ?? sessionStorage.getItem(key);
+    if (!item) return fallback;
+    return JSON.parse(item);
+  } catch {
+    return fallback;
+  }
+};
+
+const savePersisted = (key: string, value: any) => {
+  try {
+    const serialized = JSON.stringify(value);
+    localStorage.setItem(key, serialized);
+    sessionStorage.setItem(key, serialized);
+  } catch {
+    // ignore quota/privacy errors
+  }
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // In-memory state with session recovery
-  const [vendors, setVendors] = useState<Vendor[]>(() => {
-    const saved = sessionStorage.getItem('we4u_vendors');
-    return saved ? JSON.parse(saved) : initialVendors;
-  });
-
-  const [plans, setPlans] = useState<SubscriptionPlan[]>(() => {
-    const saved = sessionStorage.getItem('we4u_plans');
-    return saved ? JSON.parse(saved) : initialPlans;
-  });
-
-  const [bands, setBands] = useState<Band[]>(() => {
-    const saved = sessionStorage.getItem('we4u_bands');
-    return deduplicateBands(saved ? JSON.parse(saved) : initialBands);
-  });
-
-  const [childrenRecords, setChildrenRecords] = useState<ChildRecord[]>(() => {
-    const saved = sessionStorage.getItem('we4u_children');
-    return saved ? JSON.parse(saved) : initialChildren;
-  });
-
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => {
-    const saved = sessionStorage.getItem('we4u_subscriptions');
-    return saved ? JSON.parse(saved) : initialSubscriptions;
-  });
-
-  const [registrations, setRegistrations] = useState<Registration[]>(() => {
-    const saved = sessionStorage.getItem('we4u_registrations');
-    return saved ? JSON.parse(saved) : initialRegistrations;
-  });
-
-  const [payments, setPayments] = useState<Payment[]>(() => {
-    const saved = sessionStorage.getItem('we4u_payments');
-    return saved ? JSON.parse(saved) : initialPayments;
-  });
-
-  const [commissions, setCommissions] = useState<Commission[]>(() => {
-    const saved = sessionStorage.getItem('we4u_commissions');
-    return saved ? JSON.parse(saved) : initialCommissions;
-  });
-
-  const [payouts, setPayouts] = useState<Payout[]>(() => {
-    const saved = sessionStorage.getItem('we4u_payouts');
-    return saved ? JSON.parse(saved) : initialPayouts;
-  });
-
-  const [incidents, setIncidents] = useState<Incident[]>(() => {
-    const saved = sessionStorage.getItem('we4u_incidents');
-    return saved ? JSON.parse(saved) : initialIncidents;
-  });
-
-  const [enquiries, setEnquiries] = useState<Enquiry[]>(() => {
-    const saved = sessionStorage.getItem('we4u_enquiries');
-    return saved ? JSON.parse(saved) : initialEnquiries;
-  });
-
-  const [activity, setActivity] = useState<AppActivity[]>(() => {
-    const saved = sessionStorage.getItem('we4u_activity');
-    return saved ? JSON.parse(saved) : initialActivity;
-  });
-
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = sessionStorage.getItem('we4u_settings');
-    return saved ? JSON.parse(saved) : initialSettings;
-  });
+  // In-memory state with robust local storage & cross-tab synchronization
+  const [vendors, setVendors] = useState<Vendor[]>(() => loadPersisted('we4u_vendors', initialVendors));
+  const [plans, setPlans] = useState<SubscriptionPlan[]>(() => loadPersisted('we4u_plans', initialPlans));
+  const [bands, setBands] = useState<Band[]>(() => deduplicateBands(loadPersisted('we4u_bands', initialBands)));
+  const [childrenRecords, setChildrenRecords] = useState<ChildRecord[]>(() => loadPersisted('we4u_children', initialChildren));
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => loadPersisted('we4u_subscriptions', initialSubscriptions));
+  const [registrations, setRegistrations] = useState<Registration[]>(() => loadPersisted('we4u_registrations', initialRegistrations));
+  const [payments, setPayments] = useState<Payment[]>(() => loadPersisted('we4u_payments', initialPayments));
+  const [commissions, setCommissions] = useState<Commission[]>(() => loadPersisted('we4u_commissions', initialCommissions));
+  const [payouts, setPayouts] = useState<Payout[]>(() => loadPersisted('we4u_payouts', initialPayouts));
+  const [incidents, setIncidents] = useState<Incident[]>(() => loadPersisted('we4u_incidents', initialIncidents));
+  const [enquiries, setEnquiries] = useState<Enquiry[]>(() => loadPersisted('we4u_enquiries', initialEnquiries));
+  const [activity, setActivity] = useState<AppActivity[]>(() => loadPersisted('we4u_activity', initialActivity));
+  const [settings, setSettings] = useState<AppSettings>(() => loadPersisted('we4u_settings', initialSettings));
 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return sessionStorage.getItem('we4u_admin_auth') === 'true';
+    return (localStorage.getItem('we4u_admin_auth') ?? sessionStorage.getItem('we4u_admin_auth')) === 'true';
   });
 
   const [adminUser, setAdminUser] = useState<string>(() => {
-    return sessionStorage.getItem('we4u_admin_user') || 'we4u@gmail.com';
+    return localStorage.getItem('we4u_admin_user') ?? sessionStorage.getItem('we4u_admin_user') ?? 'we4u@gmail.com';
   });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Persist state changes to sessionStorage
-  useEffect(() => {
-    sessionStorage.setItem('we4u_vendors', JSON.stringify(vendors));
-  }, [vendors]);
+  // Persist state changes to localStorage and sessionStorage
+  useEffect(() => { savePersisted('we4u_vendors', vendors); }, [vendors]);
+  useEffect(() => { savePersisted('we4u_plans', plans); }, [plans]);
+  useEffect(() => { savePersisted('we4u_bands', bands); }, [bands]);
+  useEffect(() => { savePersisted('we4u_children', childrenRecords); }, [childrenRecords]);
+  useEffect(() => { savePersisted('we4u_subscriptions', subscriptions); }, [subscriptions]);
+  useEffect(() => { savePersisted('we4u_registrations', registrations); }, [registrations]);
+  useEffect(() => { savePersisted('we4u_payments', payments); }, [payments]);
+  useEffect(() => { savePersisted('we4u_commissions', commissions); }, [commissions]);
+  useEffect(() => { savePersisted('we4u_payouts', payouts); }, [payouts]);
+  useEffect(() => { savePersisted('we4u_incidents', incidents); }, [incidents]);
+  useEffect(() => { savePersisted('we4u_enquiries', enquiries); }, [enquiries]);
+  useEffect(() => { savePersisted('we4u_activity', activity); }, [activity]);
+  useEffect(() => { savePersisted('we4u_settings', settings); }, [settings]);
 
+  // Realtime cross-tab synchronization (updates live when edited in another tab/window)
   useEffect(() => {
-    sessionStorage.setItem('we4u_plans', JSON.stringify(plans));
-  }, [plans]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_bands', JSON.stringify(bands));
-  }, [bands]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_children', JSON.stringify(childrenRecords));
-  }, [childrenRecords]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_subscriptions', JSON.stringify(subscriptions));
-  }, [subscriptions]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_registrations', JSON.stringify(registrations));
-  }, [registrations]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_payments', JSON.stringify(payments));
-  }, [payments]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_commissions', JSON.stringify(commissions));
-  }, [commissions]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_payouts', JSON.stringify(payouts));
-  }, [payouts]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_incidents', JSON.stringify(incidents));
-  }, [incidents]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_enquiries', JSON.stringify(enquiries));
-  }, [enquiries]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_activity', JSON.stringify(activity));
-  }, [activity]);
-
-  useEffect(() => {
-    sessionStorage.setItem('we4u_settings', JSON.stringify(settings));
-  }, [settings]);
+    const handleStorage = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (e.key === 'we4u_settings') setSettings(parsed);
+        if (e.key === 'we4u_plans') setPlans(parsed);
+        if (e.key === 'we4u_vendors') setVendors(parsed);
+        if (e.key === 'we4u_bands') setBands(deduplicateBands(parsed));
+        if (e.key === 'we4u_children') setChildrenRecords(parsed);
+        if (e.key === 'we4u_subscriptions') setSubscriptions(parsed);
+        if (e.key === 'we4u_registrations') setRegistrations(parsed);
+        if (e.key === 'we4u_payments') setPayments(parsed);
+        if (e.key === 'we4u_commissions') setCommissions(parsed);
+        if (e.key === 'we4u_payouts') setPayouts(parsed);
+        if (e.key === 'we4u_incidents') setIncidents(parsed);
+        if (e.key === 'we4u_enquiries') setEnquiries(parsed);
+        if (e.key === 'we4u_activity') setActivity(parsed);
+      } catch {
+        // ignore JSON errors
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Asynchronously synchronize live data from Supabase & attach Realtime listeners
   useEffect(() => {
@@ -460,16 +419,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginAdmin = (username = 'we4u@gmail.com') => {
     setIsAdminLoggedIn(true);
     setAdminUser(username);
-    sessionStorage.setItem('we4u_admin_auth', 'true');
-    sessionStorage.setItem('we4u_admin_user', username);
+    savePersisted('we4u_admin_auth', 'true');
+    savePersisted('we4u_admin_user', username);
     addToast('success', 'Admin Sign In', 'Signed in successfully.');
     logAction('Admin Sign-In', `Signed in as ${username}.`, 'settings', 'AUTH');
   };
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
-    sessionStorage.removeItem('we4u_admin_auth');
-    sessionStorage.removeItem('we4u_admin_user');
+    try {
+      localStorage.removeItem('we4u_admin_auth');
+      localStorage.removeItem('we4u_admin_user');
+      sessionStorage.removeItem('we4u_admin_auth');
+      sessionStorage.removeItem('we4u_admin_user');
+    } catch {}
     addToast('info', 'Signed Out', 'Exited admin dashboard.');
   };
 
@@ -1511,7 +1474,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetDemoData = () => {
-    sessionStorage.clear();
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
     setVendors(initialVendors);
     setPlans(initialPlans);
     setBands(initialBands);
