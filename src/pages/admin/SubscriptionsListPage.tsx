@@ -233,10 +233,12 @@ export const SubscriptionsListPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleOpenReminder(sub)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-amber-50/80 hover:bg-amber-100/90 text-amber-900 transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-amber-50/80 hover:bg-amber-100 text-amber-900 transition-all shadow-2xs group"
               title="Send renewal reminder notice"
             >
-              <Bell className="w-3.5 h-3.5 text-amber-600" />
+              <div className="w-4 h-4 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors">
+                <Bell className="w-2.5 h-2.5" />
+              </div>
               <span>Reminder</span>
             </button>
           )}
@@ -244,10 +246,12 @@ export const SubscriptionsListPage: React.FC = () => {
           <button
             type="button"
             onClick={() => handleOpenRenew(sub)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-navy hover:bg-[#073966] text-white transition-all shadow-2xs hover:shadow-xs"
-            title="Extend subscription validity"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-navy bg-navy hover:bg-[#062c51] text-white transition-all shadow-2xs hover:shadow-xs group"
+            title="Extend subscription coverage"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-brand-mint" />
+            <div className="w-4 h-4 rounded-full bg-white/15 text-brand-mint flex items-center justify-center group-hover:bg-brand-mint group-hover:text-navy group-hover:rotate-180 transition-all duration-300">
+              <RefreshCw className="w-2.5 h-2.5" />
+            </div>
             <span>Renew</span>
           </button>
         </div>
