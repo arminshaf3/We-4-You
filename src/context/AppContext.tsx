@@ -1112,8 +1112,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     notes?: string
   ): Promise<{ success: boolean; message: string }> => {
     const sub = subscriptions.find((s) => s.id === subscriptionId);
-    const child = childrenRecords.find((c) => c.id === sub?.childId);
-    const guardianName = child?.primaryGuardian?.fullName || 'Guardian';
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+    setSubscriptions((prev) =>
+      prev.map((s) =>
+        s.id === subscriptionId
+          ? {
+              ...s,
+              reminderCount: (s.reminderCount || 0) + 1,
+              lastReminderSentAt: timestamp,
+              lastReminderChannel: channel,
+            }
+          : s
+      )
+    );
 
     await supabaseService.sendRenewalReminder(subscriptionId, channel, notes, adminUser);
 

@@ -168,6 +168,9 @@ export interface Subscription {
   renewalCount: number;
   customPriceAmount?: number;
   customPriceNote?: string;
+  lastReminderSentAt?: string;
+  lastReminderChannel?: string;
+  reminderCount?: number;
 }
 
 export interface Payment {

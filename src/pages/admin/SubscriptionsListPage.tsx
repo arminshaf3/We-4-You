@@ -180,8 +180,16 @@ export const SubscriptionsListPage: React.FC = () => {
       header: 'Coverage Status',
       className: 'min-w-[140px]',
       render: (sub) => (
-        <div className="whitespace-nowrap">
+        <div className="whitespace-nowrap space-y-1">
           <StatusBadge status={sub.status} />
+          {sub.reminderCount && sub.reminderCount > 0 ? (
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 text-3xs font-semibold text-emerald-900 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Reminded {sub.reminderCount}x
+              </span>
+            </div>
+          ) : null}
         </div>
       ),
     },
@@ -213,7 +221,7 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
-      className: 'text-right min-w-[250px]',
+      className: 'text-right min-w-[260px]',
       render: (sub) => (
         <div className="flex items-center justify-end gap-2 flex-nowrap whitespace-nowrap">
           {/* Executive Dollar Sign Price Button */}
@@ -233,13 +241,27 @@ export const SubscriptionsListPage: React.FC = () => {
             <button
               type="button"
               onClick={() => handleOpenReminder(sub)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-amber-50/80 hover:bg-amber-100 text-amber-900 transition-all shadow-2xs group"
-              title="Send renewal reminder notice"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all shadow-2xs group ${
+                sub.reminderCount && sub.reminderCount > 0
+                  ? 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950'
+                  : 'border-amber-200 bg-amber-50/80 hover:bg-amber-100 text-amber-900'
+              }`}
+              title={
+                sub.reminderCount && sub.reminderCount > 0
+                  ? `Reminder sent ${sub.reminderCount} time(s). Last sent: ${sub.lastReminderSentAt}. Click to dispatch another.`
+                  : 'Send renewal reminder notice'
+              }
             >
-              <div className="w-4 h-4 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                <Bell className="w-2.5 h-2.5" />
+              <div
+                className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-3xs transition-colors ${
+                  sub.reminderCount && sub.reminderCount > 0
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white'
+                }`}
+              >
+                {sub.reminderCount && sub.reminderCount > 0 ? '✓' : <Bell className="w-2.5 h-2.5" />}
               </div>
-              <span>Reminder</span>
+              <span>{sub.reminderCount && sub.reminderCount > 0 ? `Reminded (${sub.reminderCount})` : 'Reminder'}</span>
             </button>
           )}
 
@@ -584,6 +606,22 @@ export const SubscriptionsListPage: React.FC = () => {
         description="Dispatch an automated reminder to the family guardian for upcoming or expired subscription coverage."
       >
         <form onSubmit={handleConfirmReminder} className="space-y-4">
+          {reminderSub?.reminderCount && reminderSub.reminderCount > 0 ? (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-950 flex items-start gap-2.5 shadow-2xs">
+              <div className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-2xs flex-shrink-0 mt-0.5 shadow-xs">
+                ✓
+              </div>
+              <div>
+                <span className="font-bold block text-emerald-950">
+                  Reminder Sent {reminderSub.reminderCount} Time{reminderSub.reminderCount > 1 ? 's' : ''}
+                </span>
+                <span className="text-2xs text-emerald-800">
+                  Last dispatched on <strong>{reminderSub.lastReminderSentAt}</strong> via <strong>{reminderSub.lastReminderChannel || 'email'}</strong>. You can send another reminder below.
+                </span>
+              </div>
+            </div>
+          ) : null}
+
           <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-amber-900 font-semibold">Wearer:</span>
