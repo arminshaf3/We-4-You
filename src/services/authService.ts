@@ -40,10 +40,13 @@ export const authService = {
     }
 
     try {
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://we-4-you.vercel.app/login';
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: params.email.trim(),
         password: params.password,
         options: {
+          emailRedirectTo: redirectTo,
           data: {
             full_name: params.fullName,
             phone: params.phone,
@@ -251,9 +254,13 @@ export const authService = {
     if (!isSupabaseConfigured) {
       return { error: 'Supabase is not configured.' };
     }
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://we-4-you.vercel.app/login';
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email.trim(),
+      options: {
+        emailRedirectTo: redirectTo,
+      },
     });
     return { error: error ? error.message : null };
   },
@@ -294,10 +301,13 @@ export const authService = {
         },
       });
 
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://we-4-you.vercel.app/login';
+
       const { data: authData, error: authError } = await ephemeralClient.auth.signUp({
         email: params.email.trim(),
         password: params.password,
         options: {
+          emailRedirectTo: redirectTo,
           data: {
             full_name: params.fullName,
             phone: params.phone || '',
