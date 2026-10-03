@@ -241,7 +241,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return sessionStorage.getItem('we4u_admin_auth') === 'true';
   });
 
-  const [adminUser, setAdminUser] = useState<string>('Staff Administrator');
+  const [adminUser, setAdminUser] = useState<string>(() => {
+    return sessionStorage.getItem('we4u_admin_user') || 'we4u@gmail.com';
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Persist state changes to sessionStorage
@@ -454,10 +456,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Admin Auth Handlers
-  const loginAdmin = (username = 'Staff Administrator') => {
+  const loginAdmin = (username = 'we4u@gmail.com') => {
     setIsAdminLoggedIn(true);
     setAdminUser(username);
     sessionStorage.setItem('we4u_admin_auth', 'true');
+    sessionStorage.setItem('we4u_admin_user', username);
     addToast('success', 'Admin Sign In', 'Signed in successfully.');
     logAction('Admin Sign-In', `Signed in as ${username}.`, 'settings', 'AUTH');
   };
@@ -465,6 +468,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
     sessionStorage.removeItem('we4u_admin_auth');
+    sessionStorage.removeItem('we4u_admin_user');
     addToast('info', 'Signed Out', 'Exited admin dashboard.');
   };
 
