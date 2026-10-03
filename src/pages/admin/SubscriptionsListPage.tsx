@@ -123,50 +123,53 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'covered_wearer',
       header: 'Covered Wearer',
-      className: 'min-w-[170px]',
+      className: 'min-w-[190px]',
       render: (sub) => {
         const child = childrenRecords.find((c) => c.id === sub.childId);
         return child ? (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 whitespace-nowrap">
             <Link to={`/admin/children/${child.id}`} className="font-heading font-bold text-navy hover:underline text-sm block">
               {child.name}
             </Link>
-            <span className="font-mono text-2xs text-content-muted">Band: {child.currentBandCode}</span>
+            <span className="font-mono text-2xs text-slate-500">Band: {child.currentBandCode}</span>
           </div>
         ) : (
-          <span className="text-xs text-content-muted">Wearer {sub.childId}</span>
+          <span className="text-xs text-content-muted whitespace-nowrap">Wearer {sub.childId}</span>
         );
       },
     },
     {
       key: 'plan',
       header: 'Plan',
-      className: 'min-w-[120px]',
+      className: 'min-w-[140px]',
       render: (sub) => {
         const plan = plans.find((p) => p.id === sub.planId);
         return (
-          <span className="text-xs font-semibold text-navy">
-            {plan?.name || sub.planId}
-          </span>
+          <div className="whitespace-nowrap">
+            <span className="inline-block font-heading font-semibold text-xs text-navy bg-slate-100/90 px-2.5 py-1 rounded-md border border-slate-200/80">
+              {plan?.name || sub.planId}
+            </span>
+          </div>
         );
       },
     },
     {
       key: 'price',
       header: 'Rate / Price',
-      className: 'min-w-[110px]',
+      className: 'min-w-[130px]',
       render: (sub) => {
         const plan = plans.find((p) => p.id === sub.planId);
         const price = sub.customPriceAmount !== undefined ? sub.customPriceAmount : (plan?.priceAmount || 29);
         return (
-          <div className="text-xs space-y-0.5">
-            <span className="font-bold text-navy font-mono">${price.toFixed(2)}</span>
+          <div className="text-xs space-y-0.5 whitespace-nowrap">
+            <span className="font-bold text-navy font-mono text-sm">${price.toFixed(2)}</span>
             {sub.customPriceAmount !== undefined ? (
-              <span className="inline-block text-3xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                Custom Override
+              <span className="inline-flex items-center gap-1 text-3xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                Custom Rate
               </span>
             ) : (
-              <span className="block text-3xs text-content-muted">Standard</span>
+              <span className="block text-3xs text-slate-400 font-medium">Standard</span>
             )}
           </div>
         );
@@ -175,18 +178,24 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'status',
       header: 'Coverage Status',
-      className: 'min-w-[130px]',
-      render: (sub) => <StatusBadge status={sub.status} />,
+      className: 'min-w-[140px]',
+      render: (sub) => (
+        <div className="whitespace-nowrap">
+          <StatusBadge status={sub.status} />
+        </div>
+      ),
     },
     {
       key: 'period',
       header: 'Active Period',
-      className: 'min-w-[170px]',
+      className: 'min-w-[190px]',
       render: (sub) => (
-        <div className="text-xs text-content-body space-y-0.5">
-          <span>{sub.startDate} &rarr; <strong>{sub.expiryDate}</strong></span>
-          <span className="text-2xs text-content-muted block">
-            {sub.renewalCount > 0 ? `${sub.renewalCount} renewal(s)` : 'Initial period'}
+        <div className="text-xs space-y-0.5 whitespace-nowrap">
+          <span className="text-slate-700 font-medium">
+            {sub.startDate} <span className="text-slate-400">&rarr;</span> <strong className="text-navy">{sub.expiryDate}</strong>
+          </span>
+          <span className="text-2xs text-slate-400 block">
+            {sub.renewalCount > 0 ? `${sub.renewalCount} renewal(s) applied` : 'Initial coverage period'}
           </span>
         </div>
       ),
@@ -194,9 +203,9 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'paymentRef',
       header: 'Payment Receipt',
-      className: 'min-w-[110px]',
+      className: 'min-w-[130px]',
       render: (sub) => (
-        <span className="font-mono text-2xs text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80">
+        <span className="font-mono text-2xs text-slate-700 bg-slate-100/90 px-2 py-1 rounded-md border border-slate-200 whitespace-nowrap inline-block font-semibold">
           {sub.paymentRef || 'Linked to Reg'}
         </span>
       ),
@@ -204,34 +213,41 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
-      className: 'text-right min-w-[210px]',
+      className: 'text-right min-w-[250px]',
       render: (sub) => (
-        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+        <div className="flex items-center justify-end gap-2 flex-nowrap whitespace-nowrap">
+          {/* Executive Dollar Sign Price Button */}
           <button
             type="button"
             onClick={() => handleOpenCustPriceEdit(sub)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-navy transition-all shadow-2xs hover:border-slate-400"
-            title="Edit customer subscription price"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-emerald-50/70 hover:border-emerald-300 text-slate-700 hover:text-emerald-950 transition-all shadow-2xs group"
+            title="Configure customer-specific subscription price"
           >
-            <DollarSign className="w-3 h-3 text-navy" />
+            <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-3xs font-black font-mono group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              $
+            </div>
             <span>Edit Price</span>
           </button>
+
           {(sub.status === 'expiring_soon' || sub.status === 'expired') && (
             <button
               type="button"
               onClick={() => handleOpenReminder(sub)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border border-amber-300 bg-amber-50/70 hover:bg-amber-100 text-amber-900 transition-all shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-amber-200 bg-amber-50/80 hover:bg-amber-100/90 text-amber-900 transition-all shadow-2xs"
+              title="Send renewal reminder notice"
             >
-              <Bell className="w-3 h-3 text-amber-600" />
+              <Bell className="w-3.5 h-3.5 text-amber-600" />
               <span>Reminder</span>
             </button>
           )}
+
           <button
             type="button"
             onClick={() => handleOpenRenew(sub)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md bg-navy hover:bg-navy-dark text-white transition-all shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-navy hover:bg-[#073966] text-white transition-all shadow-2xs hover:shadow-xs"
+            title="Extend subscription validity"
           >
-            <RefreshCw className="w-3 h-3 text-mint" />
+            <RefreshCw className="w-3.5 h-3.5 text-brand-mint" />
             <span>Renew</span>
           </button>
         </div>
@@ -242,14 +258,14 @@ export const SubscriptionsListPage: React.FC = () => {
   const matchedReminderChild = childrenRecords.find((c) => c.id === reminderSub?.childId);
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Subscription Coverage &amp; Expirations"
         description="Monitor covered individuals, renewal reminders, expiration timelines, and extension receipts."
       />
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
           <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
             Total Subscriptions
@@ -299,75 +315,87 @@ export const SubscriptionsListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Queue Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-3 mb-4">
-        <button
-          onClick={() => setStatusFilter('ALL')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            statusFilter === 'ALL'
-              ? 'bg-navy text-white shadow-sm'
-              : 'bg-white text-content-body hover:bg-slate-100 border border-border-subtle'
-          }`}
-        >
-          <span>All Subscriptions</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-            {subscriptions.length}
-          </span>
-        </button>
+      {/* Unified Filter & Search Toolbar */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Search Bar with Left Icon */}
+        <div className="relative w-full md:max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search wearer, band code, or receipt ref..."
+            className="w-full h-10 pl-10 pr-8 text-xs sm:text-sm rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white focus:bg-white text-navy focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy transition-all"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-semibold"
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-        <button
-          onClick={() => setStatusFilter('active')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            statusFilter === 'active'
-              ? 'bg-[#088F5B] text-white shadow-sm'
-              : 'bg-white text-emerald-800 hover:bg-emerald-50 border border-emerald-200'
-          }`}
-        >
-          <span>Active</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
-            {activeCount}
-          </span>
-        </button>
+        {/* Queue Filter Badges */}
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => setStatusFilter('ALL')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              statusFilter === 'ALL'
+                ? 'bg-navy text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-navy'
+            }`}
+          >
+            <span>All Subscriptions</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-2xs ${statusFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+              {subscriptions.length}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setStatusFilter('expiring_soon')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            statusFilter === 'expiring_soon'
-              ? 'bg-amber-600 text-white shadow-sm'
-              : 'bg-white text-amber-800 hover:bg-amber-50 border border-amber-200'
-          }`}
-        >
-          <span>Expiring Soon (&le;30 Days)</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'expiring_soon' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900 font-bold'}`}>
-            {expiringCount}
-          </span>
-        </button>
+          <button
+            onClick={() => setStatusFilter('active')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              statusFilter === 'active'
+                ? 'bg-emerald-700 text-white shadow-xs'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/80'
+            }`}
+          >
+            <span>Active</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-2xs ${statusFilter === 'active' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
+              {activeCount}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setStatusFilter('expired')}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-            statusFilter === 'expired'
-              ? 'bg-rose-700 text-white shadow-sm'
-              : 'bg-white text-rose-800 hover:bg-rose-50 border border-rose-200'
-          }`}
-        >
-          <span>Expired</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${statusFilter === 'expired' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-900 font-bold'}`}>
-            {expiredCount}
-          </span>
-        </button>
-      </div>
+          <button
+            onClick={() => setStatusFilter('expiring_soon')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              statusFilter === 'expiring_soon'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/80'
+            }`}
+          >
+            <span>Expiring Soon</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-2xs ${statusFilter === 'expiring_soon' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900 font-bold'}`}>
+              {expiringCount}
+            </span>
+          </button>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-brand border border-border-subtle shadow-subtle mb-6 max-w-md relative">
-        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search wearer name, band code, or subscription ID..."
-          className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
-        />
+          <button
+            onClick={() => setStatusFilter('expired')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              statusFilter === 'expired'
+                ? 'bg-rose-700 text-white shadow-xs'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/80'
+            }`}
+          >
+            <span>Expired</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-2xs ${statusFilter === 'expired' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-900 font-bold'}`}>
+              {expiredCount}
+            </span>
+          </button>
+        </div>
       </div>
 
       <DataTable
