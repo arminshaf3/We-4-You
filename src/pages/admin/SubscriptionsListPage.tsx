@@ -121,16 +121,17 @@ export const SubscriptionsListPage: React.FC = () => {
 
   const columns: Column<Subscription>[] = [
     {
-      key: 'child',
+      key: 'covered_wearer',
       header: 'Covered Wearer',
+      className: 'min-w-[170px]',
       render: (sub) => {
         const child = childrenRecords.find((c) => c.id === sub.childId);
         return child ? (
-          <div>
+          <div className="space-y-0.5">
             <Link to={`/admin/children/${child.id}`} className="font-heading font-bold text-navy hover:underline text-sm block">
               {child.name}
             </Link>
-            <span className="font-mono text-xs text-content-muted">Band: {child.currentBandCode}</span>
+            <span className="font-mono text-2xs text-content-muted">Band: {child.currentBandCode}</span>
           </div>
         ) : (
           <span className="text-xs text-content-muted">Wearer {sub.childId}</span>
@@ -140,6 +141,7 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'plan',
       header: 'Plan',
+      className: 'min-w-[120px]',
       render: (sub) => {
         const plan = plans.find((p) => p.id === sub.planId);
         return (
@@ -152,14 +154,15 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'price',
       header: 'Rate / Price',
+      className: 'min-w-[110px]',
       render: (sub) => {
         const plan = plans.find((p) => p.id === sub.planId);
         const price = sub.customPriceAmount !== undefined ? sub.customPriceAmount : (plan?.priceAmount || 29);
         return (
-          <div className="text-xs">
+          <div className="text-xs space-y-0.5">
             <span className="font-bold text-navy font-mono">${price.toFixed(2)}</span>
             {sub.customPriceAmount !== undefined ? (
-              <span className="block text-3xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5">
+              <span className="inline-block text-3xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                 Custom Override
               </span>
             ) : (
@@ -172,16 +175,18 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'status',
       header: 'Coverage Status',
+      className: 'min-w-[130px]',
       render: (sub) => <StatusBadge status={sub.status} />,
     },
     {
       key: 'period',
       header: 'Active Period',
+      className: 'min-w-[170px]',
       render: (sub) => (
-        <div className="text-xs text-content-body">
+        <div className="text-xs text-content-body space-y-0.5">
           <span>{sub.startDate} &rarr; <strong>{sub.expiryDate}</strong></span>
-          <span className="text-[11px] text-content-muted block">
-            {sub.renewalCount > 0 ? `${sub.renewalCount} simulated renewal(s)` : 'Initial period'}
+          <span className="text-2xs text-content-muted block">
+            {sub.renewalCount > 0 ? `${sub.renewalCount} renewal(s)` : 'Initial period'}
           </span>
         </div>
       ),
@@ -189,8 +194,9 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'paymentRef',
       header: 'Payment Receipt',
+      className: 'min-w-[110px]',
       render: (sub) => (
-        <span className="font-mono text-xs text-slate-600">
+        <span className="font-mono text-2xs text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200/80">
           {sub.paymentRef || 'Linked to Reg'}
         </span>
       ),
@@ -198,36 +204,36 @@ export const SubscriptionsListPage: React.FC = () => {
     {
       key: 'actions',
       header: 'Actions',
-      className: 'text-right',
+      className: 'text-right min-w-[210px]',
       render: (sub) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <Button
+        <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+          <button
+            type="button"
             onClick={() => handleOpenCustPriceEdit(sub)}
-            variant="outline"
-            size="sm"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border border-slate-300 bg-white hover:bg-slate-50 text-navy transition-all shadow-2xs hover:border-slate-400"
             title="Edit customer subscription price"
-            leftIcon={<DollarSign className="w-3.5 h-3.5 text-navy" />}
           >
-            Edit Price
-          </Button>
+            <DollarSign className="w-3 h-3 text-navy" />
+            <span>Edit Price</span>
+          </button>
           {(sub.status === 'expiring_soon' || sub.status === 'expired') && (
-            <Button
+            <button
+              type="button"
               onClick={() => handleOpenReminder(sub)}
-              variant="outline"
-              size="sm"
-              leftIcon={<Bell className="w-3.5 h-3.5 text-amber-600" />}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md border border-amber-300 bg-amber-50/70 hover:bg-amber-100 text-amber-900 transition-all shadow-2xs"
             >
-              Reminder
-            </Button>
+              <Bell className="w-3 h-3 text-amber-600" />
+              <span>Reminder</span>
+            </button>
           )}
-          <Button
+          <button
+            type="button"
             onClick={() => handleOpenRenew(sub)}
-            variant="primary"
-            size="sm"
-            leftIcon={<RefreshCw className="w-3.5 h-3.5 text-mint" />}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-md bg-navy hover:bg-navy-dark text-white transition-all shadow-2xs"
           >
-            Renew
-          </Button>
+            <RefreshCw className="w-3 h-3 text-mint" />
+            <span>Renew</span>
+          </button>
         </div>
       ),
     },
