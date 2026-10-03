@@ -97,7 +97,8 @@ interface AppContextType {
   addPlan: (plan: Omit<SubscriptionPlan, 'id'>) => SubscriptionPlan;
   updatePlan: (id: string, updates: Partial<SubscriptionPlan>) => void;
   togglePlanActive: (id: string) => void;
-  renewSubscription: (subscriptionId: string, monthsToAdd: number, method?: PaymentMethod, cardDetails?: CardPaymentDetails) => Payment | undefined;
+  updateCustomerSubscriptionPrice: (subscriptionId: string, customPrice: number, notes?: string) => void;
+  renewSubscription: (subscriptionId: string, monthsToAdd: number, method?: PaymentMethod, cardDetails?: CardPaymentDetails, customPriceOverride?: number) => Payment | undefined;
   sendRenewalReminder: (subscriptionId: string, channel?: string, notes?: string) => Promise<{ success: boolean; message: string }>;
   directSubscribeWithCard: (params: {
     bandCode: string;
@@ -1033,11 +1034,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updatePlan(id, { isActive: newActive });
   };
 
+  const updateCustomerSubscriptionPrice = (subscriptionId: string, customPrice: number, notes?: string) => {
+    const numPrice = Number(customPrice);
+    setSubscriptions((prev) =>
+      prev.map((s) =>
+        s.id === subscriptionId
+          ? {
+              ...s,
+              customPriceAmount: isNaN(numPrice) ? undefined : numPrice,
+              customPriceNote: notes?.trim() || 'Admin customized subscription rate',
+            }
+          : s
+      )
+    );
+    logAction(
+      'Customer Subscription Price Updated',
+      `Admin set custom price of $${numPrice.toFixed(2)} for subscription ${subscriptionId}.`,
+      'subscription',
+      subscriptionId
+    );
+    addToast('success', 'Customer Price Updated', `Custom rate of $${numPrice.toFixed(2)} configured for this customer.`);
+  };
+
   const renewSubscription = (
     subscriptionId: string,
     monthsToAdd: number,
     method: PaymentMethod = 'card',
-    cardDetails?: CardPaymentDetails
+    cardDetails?: CardPaymentDetails,
+    customPriceOverride?: number
   ): Payment | undefined => {
     const sub = subscriptions.find((s) => s.id === subscriptionId);
     if (!sub) return undefined;
@@ -1052,7 +1076,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const transactionId = cardDetails?.transactionId || (isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined);
     const receiptRef = isCard ? `CARD-REN-${Math.floor(1000 + Math.random() * 9000)}` : `REC-REN-${Math.floor(1000 + Math.random() * 9000)}`;
     const matchingPlan = plans.find((p) => p.durationMonths === monthsToAdd && p.isActive) || plans.find((p) => p.durationMonths === monthsToAdd);
-    const amount = matchingPlan ? matchingPlan.priceAmount : (monthsToAdd >= 24 ? 49.0 : 29.0);
+    const standardAmount = matchingPlan ? matchingPlan.priceAmount : (monthsToAdd >= 24 ? 49.0 : 29.0);
+    const amount = typeof customPriceOverride === 'number' && !isNaN(customPriceOverride)
+      ? Number(customPriceOverride)
+      : (typeof sub.customPriceAmount === 'number' ? sub.customPriceAmount : standardAmount);
 
     setSubscriptions((prev) =>
       prev.map((s) =>
@@ -1065,6 +1092,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               paymentMethod: method,
               transactionId,
               renewalCount: s.renewalCount + 1,
+              customPriceAmount: typeof customPriceOverride === 'number' ? customPriceOverride : s.customPriceAmount,
             }
           : s
       )
@@ -1091,12 +1119,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       payerName: cardDetails?.cardholderName || 'Guardian Renewal',
       notes: isCard
         ? `Card payment accepted & confirmed online (${cardDetails?.brand || 'Visa'} ending ${cardDetails?.last4 || '4242'}). Coverage extended by ${monthsToAdd} months.`
-        : `Manual subscription renewal extended by ${monthsToAdd} months.`,
+        : `Manual subscription renewal extended by ${monthsToAdd} months.${typeof customPriceOverride === 'number' ? ` Custom negotiated customer rate applied: $${customPriceOverride.toFixed(2)}.` : ''}`,
     };
     setPayments((prev) => [newPay, ...prev]);
 
     logAction('Subscription Renewed', `Renewed subscription ${subscriptionId} until ${newExpiry} via ${method} ($${amount}).`, 'payment', subscriptionId);
-    addToast('success', isCard ? 'Card Payment Confirmed' : 'Subscription Renewed', `Coverage extended to ${newExpiry}.`);
+    addToast('success', isCard ? 'Card Payment Confirmed' : 'Subscription Renewed', `Coverage extended to ${newExpiry} at $${amount.toFixed(2)}.`);
     return newPay;
   };
 
@@ -1557,6 +1585,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addPlan,
         updatePlan,
         togglePlanActive,
+        updateCustomerSubscriptionPrice,
         renewSubscription,
         sendRenewalReminder,
         directSubscribeWithCard,

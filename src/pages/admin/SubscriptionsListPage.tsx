@@ -5,13 +5,13 @@ import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { FormField, Select, Textarea } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Subscription, SubscriptionStatus } from '../../types';
-import { CreditCard, RefreshCw, Calendar, ArrowRight, Search, Bell, Mail, Phone, MessageSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CreditCard, RefreshCw, Calendar, ArrowRight, Search, Bell, Mail, Phone, MessageSquare, AlertCircle, CheckCircle2, DollarSign, Edit2 } from 'lucide-react';
 
 export const SubscriptionsListPage: React.FC = () => {
-  const { subscriptions, childrenRecords, plans, renewSubscription, sendRenewalReminder } = useApp();
+  const { subscriptions, childrenRecords, plans, renewSubscription, sendRenewalReminder, updateCustomerSubscriptionPrice } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -21,6 +21,13 @@ export const SubscriptionsListPage: React.FC = () => {
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
   const [renewalMonths, setRenewalMonths] = useState(12);
   const [renewalMethod, setRenewalMethod] = useState<'card' | 'offline_voucher'>('card');
+  const [customRenewalPrice, setCustomRenewalPrice] = useState<string>('');
+
+  // Customer Price Edit Modal
+  const [isCustPriceModalOpen, setIsCustPriceModalOpen] = useState(false);
+  const [custPriceSub, setCustPriceSub] = useState<Subscription | null>(null);
+  const [custPriceAmount, setCustPriceAmount] = useState<number>(29);
+  const [custPriceNote, setCustPriceNote] = useState<string>('');
 
   // Reminder Modal
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
@@ -57,7 +64,16 @@ export const SubscriptionsListPage: React.FC = () => {
     setSelectedSub(sub);
     setRenewalMonths(12);
     setRenewalMethod('card');
+    setCustomRenewalPrice(sub.customPriceAmount !== undefined ? String(sub.customPriceAmount) : '');
     setIsRenewModalOpen(true);
+  };
+
+  const handleOpenCustPriceEdit = (sub: Subscription) => {
+    setCustPriceSub(sub);
+    const plan = plans.find((p) => p.id === sub.planId);
+    setCustPriceAmount(sub.customPriceAmount !== undefined ? sub.customPriceAmount : (plan?.priceAmount || 29));
+    setCustPriceNote(sub.customPriceNote || '');
+    setIsCustPriceModalOpen(true);
   };
 
   const handleOpenReminder = (sub: Subscription) => {
@@ -70,7 +86,8 @@ export const SubscriptionsListPage: React.FC = () => {
   const handleConfirmRenew = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSub) return;
-    renewSubscription(selectedSub.id, Number(renewalMonths), renewalMethod);
+    const customPriceNum = customRenewalPrice.trim() !== '' ? Number(customRenewalPrice) : undefined;
+    renewSubscription(selectedSub.id, Number(renewalMonths), renewalMethod, undefined, customPriceNum);
     setIsRenewModalOpen(false);
   };
 
@@ -84,6 +101,13 @@ export const SubscriptionsListPage: React.FC = () => {
     } finally {
       setIsSendingReminder(false);
     }
+  };
+
+  const handleSaveCustPrice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!custPriceSub) return;
+    updateCustomerSubscriptionPrice(custPriceSub.id, custPriceAmount, custPriceNote);
+    setIsCustPriceModalOpen(false);
   };
 
   // Preview projected new expiry date
@@ -126,6 +150,26 @@ export const SubscriptionsListPage: React.FC = () => {
       },
     },
     {
+      key: 'price',
+      header: 'Rate / Price',
+      render: (sub) => {
+        const plan = plans.find((p) => p.id === sub.planId);
+        const price = sub.customPriceAmount !== undefined ? sub.customPriceAmount : (plan?.priceAmount || 29);
+        return (
+          <div className="text-xs">
+            <span className="font-bold text-navy font-mono">${price.toFixed(2)}</span>
+            {sub.customPriceAmount !== undefined ? (
+              <span className="block text-3xs font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5">
+                Custom Override
+              </span>
+            ) : (
+              <span className="block text-3xs text-content-muted">Standard</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       key: 'status',
       header: 'Coverage Status',
       render: (sub) => <StatusBadge status={sub.status} />,
@@ -153,10 +197,19 @@ export const SubscriptionsListPage: React.FC = () => {
     },
     {
       key: 'actions',
-      header: 'Action',
+      header: 'Actions',
       className: 'text-right',
       render: (sub) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5">
+          <Button
+            onClick={() => handleOpenCustPriceEdit(sub)}
+            variant="outline"
+            size="sm"
+            title="Edit customer subscription price"
+            leftIcon={<DollarSign className="w-3.5 h-3.5 text-navy" />}
+          >
+            Edit Price
+          </Button>
           {(sub.status === 'expiring_soon' || sub.status === 'expired') && (
             <Button
               onClick={() => handleOpenReminder(sub)}
@@ -164,7 +217,7 @@ export const SubscriptionsListPage: React.FC = () => {
               size="sm"
               leftIcon={<Bell className="w-3.5 h-3.5 text-amber-600" />}
             >
-              Send Reminder
+              Reminder
             </Button>
           )}
           <Button
@@ -363,10 +416,30 @@ export const SubscriptionsListPage: React.FC = () => {
             </FormField>
           </div>
 
+          <FormField
+            label="Custom Renewal Price Override ($ USD)"
+            hint="Leave blank to use standard rate, or enter custom discounted / special rate for this customer"
+          >
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold">
+                $
+              </div>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={customRenewalPrice}
+                onChange={(e) => setCustomRenewalPrice(e.target.value)}
+                placeholder="e.g. 25.00 (Optional Custom Price)"
+                className="pl-8"
+              />
+            </div>
+          </FormField>
+
           <div className="text-2xs text-content-muted flex items-center justify-between pt-1">
             <span>Prices are managed centrally by the Administrator.</span>
             <Link to="/admin/plans" className="text-navy font-semibold underline hover:text-navy-dark">
-              Edit Subscription Prices →
+              Edit Standard Plans →
             </Link>
           </div>
 
@@ -379,6 +452,90 @@ export const SubscriptionsListPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Customer Specific Price Edit Modal */}
+      <Modal
+        isOpen={isCustPriceModalOpen}
+        onClose={() => setIsCustPriceModalOpen(false)}
+        title="Edit Customer Subscription Rate"
+        description="Set a custom recurring or renewal price specifically for this customer / wearer."
+      >
+        {custPriceSub && (
+          <form onSubmit={handleSaveCustPrice} className="space-y-4">
+            <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-content-muted">Subscription ID:</span>
+                <span className="font-mono font-bold text-navy">{custPriceSub.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-muted">Current Expiration:</span>
+                <span className="text-navy font-semibold">{custPriceSub.expiryDate}</span>
+              </div>
+            </div>
+
+            <FormField
+              label="Custom Customer Rate ($ USD)"
+              required
+              hint="Overrides standard plan pricing for all future extensions and receipts for this individual"
+            >
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold">
+                  $
+                </div>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={custPriceAmount}
+                  onChange={(e) => setCustPriceAmount(Number(e.target.value))}
+                  className="pl-8"
+                  placeholder="29.00"
+                />
+              </div>
+            </FormField>
+
+            {/* Quick Presets */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-navy">Quick Rate Presets:</label>
+              <div className="flex flex-wrap gap-2">
+                {[0, 15, 20, 25, 29, 39, 49].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setCustPriceAmount(amt)}
+                    className={`px-2.5 py-1 text-xs rounded-brand border transition-all ${
+                      custPriceAmount === amt
+                        ? 'bg-navy text-white font-bold border-navy shadow-xs'
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                    }`}
+                  >
+                    {amt === 0 ? 'Free / Waived ($0)' : `$${amt}.00`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <FormField label="Staff Note / Reason for Rate Change">
+              <Textarea
+                rows={2}
+                value={custPriceNote}
+                onChange={(e) => setCustPriceNote(e.target.value)}
+                placeholder="e.g. Special agreement, loyalty pricing, or multi-member household discount"
+              />
+            </FormField>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
+              <Button onClick={() => setIsCustPriceModalOpen(false)} variant="outline" size="md">
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="md">
+                Save Customer Rate
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       {/* Reminder Modal */}

@@ -187,11 +187,15 @@ export const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* Visual */}
             <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="relative rounded-brand-lg overflow-hidden border border-border-subtle shadow-card bg-white">
+              <div className="relative rounded-brand-lg overflow-hidden border border-border-subtle shadow-card bg-white group">
                 <img
-                  src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80"
-                  alt="Mother walking warmly with her child in natural daylight"
-                  className="w-full h-80 sm:h-96 object-cover"
+                  src={settings.aboutImageUrl || 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80'}
+                  alt="Our Purpose Visual"
+                  className="w-full h-80 sm:h-96 object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80';
+                  }}
                 />
               </div>
             </div>
@@ -202,10 +206,10 @@ export const HomePage: React.FC = () => {
                 Our Purpose
               </span>
               <h2 className="text-3xl sm:text-4xl font-heading font-bold text-navy leading-tight">
-                Care starts with connection.
+                {settings.aboutHeadline || 'Care starts with connection.'}
               </h2>
               <p className="text-lg text-content-body leading-relaxed">
-                We 4 You brings families and caring people closer through simple identification bands and an office contact service.
+                {settings.aboutText || 'We 4 You brings families and caring people closer through simple identification bands and an office contact service.'}
               </p>
               <div className="pt-3">
                 <Button to="/about" variant="outline" size="md">
@@ -450,20 +454,23 @@ export const HomePage: React.FC = () => {
               Comfortable, Universal &amp; Durable Design
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold text-navy tracking-tight">
-              Designed for everyone.
+              {settings.showcaseHeadline || 'Designed for everyone.'}
             </h2>
             <p className="text-base sm:text-lg text-content-body leading-relaxed">
-              Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for children, seniors, runners, and everyday wearers.
+              {settings.showcaseSubheadline || 'Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for children, seniors, runners, and everyday wearers.'}
             </p>
           </div>
 
           {/* Full-width Landscape Product Image Banner */}
           <div className="relative rounded-brand-2xl overflow-hidden shadow-2xl border border-slate-200/80 bg-white group">
             <img
-              src="/wristbands-colors-showcase.jpg"
-              alt="We 4 You identification wristbands in Mint Green, Coral Red, Vibrant Orange, Royal Purple, Clean White, and Deep Navy"
+              src={settings.showcaseImageUrl || '/wristbands-colors-showcase.jpg'}
+              alt="We 4 You identification wristbands showcase banner"
               className="w-full h-auto object-cover select-none transition-transform duration-700 group-hover:scale-[1.01]"
               loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/wristbands-colors-showcase.jpg';
+              }}
             />
             {/* Subtle bottom glassmorphic specs bar */}
             <div className="bg-navy/95 backdrop-blur-md px-6 py-4 text-white flex flex-wrap items-center justify-between gap-4 border-t border-white/10">

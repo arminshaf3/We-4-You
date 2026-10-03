@@ -29,6 +29,12 @@ export const initialSettings: AppSettings = {
   heroHeadline: 'A little band.',
   heroHighlight: 'Protection for everyone.',
   heroSubheadline: 'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.',
+  aboutImageUrl: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80',
+  aboutHeadline: 'Care starts with connection.',
+  aboutText: 'We 4 You brings families and caring people closer through simple identification bands and an office contact service.',
+  showcaseImageUrl: '/wristbands-colors-showcase.jpg',
+  showcaseHeadline: 'Designed for everyone.',
+  showcaseSubheadline: 'Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for children, seniors, runners, and everyday wearers.',
 };
 
 export const initialVendors: Vendor[] = [

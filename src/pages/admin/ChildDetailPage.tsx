@@ -31,7 +31,7 @@ import {
 
 export const ChildDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { childrenRecords, subscriptions, vendors, incidents, updateChildRecord } = useApp();
+  const { childrenRecords, subscriptions, vendors, incidents, updateChildRecord, updateCustomerSubscriptionPrice } = useApp();
 
   const child = childrenRecords.find((c) => c.id === id);
   const sub = subscriptions.find((s) => s.id === child?.subscriptionId);
@@ -40,6 +40,11 @@ export const ChildDetailPage: React.FC = () => {
 
   // Signed URL for private photo
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(child?.photoUrl || null);
+
+  // Custom Price Modal State
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [customPriceVal, setCustomPriceVal] = useState<number>(sub?.customPriceAmount !== undefined ? sub.customPriceAmount : 29);
+  const [customPriceNote, setCustomPriceNote] = useState<string>(sub?.customPriceNote || '');
 
   useEffect(() => {
     if (child?.photoUrl) {
@@ -422,6 +427,7 @@ export const ChildDetailPage: React.FC = () => {
           </div>
 
           {/* Active Subscription Details */}
+          {/* Subscription Details */}
           <div className="bg-white p-5 rounded-brand border border-border-subtle shadow-subtle space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-heading font-bold uppercase tracking-wider text-navy">
@@ -436,6 +442,19 @@ export const ChildDetailPage: React.FC = () => {
                   <StatusBadge status={sub.status} size="sm" />
                 </div>
                 <div className="flex items-center justify-between">
+                  <span className="text-content-muted">Rate / Price:</span>
+                  <div className="text-right">
+                    <span className="font-bold text-navy">
+                      ${(sub.customPriceAmount !== undefined ? sub.customPriceAmount : 29).toFixed(2)}
+                    </span>
+                    {sub.customPriceAmount !== undefined && (
+                      <span className="block text-3xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5">
+                        Custom Price Override
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
                   <span className="text-content-muted">Start Date:</span>
                   <span className="font-semibold text-navy">{sub.startDate}</span>
                 </div>
@@ -447,6 +466,22 @@ export const ChildDetailPage: React.FC = () => {
                   <span className="text-content-muted">Renewals:</span>
                   <span className="text-navy">{sub.renewalCount} extension(s)</span>
                 </div>
+
+                <div className="pt-2 flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      setCustomPriceVal(sub.customPriceAmount !== undefined ? sub.customPriceAmount : 29);
+                      setCustomPriceNote(sub.customPriceNote || '');
+                      setIsPriceModalOpen(true);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs"
+                    leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                  >
+                    Edit Customer Price
+                  </Button>
+                </div>
               </div>
             ) : (
               <p className="text-xs text-content-muted">No linked active subscription.</p>
@@ -455,7 +490,7 @@ export const ChildDetailPage: React.FC = () => {
               to="/admin/subscriptions"
               className="text-xs text-navy font-semibold hover:underline block text-center pt-2 border-t border-border-subtle"
             >
-              Manage Subscription →
+              Manage In Subscriptions Portal →
             </Link>
           </div>
 
@@ -674,6 +709,101 @@ export const ChildDetailPage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit Customer Subscription Price Modal */}
+      <Modal
+        isOpen={isPriceModalOpen}
+        onClose={() => setIsPriceModalOpen(false)}
+        title={`Custom Subscription Price: ${child.name}`}
+        description="Set a customized subscription rate or special negotiated pricing for this specific customer."
+      >
+        {sub && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              updateCustomerSubscriptionPrice(sub.id, customPriceVal, customPriceNote);
+              setIsPriceModalOpen(false);
+            }}
+            className="space-y-4"
+          >
+            <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-content-muted">Wearer / Customer:</span>
+                <span className="font-bold text-navy">{child.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-muted">Band Reference:</span>
+                <span className="font-mono text-navy font-bold">{child.currentBandCode}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-content-muted">Current Expiration:</span>
+                <span className="text-navy">{sub.expiryDate}</span>
+              </div>
+            </div>
+
+            <FormField
+              label="Custom Subscription Price ($ USD)"
+              required
+              hint="Overrides standard plan pricing for all future renewals and receipts for this customer"
+            >
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold">
+                  $
+                </div>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  value={customPriceVal}
+                  onChange={(e) => setCustomPriceVal(Number(e.target.value))}
+                  className="pl-8"
+                  placeholder="29.00"
+                />
+              </div>
+            </FormField>
+
+            {/* Quick Discount / Override Presets */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-navy">Quick Rate Presets:</label>
+              <div className="flex flex-wrap gap-2">
+                {[0, 15, 20, 25, 29, 39, 49].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setCustomPriceVal(amt)}
+                    className={`px-2.5 py-1 text-xs rounded-brand border transition-all ${
+                      customPriceVal === amt
+                        ? 'bg-navy text-white font-bold border-navy shadow-xs'
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                    }`}
+                  >
+                    {amt === 0 ? 'Free / Waived ($0)' : `$${amt}.00`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <FormField label="Price Override Reason / Staff Note">
+              <Textarea
+                value={customPriceNote}
+                onChange={(e) => setCustomPriceNote(e.target.value)}
+                placeholder="e.g. Special family hardship rate, multi-child discount, or promotional agreement"
+                rows={2}
+              />
+            </FormField>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-border-subtle">
+              <Button onClick={() => setIsPriceModalOpen(false)} variant="outline" size="md">
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="md">
+                Apply Customer Price
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   );

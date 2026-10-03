@@ -166,6 +166,8 @@ export interface Subscription {
   paymentMethod?: PaymentMethod;
   transactionId?: string;
   renewalCount: number;
+  customPriceAmount?: number;
+  customPriceNote?: string;
 }
 
 export interface Payment {
@@ -280,4 +282,10 @@ export interface AppSettings {
   heroHeadline?: string;
   heroHighlight?: string;
   heroSubheadline?: string;
+  aboutImageUrl?: string;
+  aboutHeadline?: string;
+  aboutText?: string;
+  showcaseImageUrl?: string;
+  showcaseHeadline?: string;
+  showcaseSubheadline?: string;
 }
