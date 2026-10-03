@@ -298,7 +298,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     supabaseService.getPlans().then((data) => {
-      if (data && data.length > 0) setPlans(data);
+      if (data && data.length > 0) {
+        const isModified = localStorage.getItem('we4u_plans_modified') === 'true';
+        if (!isModified) {
+          setPlans(data);
+        } else {
+          setPlans((prev) => {
+            const map = new Map<string, SubscriptionPlan>();
+            data.forEach((p) => map.set(p.id, p));
+            prev.forEach((p) => map.set(p.id, p));
+            return Array.from(map.values());
+          });
+        }
+      }
     });
 
     supabaseService.getBands().then((data) => {
@@ -982,6 +994,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updatePlan = (id: string, updates: Partial<SubscriptionPlan>) => {
+    try {
+      localStorage.setItem('we4u_plans_modified', 'true');
+    } catch {}
     setPlans((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
