@@ -276,4 +276,8 @@ export interface AppSettings {
   defaultCommissionPercentage: number;
   defaultCommissionFixed: number;
   simulationNote: string;
+  heroImageUrl?: string;
+  heroHeadline?: string;
+  heroHighlight?: string;
+  heroSubheadline?: string;
 }

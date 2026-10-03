@@ -1051,7 +1051,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const isCard = method === 'card';
     const transactionId = cardDetails?.transactionId || (isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined);
     const receiptRef = isCard ? `CARD-REN-${Math.floor(1000 + Math.random() * 9000)}` : `REC-REN-${Math.floor(1000 + Math.random() * 9000)}`;
-    const amount = monthsToAdd === 24 ? 49.0 : 29.0;
+    const matchingPlan = plans.find((p) => p.durationMonths === monthsToAdd && p.isActive) || plans.find((p) => p.durationMonths === monthsToAdd);
+    const amount = matchingPlan ? matchingPlan.priceAmount : (monthsToAdd >= 24 ? 49.0 : 29.0);
 
     setSubscriptions((prev) =>
       prev.map((s) =>

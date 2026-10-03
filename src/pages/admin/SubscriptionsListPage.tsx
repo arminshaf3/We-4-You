@@ -339,14 +339,16 @@ export const SubscriptionsListPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Extension Duration" required>
+            <FormField label="Extension Duration" required hint="Configured in Admin Service Plans">
               <Select
                 value={renewalMonths}
                 onChange={(e) => setRenewalMonths(Number(e.target.value))}
               >
-                <option value={12}>1 Year Extension ($29.00)</option>
-                <option value={24}>2 Year Extension ($49.00)</option>
-                <option value={6}>6 Month Extension ($15.00)</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.durationMonths}>
+                    {plan.name} — {plan.durationMonths} Mo ({plan.priceFormatted})
+                  </option>
+                ))}
               </Select>
             </FormField>
 
@@ -359,6 +361,13 @@ export const SubscriptionsListPage: React.FC = () => {
                 <option value="offline_voucher">Cash / Bank Transfer</option>
               </Select>
             </FormField>
+          </div>
+
+          <div className="text-2xs text-content-muted flex items-center justify-between pt-1">
+            <span>Prices are managed centrally by the Administrator.</span>
+            <Link to="/admin/plans" className="text-navy font-semibold underline hover:text-navy-dark">
+              Edit Subscription Prices →
+            </Link>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

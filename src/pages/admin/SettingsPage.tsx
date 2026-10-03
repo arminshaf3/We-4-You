@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { Button } from '../../components/common/Button';
-import { FormField, Input } from '../../components/common/FormField';
+import { FormField, Input, Textarea } from '../../components/common/FormField';
+import { Modal } from '../../components/common/Modal';
 import { useApp } from '../../context/AppContext';
+import { SubscriptionPlan } from '../../types';
 import {
   Settings,
   Save,
@@ -29,10 +32,40 @@ import {
   FileText,
   BadgePercent,
   Store,
+  Image as ImageIcon,
+  Upload,
+  Link as LinkIcon,
+  CreditCard,
+  Edit2,
+  ExternalLink,
+  Trash2,
 } from 'lucide-react';
 
+const HERO_PRESETS = [
+  {
+    name: 'Default Family Protection',
+    url: '/hero-full.jpg',
+    description: 'Original mother and child with identification wristband on sofa',
+  },
+  {
+    name: 'Elderly & Senior Care',
+    url: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=1600&q=80',
+    description: 'Caring elderly couple walking outdoors with peace of mind',
+  },
+  {
+    name: 'Youth & Child Safety',
+    url: 'https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?auto=format&fit=crop&w=1600&q=80',
+    description: 'Happy child playing safely outdoors in public park',
+  },
+  {
+    name: 'Active Sports & Athletes',
+    url: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=80',
+    description: 'Runner with safety wristband on active morning trail',
+  },
+];
+
 export const SettingsPage: React.FC = () => {
-  const { settings, updateSettings, resetDemoData } = useApp();
+  const { settings, updateSettings, resetDemoData, plans, updatePlan } = useApp();
 
   const [officePhone, setOfficePhone] = useState(settings.officePhone);
   const [officeEmail, setOfficeEmail] = useState(settings.officeEmail);
@@ -46,7 +79,23 @@ export const SettingsPage: React.FC = () => {
   const [defaultCommPct, setDefaultCommPct] = useState(settings.defaultCommissionPercentage);
   const [defaultCommFixed, setDefaultCommFixed] = useState(settings.defaultCommissionFixed || 10);
   const [simulationNote, setSimulationNote] = useState(settings.simulationNote || '');
+
+  // Landing Page & Hero Customization
+  const [heroImageUrl, setHeroImageUrl] = useState(settings.heroImageUrl || '/hero-full.jpg');
+  const [heroHeadline, setHeroHeadline] = useState(settings.heroHeadline || 'A little band.');
+  const [heroHighlight, setHeroHighlight] = useState(settings.heroHighlight || 'Protection for everyone.');
+  const [heroSubheadline, setHeroSubheadline] = useState(
+    settings.heroSubheadline ||
+      'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.'
+  );
+
   const [isSavedRecently, setIsSavedRecently] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Quick Plan Edit Modal inside Settings
+  const [selectedPlanToEdit, setSelectedPlanToEdit] = useState<SubscriptionPlan | null>(null);
+  const [quickPlanPrice, setQuickPlanPrice] = useState<number>(29);
+  const [quickPlanFormatted, setQuickPlanFormatted] = useState<string>('$29.00 / year');
 
   // Sync state if context changes externally
   useEffect(() => {
@@ -60,6 +109,13 @@ export const SettingsPage: React.FC = () => {
     setDefaultCommPct(settings.defaultCommissionPercentage);
     setDefaultCommFixed(settings.defaultCommissionFixed || 10);
     setSimulationNote(settings.simulationNote || '');
+    setHeroImageUrl(settings.heroImageUrl || '/hero-full.jpg');
+    setHeroHeadline(settings.heroHeadline || 'A little band.');
+    setHeroHighlight(settings.heroHighlight || 'Protection for everyone.');
+    setHeroSubheadline(
+      settings.heroSubheadline ||
+        'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.'
+    );
   }, [settings]);
 
   const hasUnsavedChanges =
@@ -71,7 +127,49 @@ export const SettingsPage: React.FC = () => {
     allowPhotoUpload !== settings.allowPhotoUpload ||
     Number(defaultCommPct) !== settings.defaultCommissionPercentage ||
     Number(defaultCommFixed) !== (settings.defaultCommissionFixed || 10) ||
-    simulationNote !== (settings.simulationNote || '');
+    simulationNote !== (settings.simulationNote || '') ||
+    heroImageUrl !== (settings.heroImageUrl || '/hero-full.jpg') ||
+    heroHeadline !== (settings.heroHeadline || 'A little band.') ||
+    heroHighlight !== (settings.heroHighlight || 'Protection for everyone.') ||
+    heroSubheadline !== (settings.heroSubheadline || '');
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate image type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (PNG, JPG, WebP, etc.).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const dataUrl = loadEvt.target?.result as string;
+      if (dataUrl) {
+        setHeroImageUrl(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOpenQuickPlanEdit = (plan: SubscriptionPlan) => {
+    setSelectedPlanToEdit(plan);
+    setQuickPlanPrice(plan.priceAmount);
+    setQuickPlanFormatted(plan.priceFormatted);
+  };
+
+  const handleSaveQuickPlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlanToEdit) return;
+
+    updatePlan(selectedPlanToEdit.id, {
+      priceAmount: Number(quickPlanPrice),
+      priceFormatted: quickPlanFormatted.trim(),
+    });
+
+    setSelectedPlanToEdit(null);
+  };
 
   const handleSave = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -86,6 +184,10 @@ export const SettingsPage: React.FC = () => {
       defaultCommissionPercentage: Number(defaultCommPct),
       defaultCommissionFixed: Number(defaultCommFixed),
       simulationNote: simulationNote.trim(),
+      heroImageUrl: heroImageUrl.trim(),
+      heroHeadline: heroHeadline.trim(),
+      heroHighlight: heroHighlight.trim(),
+      heroSubheadline: heroSubheadline.trim(),
     });
     setIsSavedRecently(true);
     setTimeout(() => setIsSavedRecently(false), 3000);
@@ -109,7 +211,7 @@ export const SettingsPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <PageHeader
           title="System & Brand Configuration"
-          description="Centralized configuration management for public office contact, parent registration policies, and partner commission defaults."
+          description="Centralized configuration management for landing page media, subscription plan prices, office contact, and registration policies."
         />
 
         {/* Global Environment Status Badges */}
@@ -130,8 +232,266 @@ export const SettingsPage: React.FC = () => {
         
         {/* Left Column (8 cols): Form Sections */}
         <form onSubmit={handleSave} className="lg:col-span-8 space-y-8">
-          
-          {/* Section 1: Public Office & Contact Information */}
+
+          {/* Section 1: Landing Page Hero Image & Visual Customizer */}
+          <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-6 sm:p-7 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-navy/5 border border-navy/10 flex items-center justify-center text-navy font-bold shadow-xs">
+                  <ImageIcon className="w-5 h-5 text-navy" />
+                </div>
+                <div>
+                  <h2 className="text-base font-heading font-bold text-navy">Landing Page Hero Banner &amp; Visuals</h2>
+                  <p className="text-xs text-content-muted">Upload or set custom background imagery and headlines for the public landing page.</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-wider text-navy bg-navy/5 border border-navy/10 px-2.5 py-1 rounded-md">
+                Public Hero
+              </span>
+            </div>
+
+            {/* Live Hero Banner Preview Box */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-navy">
+                <span>Hero Banner Live Display</span>
+                <span className="text-2xs text-content-muted">Changes preview in real-time</span>
+              </div>
+              <div className="relative rounded-xl overflow-hidden bg-[#05294B] min-h-[180px] sm:min-h-[220px] flex items-center p-6 border border-navy/20 shadow-inner group">
+                <img
+                  src={heroImageUrl || '/hero-full.jpg'}
+                  alt="Landing Hero Banner"
+                  className="absolute inset-0 w-full h-full object-cover object-right pointer-events-none transition-all duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/hero-full.jpg';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#05294B] via-[#05294B]/80 to-transparent pointer-events-none" />
+                <div className="relative z-10 max-w-md text-white space-y-2">
+                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-mint/20 text-mint text-3xs font-bold border border-mint/30 uppercase tracking-wider">
+                    Live Banner Preview
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold leading-tight font-heading">
+                    {heroHeadline} <span className="text-mint">{heroHighlight}</span>
+                  </h3>
+                  <p className="text-xs text-slate-200 line-clamp-2">
+                    {heroSubheadline}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image Upload & URL Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="p-4 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 hover:bg-slate-50 flex flex-col items-center justify-center text-center space-y-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="w-10 h-10 rounded-full bg-navy/5 text-navy flex items-center justify-center">
+                  <Upload className="w-5 h-5 text-navy" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-navy block">Upload New Hero Photo</span>
+                  <span className="text-3xs text-content-muted block">PNG, JPG, WebP (Max 5MB recommended)</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  leftIcon={<Upload className="w-3.5 h-3.5" />}
+                >
+                  Choose File from Device
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <FormField label="Or Enter Direct Image URL" hint="Paste any high-resolution image URL">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <LinkIcon className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <input
+                      type="url"
+                      value={heroImageUrl}
+                      onChange={(e) => setHeroImageUrl(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full h-10 pl-9 pr-4 text-xs font-mono rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy transition-all focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                    />
+                  </div>
+                </FormField>
+
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setHeroImageUrl('/hero-full.jpg')}
+                    className="text-2xs font-semibold text-slate-500 hover:text-navy flex items-center gap-1 underline"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Reset to Default Family Hero
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Hero Presets */}
+            <div className="pt-2">
+              <label className="text-xs font-semibold text-navy block mb-2">
+                Quick High-Resolution Presets:
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {HERO_PRESETS.map((preset) => {
+                  const isSelected = heroImageUrl === preset.url;
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => setHeroImageUrl(preset.url)}
+                      className={`p-2 rounded-lg border text-left transition-all flex flex-col gap-1.5 ${
+                        isSelected
+                          ? 'border-navy bg-navy/5 ring-1 ring-navy'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="h-14 w-full rounded overflow-hidden relative bg-slate-100">
+                        <img
+                          src={preset.url}
+                          alt={preset.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/hero-full.jpg';
+                          }}
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 bg-navy text-white rounded-full p-0.5">
+                            <Check className="w-3 h-3 text-mint" />
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-2xs font-bold text-navy line-clamp-1">{preset.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Headline & Subtitle Text Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border-subtle">
+              <FormField label="Hero Headline Text">
+                <input
+                  type="text"
+                  value={heroHeadline}
+                  onChange={(e) => setHeroHeadline(e.target.value)}
+                  placeholder="A little band."
+                  className="w-full h-10 px-3 text-xs sm:text-sm font-medium rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                />
+              </FormField>
+
+              <FormField label="Highlighted Phrase (Mint Color)">
+                <input
+                  type="text"
+                  value={heroHighlight}
+                  onChange={(e) => setHeroHighlight(e.target.value)}
+                  placeholder="Protection for everyone."
+                  className="w-full h-10 px-3 text-xs sm:text-sm font-medium rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+                />
+              </FormField>
+            </div>
+
+            <FormField label="Hero Subheading Description">
+              <input
+                type="text"
+                value={heroSubheadline}
+                onChange={(e) => setHeroSubheadline(e.target.value)}
+                placeholder="Instant emergency reconnection & peace of mind for children, seniors, athletes..."
+                className="w-full h-10 px-3 text-xs sm:text-sm font-medium rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
+              />
+            </FormField>
+          </div>
+
+          {/* Section 2: Subscription Plans & Pricing Rates */}
+          <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-6 sm:p-7 space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-navy/5 border border-navy/10 flex items-center justify-center text-navy font-bold shadow-xs">
+                  <CreditCard className="w-5 h-5 text-navy" />
+                </div>
+                <div>
+                  <h2 className="text-base font-heading font-bold text-navy">Subscription Plans &amp; Pricing Rates</h2>
+                  <p className="text-xs text-content-muted">
+                    Configure service subscription costs, renewal fees, and public pricing tiers.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/admin/plans"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-navy hover:text-navy-dark bg-navy/5 hover:bg-navy/10 border border-navy/10 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <span>Full Plans Editor</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Plans List Cards */}
+            <div className="space-y-3">
+              {plans.map((p) => (
+                <div
+                  key={p.id}
+                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-heading font-bold text-sm text-navy">{p.name}</span>
+                      <span className={`text-3xs font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                        p.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                      }`}>
+                        {p.isActive ? 'Active' : 'Hidden'}
+                      </span>
+                      {p.isProvisional && (
+                        <span className="text-3xs font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md uppercase">
+                          Provisional
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-content-muted line-clamp-1">
+                      {p.durationMonths} Months Coverage • {p.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <div className="text-right">
+                      <span className="font-bold text-navy text-sm block font-mono">{p.priceFormatted}</span>
+                      <span className="text-3xs text-content-muted block">${p.priceAmount.toFixed(2)} USD</span>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenQuickPlanEdit(p)}
+                      leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                    >
+                      Edit Price
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-3 bg-navy/[0.03] border border-navy/10 rounded-lg flex items-center justify-between text-xs text-navy">
+              <span>
+                Want to add new durations, features, or provisional rates?
+              </span>
+              <Link to="/admin/plans" className="font-bold underline text-navy hover:text-navy-dark">
+                Open Service Plans Management →
+              </Link>
+            </div>
+          </div>
+
+          {/* Section 3: Public Office & Contact Information */}
           <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-6 sm:p-7 space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
               <div className="flex items-center gap-3">
@@ -139,7 +499,7 @@ export const SettingsPage: React.FC = () => {
                   <Building2 className="w-5 h-5 text-navy" />
                 </div>
                 <div>
-                  <h2 className="text-base font-heading font-bold text-navy">Public Office & Contact Details</h2>
+                  <h2 className="text-base font-heading font-bold text-navy">Public Office &amp; Contact Details</h2>
                   <p className="text-xs text-content-muted">Information published on citizen portals, band packaging, and parent communications.</p>
                 </div>
               </div>
@@ -647,6 +1007,61 @@ export const SettingsPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Quick Edit Plan Price Modal */}
+      <Modal
+        isOpen={Boolean(selectedPlanToEdit)}
+        onClose={() => setSelectedPlanToEdit(null)}
+        title={`Edit Price: ${selectedPlanToEdit?.name}`}
+        description={`Update the billing amount and display price for this ${selectedPlanToEdit?.durationMonths}-month plan.`}
+      >
+        {selectedPlanToEdit && (
+          <form onSubmit={handleSaveQuickPlan} className="space-y-4">
+            <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle text-xs text-content-body space-y-1">
+              <div><strong>Plan:</strong> {selectedPlanToEdit.name}</div>
+              <div><strong>Coverage Duration:</strong> {selectedPlanToEdit.durationMonths} Months</div>
+            </div>
+
+            <FormField label="Price Amount ($ USD)" required hint="Numeric value used in checkout and payment calculations">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={quickPlanPrice}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setQuickPlanPrice(val);
+                  setQuickPlanFormatted(`$${val.toFixed(2)} / ${selectedPlanToEdit.durationMonths === 12 ? 'year' : `${selectedPlanToEdit.durationMonths / 12} years`}`);
+                }}
+              />
+            </FormField>
+
+            <FormField label="Display Price Formatted" required hint="Display string shown on public website and selection dropdowns">
+              <Input
+                type="text"
+                required
+                value={quickPlanFormatted}
+                onChange={(e) => setQuickPlanFormatted(e.target.value)}
+                placeholder="e.g. $29.00 / year"
+              />
+            </FormField>
+
+            <div className="pt-4 border-t border-border-subtle flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedPlanToEdit(null)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Price
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };

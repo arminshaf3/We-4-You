@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { activeVendors, submitPublicEnquiry, addToast } = useApp();
+  const { activeVendors, submitPublicEnquiry, addToast, settings } = useApp();
 
   // Contact section state
   const [contactName, setContactName] = useState('');
@@ -35,6 +35,13 @@ export const HomePage: React.FC = () => {
     addToast('success', 'Message Received', 'Thank you! Our office has received your message (Simulated).');
   };
 
+  const heroImage = settings.heroImageUrl || '/hero-full.jpg';
+  const heroHeadline = settings.heroHeadline || 'A little band.';
+  const heroHighlight = settings.heroHighlight || 'Protection for everyone.';
+  const heroSubheadline =
+    settings.heroSubheadline ||
+    'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.';
+
   return (
     <div className="flex flex-col">
       {/* 1. Full-Fit Hero Section */}
@@ -42,10 +49,13 @@ export const HomePage: React.FC = () => {
         {/* Full-bleed Background Image */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/hero-full.jpg"
-            alt="Mother and son seated comfortably on sofa with child wearing We 4 You identification wristband"
-            className="w-full h-full object-cover object-right select-none pointer-events-none"
+            src={heroImage}
+            alt="We 4 You emergency identification and peace of mind banner"
+            className="w-full h-full object-cover object-right select-none pointer-events-none transition-all duration-700"
             loading="eager"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/hero-full.jpg';
+            }}
           />
           {/* Subtle gradient vignette to guarantee 100% text readability across all screen widths */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#05294B] via-[#05294B]/85 via-40% to-transparent lg:via-[#05294B]/30 lg:via-45% lg:to-transparent pointer-events-none" />
@@ -58,13 +68,13 @@ export const HomePage: React.FC = () => {
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] xl:text-[62px] font-heading font-bold text-white leading-[1.12] tracking-tight">
-              A little band.<br />
-              <span className="text-mint">Protection for everyone.</span>
+              {heroHeadline}<br />
+              <span className="text-mint">{heroHighlight}</span>
             </h1>
 
             {/* Subheading */}
             <p className="text-base sm:text-lg lg:text-xl text-slate-100 max-w-lg leading-relaxed font-body drop-shadow-sm">
-              Instant emergency reconnection &amp; peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.
+              {heroSubheadline}
             </p>
 
             {/* Action Buttons */}

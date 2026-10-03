@@ -25,6 +25,10 @@ export const initialSettings: AppSettings = {
   defaultCommissionPercentage: 15,
   defaultCommissionFixed: 10,
   simulationNote: 'Active System Mode — Connected to We 4 You secure network.',
+  heroImageUrl: '/hero-full.jpg',
+  heroHeadline: 'A little band.',
+  heroHighlight: 'Protection for everyone.',
+  heroSubheadline: 'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.',
 };
 
 export const initialVendors: Vendor[] = [
