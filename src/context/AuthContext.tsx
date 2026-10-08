@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { authService, UserProfile, UserRole, SignUpParentParams, SignInParams } from '../services/authService';
@@ -149,28 +149,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isVendor = currentRole === 'vendor';
   const isSupport = currentRole === 'support';
 
+  const authValue = useMemo<AuthContextType>(() => ({
+    user,
+    profile,
+    session,
+    role: currentRole,
+    isLoading,
+    isAuthenticated,
+    isAdmin,
+    isParent,
+    isVendor,
+    isSupport,
+    signUpParent,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    resendVerification,
+    refreshProfile,
+  }), [
+    user,
+    profile,
+    session,
+    currentRole,
+    isLoading,
+    isAuthenticated,
+    isAdmin,
+    isParent,
+    isVendor,
+    isSupport,
+    signUpParent,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+    resendVerification,
+    refreshProfile,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        session,
-        role: currentRole,
-        isLoading,
-        isAuthenticated,
-        isAdmin,
-        isParent,
-        isVendor,
-        isSupport,
-        signUpParent,
-        signIn,
-        signOut,
-        resetPassword,
-        updatePassword,
-        resendVerification,
-        refreshProfile,
-      }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );

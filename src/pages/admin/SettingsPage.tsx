@@ -170,51 +170,16 @@ export const SettingsPage: React.FC = () => {
   const [quickPlanPrice, setQuickPlanPrice] = useState<number>(29);
   const [quickPlanFormatted, setQuickPlanFormatted] = useState<string>('$29.00 / year');
 
-  // Track whether the user has made any local edits.
-  // Only sync from context settings when there are no local unsaved changes,
-  // preventing the form from resetting while the user is actively typing.
-  const isEditingRef = React.useRef(false);
+  // Keep initial settings synced on initial mount.
+  // Do NOT re-sync while the component is mounted to avoid wiping out user keystrokes.
+  const isFirstMount = React.useRef(true);
 
   useEffect(() => {
-    // If the user is actively editing, don't overwrite their input
-    if (isEditingRef.current) return;
-
-    setOfficePhone(settings.officePhone);
-    setOfficeEmail(settings.officeEmail);
-    setOfficeAddress(settings.officeAddress);
-    setOfficeHours(settings.officeHours);
-    setAvailableLanguages(settings.availableLanguages || ['English', 'Spanish', 'French', 'Arabic']);
-    setDirectPurchaseEnabled(settings.directPurchaseEnabled);
-    setAllowPhotoUpload(settings.allowPhotoUpload);
-    setDefaultCommPct(settings.defaultCommissionPercentage);
-    setDefaultCommFixed(settings.defaultCommissionFixed || 10);
-    setSimulationNote(settings.simulationNote || '');
-
-    setHeroImageUrl(settings.heroImageUrl || '/hero-full.jpg');
-    setHeroHeadline(settings.heroHeadline || 'A little band.');
-    setHeroHighlight(settings.heroHighlight || 'Protection for everyone.');
-    setHeroSubheadline(
-      settings.heroSubheadline ||
-        'Instant emergency reconnection & peace of mind for children, seniors, athletes, travelers, and loved ones through our central office.'
-    );
-
-    setAboutImageUrl(
-      settings.aboutImageUrl ||
-        'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80'
-    );
-    setAboutHeadline(settings.aboutHeadline || 'Care starts with connection.');
-    setAboutText(
-      settings.aboutText ||
-        'We 4 You brings families and caring people closer through simple identification bands and an office contact service.'
-    );
-
-    setShowcaseImageUrl(settings.showcaseImageUrl || '/wristbands-colors-showcase.jpg');
-    setShowcaseHeadline(settings.showcaseHeadline || 'Designed for everyone.');
-    setShowcaseSubheadline(
-      settings.showcaseSubheadline ||
-        'Crafted from ultra-soft, hypoallergenic silicone with curved stainless steel ID plates. Waterproof, lightweight, and engineered for children, seniors, runners, and everyday wearers.'
-    );
-  }, [settings]);
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+  }, []);
 
   const hasUnsavedChanges =
     officePhone !== settings.officePhone ||
@@ -236,9 +201,6 @@ export const SettingsPage: React.FC = () => {
     showcaseImageUrl !== (settings.showcaseImageUrl || '/wristbands-colors-showcase.jpg') ||
     showcaseHeadline !== (settings.showcaseHeadline || 'Designed for everyone.') ||
     showcaseSubheadline !== (settings.showcaseSubheadline || '');
-
-  // Mark that the user has started editing so the sync effect is suppressed
-  const markEditing = () => { isEditingRef.current = true; };
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -304,8 +266,6 @@ export const SettingsPage: React.FC = () => {
       showcaseHeadline: showcaseHeadline.trim(),
       showcaseSubheadline: showcaseSubheadline.trim(),
     });
-    // After saving, allow future external settings changes to re-sync
-    isEditingRef.current = false;
     setIsSavedRecently(true);
     setTimeout(() => setIsSavedRecently(false), 3000);
   };
@@ -348,7 +308,7 @@ export const SettingsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column (8 cols): Form Sections */}
-        <form onSubmit={handleSave} onFocus={markEditing} className="lg:col-span-8 space-y-8">
+        <form onSubmit={handleSave} className="lg:col-span-8 space-y-8">
 
           {/* Section 1: Complete Landing Page Visuals & Imagery Customizer */}
           <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-6 sm:p-7 space-y-6">
