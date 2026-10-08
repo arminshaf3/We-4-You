@@ -170,8 +170,15 @@ export const SettingsPage: React.FC = () => {
   const [quickPlanPrice, setQuickPlanPrice] = useState<number>(29);
   const [quickPlanFormatted, setQuickPlanFormatted] = useState<string>('$29.00 / year');
 
-  // Sync state if context changes externally
+  // Track whether the user has made any local edits.
+  // Only sync from context settings when there are no local unsaved changes,
+  // preventing the form from resetting while the user is actively typing.
+  const isEditingRef = React.useRef(false);
+
   useEffect(() => {
+    // If the user is actively editing, don't overwrite their input
+    if (isEditingRef.current) return;
+
     setOfficePhone(settings.officePhone);
     setOfficeEmail(settings.officeEmail);
     setOfficeAddress(settings.officeAddress);
@@ -229,6 +236,9 @@ export const SettingsPage: React.FC = () => {
     showcaseImageUrl !== (settings.showcaseImageUrl || '/wristbands-colors-showcase.jpg') ||
     showcaseHeadline !== (settings.showcaseHeadline || 'Designed for everyone.') ||
     showcaseSubheadline !== (settings.showcaseSubheadline || '');
+
+  // Mark that the user has started editing so the sync effect is suppressed
+  const markEditing = () => { isEditingRef.current = true; };
 
   const handleFileSelect = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -294,6 +304,8 @@ export const SettingsPage: React.FC = () => {
       showcaseHeadline: showcaseHeadline.trim(),
       showcaseSubheadline: showcaseSubheadline.trim(),
     });
+    // After saving, allow future external settings changes to re-sync
+    isEditingRef.current = false;
     setIsSavedRecently(true);
     setTimeout(() => setIsSavedRecently(false), 3000);
   };
@@ -336,7 +348,7 @@ export const SettingsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column (8 cols): Form Sections */}
-        <form onSubmit={handleSave} className="lg:col-span-8 space-y-8">
+        <form onSubmit={handleSave} onFocus={markEditing} className="lg:col-span-8 space-y-8">
 
           {/* Section 1: Complete Landing Page Visuals & Imagery Customizer */}
           <div className="bg-white rounded-brand border border-border-subtle shadow-subtle p-6 sm:p-7 space-y-6">

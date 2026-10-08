@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   Vendor,
   Band,
@@ -390,9 +390,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Active getters
-  const activeVendors = vendors.filter((v) => v.isActive);
-  const activePlans = plans.filter((p) => p.isActive);
+  // Active getters — memoized to prevent new references on every render
+  const activeVendors = useMemo(() => vendors.filter((v) => v.isActive), [vendors]);
+  const activePlans = useMemo(() => plans.filter((p) => p.isActive), [plans]);
 
   // Helper: Activity logger
   const logAction = (
@@ -1545,65 +1545,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
+
+  // Memoize the full context value so consumers don't re-render unless
+  // actual state they care about has changed. Without this, the new object
+  // literal on every AppProvider render caused all consumers to re-render
+  // on every context state change (e.g. polling, toasts), which made typed
+  // characters appear to be lost (one-character-at-a-time bug).
+  const contextValue = useMemo<AppContextType>(() => ({
+    vendors,
+    activeVendors,
+    plans,
+    activePlans,
+    bands,
+    childrenRecords,
+    subscriptions,
+    registrations,
+    payments,
+    commissions,
+    payouts,
+    incidents,
+    enquiries,
+    activity,
+    settings,
+    isAdminLoggedIn,
+    adminUser,
+    toasts,
+    loginAdmin,
+    logoutAdmin,
+    addToast,
+    removeToast,
+    submitPublicRegistration,
+    updateRegistrationStatus,
+    addVendor,
+    updateVendor,
+    toggleVendorActive,
+    assignBandToChild,
+    updateBandStatus,
+    markBandLost,
+    replaceBand,
+    addBandToInventory,
+    updateChildRecord,
+    addPlan,
+    updatePlan,
+    togglePlanActive,
+    updateCustomerSubscriptionPrice,
+    renewSubscription,
+    sendRenewalReminder,
+    directSubscribeWithCard,
+    verifyPayment,
+    reversePayment,
+    approveCommission,
+    createSimulatedPayout,
+    logIncident,
+    submitPublicFoundReport,
+    addContactAttempt,
+    updateIncidentStatus,
+    resolveIncident,
+    submitPublicEnquiry,
+    updateEnquiryStatus,
+    updateSettings,
+    resetDemoData,
+    findBandRecord,
+  }), [
+    vendors, activeVendors, plans, activePlans, bands, childrenRecords,
+    subscriptions, registrations, payments, commissions, payouts, incidents,
+    enquiries, activity, settings, isAdminLoggedIn, adminUser, toasts,
+    loginAdmin, logoutAdmin, addToast, removeToast, submitPublicRegistration,
+    updateRegistrationStatus, addVendor, updateVendor, toggleVendorActive,
+    assignBandToChild, updateBandStatus, markBandLost, replaceBand,
+    addBandToInventory, updateChildRecord, addPlan, updatePlan, togglePlanActive,
+    updateCustomerSubscriptionPrice, renewSubscription, sendRenewalReminder,
+    directSubscribeWithCard, verifyPayment, reversePayment, approveCommission,
+    createSimulatedPayout, logIncident, submitPublicFoundReport, addContactAttempt,
+    updateIncidentStatus, resolveIncident, submitPublicEnquiry, updateEnquiryStatus,
+    updateSettings, resetDemoData, findBandRecord,
+  ]);
+
   return (
-    <AppContext.Provider
-      value={{
-        vendors,
-        activeVendors,
-        plans,
-        activePlans,
-        bands,
-        childrenRecords,
-        subscriptions,
-        registrations,
-        payments,
-        commissions,
-        payouts,
-        incidents,
-        enquiries,
-        activity,
-        settings,
-        isAdminLoggedIn,
-        adminUser,
-        toasts,
-        loginAdmin,
-        logoutAdmin,
-        addToast,
-        removeToast,
-        submitPublicRegistration,
-        updateRegistrationStatus,
-        addVendor,
-        updateVendor,
-        toggleVendorActive,
-        assignBandToChild,
-        updateBandStatus,
-        markBandLost,
-        replaceBand,
-        addBandToInventory,
-        updateChildRecord,
-        addPlan,
-        updatePlan,
-        togglePlanActive,
-        updateCustomerSubscriptionPrice,
-        renewSubscription,
-        sendRenewalReminder,
-        directSubscribeWithCard,
-        verifyPayment,
-        reversePayment,
-        approveCommission,
-        createSimulatedPayout,
-        logIncident,
-        submitPublicFoundReport,
-        addContactAttempt,
-        updateIncidentStatus,
-        resolveIncident,
-        submitPublicEnquiry,
-        updateEnquiryStatus,
-        updateSettings,
-        resetDemoData,
-        findBandRecord,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
