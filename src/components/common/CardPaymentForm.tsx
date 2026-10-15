@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreditCard, ShieldCheck, Lock, Sparkles, AlertCircle } from 'lucide-react';
-import { FormField, Input } from './FormField';
+import { FormField, Input, commitFormattedInput } from './FormField';
 
 export interface CardFormData {
   cardNumber: string;
@@ -98,39 +98,43 @@ export const CardPaymentForm: React.FC<CardPaymentFormProps> = ({
   compact = false,
 }) => {
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value);
-    const brand = detectCardBrand(formatted);
-    const clean = formatted.replace(/\s+/g, '');
-    const last4 = clean.length >= 4 ? clean.slice(-4) : clean;
-
-    onChange({
-      ...cardData,
-      cardNumber: formatted,
-      brand,
-      last4,
+    commitFormattedInput(e, formatCardNumber, (formatted) => {
+      const brand = detectCardBrand(formatted);
+      const clean = formatted.replace(/\s+/g, '');
+      const last4 = clean.length >= 4 ? clean.slice(-4) : clean;
+      onChange({
+        ...cardData,
+        cardNumber: formatted,
+        brand,
+        last4,
+      });
     });
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      ...cardData,
-      cardholderName: e.target.value.toUpperCase(),
+    commitFormattedInput(e, (value) => value.toUpperCase(), (cardholderName) => {
+      onChange({
+        ...cardData,
+        cardholderName,
+      });
     });
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatExpiry(e.target.value);
-    onChange({
-      ...cardData,
-      expiryDate: formatted,
+    commitFormattedInput(e, formatExpiry, (expiryDate) => {
+      onChange({
+        ...cardData,
+        expiryDate,
+      });
     });
   };
 
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-    onChange({
-      ...cardData,
-      cvv: digits,
+    commitFormattedInput(e, (value) => value.replace(/\D/g, '').slice(0, 4), (cvv) => {
+      onChange({
+        ...cardData,
+        cvv,
+      });
     });
   };
 

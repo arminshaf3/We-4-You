@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { Modal } from '../../components/common/Modal';
-import { FormField, Input, Select } from '../../components/common/FormField';
+import { FormField, Input, Select, commitFormattedInput } from '../../components/common/FormField';
 import { CardPaymentForm, CardFormData, validateCardData } from '../../components/common/CardPaymentForm';
 import { useApp } from '../../context/AppContext';
 import {
@@ -356,7 +356,7 @@ export const SubscriptionsPage: React.FC = () => {
                     <Input
                       id="directBandCode"
                       value={directBandCode}
-                      onChange={(e) => setDirectBandCode(e.target.value.toUpperCase())}
+                      onChange={(e) => commitFormattedInput(e, (value) => value.toUpperCase(), setDirectBandCode)}
                       placeholder="W4Y-1082-M4"
                       className="font-mono uppercase font-semibold text-sm"
                       required

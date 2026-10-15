@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
-import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea, commitFormattedInput } from '../../components/common/FormField';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { CardPaymentForm, CardFormData, validateCardData } from '../../components/common/CardPaymentForm';
 import { useApp } from '../../context/AppContext';
@@ -196,11 +196,12 @@ export const RegisterPage: React.FC = () => {
   };
 
   const handleBandCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const normalized = normalizeBandCode(e.target.value);
-    setBandCode(normalized);
-    if (errors.bandCode) {
-      setErrors((prev) => ({ ...prev, bandCode: '' }));
-    }
+    commitFormattedInput(e, normalizeBandCode, (normalized) => {
+      setBandCode(normalized);
+      if (errors.bandCode) {
+        setErrors((prev) => ({ ...prev, bandCode: '' }));
+      }
+    });
   };
 
   // Real-time Inventory Verification Status Helper

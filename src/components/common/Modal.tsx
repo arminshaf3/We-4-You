@@ -10,6 +10,21 @@ interface ModalProps {
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 }
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+const TEXT_FIELD_SELECTOR = [
+  'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([disabled])',
+  'textarea:not([disabled])',
+  'select:not([disabled])',
+].join(', ');
+
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -19,62 +34,76 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = 'lg',
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const isOpenRef = useRef(isOpen);
+
+  onCloseRef.current = onClose;
+  isOpenRef.current = isOpen;
 
   useEffect(() => {
-    if (isOpen) {
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      // Focus modal container or first focusable
-      setTimeout(() => {
-        const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable && focusable.length > 0) {
-          focusable[0].focus();
-        } else {
-          modalRef.current?.focus();
+    if (!isOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    // Focus the first text field once, when the dialog opens.
+    // Skip if the user has already clicked a field inside the dialog.
+    const focusTimer = window.setTimeout(() => {
+      const root = modalRef.current;
+      if (!root) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && root.contains(active) && active !== root) {
+        return;
+      }
+      const field = root.querySelector<HTMLElement>(TEXT_FIELD_SELECTOR);
+      if (field) {
+        field.focus();
+      } else {
+        root.focus();
+      }
+    }, 0);
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCloseRef.current();
+        return;
+      }
+
+      if (e.key !== 'Tab' || !modalRef.current) return;
+
+      const focusables = modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
         }
-      }, 50);
+      } else if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    };
 
-      // Prevent body scrolling
-      document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
 
-      // Handle Escape key
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-        }
-        // Focus trap
-        if (e.key === 'Tab' && modalRef.current) {
-          const focusables = modalRef.current.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusables.length === 0) return;
-          const first = focusables[0];
-          const last = focusables[focusables.length - 1];
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
 
-          if (e.shiftKey) {
-            if (document.activeElement === first) {
-              last.focus();
-              e.preventDefault();
-            }
-          } else {
-            if (document.activeElement === last) {
-              first.focus();
-              e.preventDefault();
-            }
-          }
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyDown);
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-        document.body.style.overflow = 'unset';
-        previouslyFocusedElement.current?.focus();
-      };
-    }
-  }, [isOpen, onClose]);
+      // Restore the opener only when the dialog is actually closing.
+      // Re-running this while it is still open pulls the caret out of the field.
+      if (!isOpenRef.current && previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -93,16 +122,13 @@ export const Modal: React.FC<ModalProps> = ({
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      {/* Backdrop click */}
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      {/* Modal Dialog Card */}
       <div
         ref={modalRef}
         tabIndex={-1}
         className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white rounded-brand-lg shadow-floating border border-border-subtle p-5 sm:p-7 z-10 my-auto`}
       >
-        {/* Header */}
         <div className="flex items-start justify-between gap-4 pb-3 sm:pb-4 border-b border-border-subtle flex-shrink-0">
           <div>
             <h3 id="modal-title" className="text-lg sm:text-xl font-heading font-bold text-navy">
@@ -115,6 +141,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close dialog"
             className="p-1.5 -mr-1.5 text-content-muted hover:text-navy hover:bg-neutral-soft rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy"
@@ -123,7 +150,6 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <div className="mt-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">{children}</div>
       </div>
     </div>

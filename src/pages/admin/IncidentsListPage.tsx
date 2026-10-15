@@ -6,7 +6,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { BandLookupModal } from '../../components/admin/BandLookupModal';
-import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea, commitFormattedInput } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Incident, IncidentReportType } from '../../types';
 import { AlertTriangle, Plus, PhoneCall, Radio, User, MapPin, Search, ShieldCheck, CheckCircle2 } from 'lucide-react';
@@ -330,7 +330,7 @@ export const IncidentsListPage: React.FC = () => {
             <FormField label="Quoted Band Reference" required hint="e.g. W4Y-1082-M4">
               <Input
                 value={bandRef}
-                onChange={(e) => setBandRef(e.target.value.toUpperCase())}
+                onChange={(e) => commitFormattedInput(e, (value) => value.toUpperCase(), setBandRef)}
                 placeholder="W4Y-XXXX-XX"
                 className="font-mono uppercase font-bold"
                 required

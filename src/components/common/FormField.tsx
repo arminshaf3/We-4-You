@@ -44,6 +44,37 @@ export const FormField: React.FC<FormFieldProps> = ({
   );
 };
 
+/**
+ * Writes a reformatted input value without kicking the caret out of the field.
+ * Formatting (uppercase, inserted hyphens, card spacing) used to replace the
+ * whole value and jump the cursor, so the next character required another click.
+ */
+export function commitFormattedInput(
+  event: React.ChangeEvent<HTMLInputElement>,
+  format: (value: string) => string,
+  commit: (formatted: string) => void,
+) {
+  const input = event.currentTarget;
+  const raw = input.value;
+  const start = input.selectionStart ?? raw.length;
+  const end = input.selectionEnd ?? start;
+  const next = format(raw);
+  const nextStart = format(raw.slice(0, start)).length;
+  const nextEnd = start === end ? nextStart : format(raw.slice(0, end)).length;
+
+  commit(next);
+
+  requestAnimationFrame(() => {
+    if (document.activeElement !== input) return;
+    const max = input.value.length;
+    try {
+      input.setSelectionRange(Math.min(nextStart, max), Math.min(nextEnd, max));
+    } catch {
+      // date/number/email inputs can reject a selection range
+    }
+  });
+}
+
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
 }

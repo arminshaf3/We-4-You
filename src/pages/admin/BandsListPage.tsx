@@ -5,7 +5,7 @@ import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
-import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
+import { FormField, Input, Select, Textarea, commitFormattedInput } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Band, BandStatus } from '../../types';
 import { Radio, Plus, RefreshCw, Search, ShieldCheck, AlertOctagon, UserPlus, Edit3 } from 'lucide-react';
@@ -450,7 +450,7 @@ export const BandsListPage: React.FC = () => {
             <Input
               value={newBandCode}
               onChange={(e) => {
-                setNewBandCode(e.target.value.toUpperCase());
+                commitFormattedInput(e, (value) => value.toUpperCase(), setNewBandCode);
                 if (addError) setAddError('');
               }}
               placeholder="e.g. W4Y-9941-T8"

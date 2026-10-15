@@ -446,7 +446,8 @@ export const SettingsPage: React.FC = () => {
                         <input
                           type="text"
                           value={heroImageUrl}
-                          onChange={(e) => setHeroImageUrl(cleanAndResolveImageUrl(e.target.value))}
+                          onChange={(e) => setHeroImageUrl(e.target.value)}
+                          onBlur={(e) => setHeroImageUrl(cleanAndResolveImageUrl(e.target.value))}
                           onPaste={(e) => extractImageFromClipboard(e, (url) => setHeroImageUrl(url))}
                           placeholder="Paste image URL or Google link (Ctrl+V)..."
                           className="w-full h-10 pl-9 pr-4 text-xs font-mono rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy transition-all focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
@@ -620,7 +621,8 @@ export const SettingsPage: React.FC = () => {
                         <input
                           type="text"
                           value={aboutImageUrl}
-                          onChange={(e) => setAboutImageUrl(cleanAndResolveImageUrl(e.target.value))}
+                          onChange={(e) => setAboutImageUrl(e.target.value)}
+                          onBlur={(e) => setAboutImageUrl(cleanAndResolveImageUrl(e.target.value))}
                           onPaste={(e) => extractImageFromClipboard(e, (url) => setAboutImageUrl(url))}
                           placeholder="Paste image URL or Google link (Ctrl+V)..."
                           className="w-full h-10 pl-9 pr-4 text-xs font-mono rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy transition-all focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"
@@ -778,7 +780,8 @@ export const SettingsPage: React.FC = () => {
                         <input
                           type="text"
                           value={showcaseImageUrl}
-                          onChange={(e) => setShowcaseImageUrl(cleanAndResolveImageUrl(e.target.value))}
+                          onChange={(e) => setShowcaseImageUrl(e.target.value)}
+                          onBlur={(e) => setShowcaseImageUrl(cleanAndResolveImageUrl(e.target.value))}
                           onPaste={(e) => extractImageFromClipboard(e, (url) => setShowcaseImageUrl(url))}
                           placeholder="Paste image URL or Google link (Ctrl+V)..."
                           className="w-full h-10 pl-9 pr-4 text-xs font-mono rounded-brand border border-slate-200 bg-slate-50/50 hover:bg-white focus:bg-white text-navy transition-all focus:outline-none focus:ring-2 focus:ring-navy/20 focus:border-navy"

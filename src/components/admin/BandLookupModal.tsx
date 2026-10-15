@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal } from '../common/Modal';
+import { commitFormattedInput } from '../common/FormField';
 import { Button } from '../common/Button';
 import { StatusBadge } from '../common/StatusBadge';
 import { useApp } from '../../context/AppContext';
@@ -58,7 +59,7 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value.toUpperCase())}
+          onChange={(e) => commitFormattedInput(e, (value) => value.toUpperCase(), setQuery)}
           placeholder="Enter printed code (e.g. W4Y-1082-M4)"
           className="flex-1 h-12 px-4 text-base font-mono uppercase font-semibold rounded-brand border border-border-subtle bg-white text-navy focus:outline-none focus:ring-2 focus:ring-navy"
         />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
-import { FormField, Input, Textarea } from '../../components/common/FormField';
+import { FormField, Input, Textarea, commitFormattedInput } from '../../components/common/FormField';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { useApp } from '../../context/AppContext';
 import {
@@ -225,7 +225,7 @@ export const FoundBandPage: React.FC = () => {
                       <Input
                         type="text"
                         value={bandCode}
-                        onChange={(e) => setBandCode(e.target.value.toUpperCase())}
+                        onChange={(e) => commitFormattedInput(e, (value) => value.toUpperCase(), setBandCode)}
                         placeholder="e.g. W4Y-1082-M4"
                         required
                         className="font-mono uppercase font-bold text-base tracking-wider"
