@@ -7,10 +7,10 @@ import { Modal } from '../../components/common/Modal';
 import { FormField, Input, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
 import { Payment } from '../../types';
-import { Receipt, CheckCircle, RotateCcw, AlertCircle, Search, CreditCard, Sparkles, Printer } from 'lucide-react';
+import { Receipt, CheckCircle, RotateCcw, AlertCircle, Search, CreditCard, Sparkles, Printer, ShieldCheck } from 'lucide-react';
 
 export const PaymentsListPage: React.FC = () => {
-  const { payments, verifyPayment, reversePayment } = useApp();
+  const { payments, verifyPayment, reversePayment, registrations } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -60,6 +60,17 @@ export const PaymentsListPage: React.FC = () => {
     setSelectedPayment(payment);
     setIsReceiptModalOpen(true);
   };
+
+  const linkedRegistration = useMemo(() => {
+    if (!selectedPayment?.registrationId) return null;
+    return (
+      registrations.find(
+        (r) =>
+          r.referenceNumber.toLowerCase() === selectedPayment.registrationId?.toLowerCase() ||
+          r.id.toLowerCase() === selectedPayment.registrationId?.toLowerCase()
+      ) || null
+    );
+  }, [selectedPayment, registrations]);
 
   const handleConfirmReverse = (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,116 +198,119 @@ export const PaymentsListPage: React.FC = () => {
 
   return (
     <div>
-      <PageHeader
-        title="Payment Verification &amp; Receipts"
-        description="Monitor online credit card payments, instant authorizations, and offline manual voucher verifications."
-      />
+      {/* Background Dashboard Elements (hidden during print) */}
+      <div className="print:hidden">
+        <PageHeader
+          title="Payment Verification &amp; Receipts"
+          description="Monitor online credit card payments, instant authorizations, and offline manual voucher verifications."
+        />
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
-          <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Card Payments (Confirmed)
-          </span>
-          <span className="text-2xl font-heading font-bold text-[#088F5B] block mt-1">
-            ${cardAmount.toFixed(2)}
-          </span>
-          <span className="text-[11px] text-content-muted mt-0.5 block">
-            {cardPayments.length} instant card authorizations
-          </span>
+        {/* Summary KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
+            <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
+              Card Payments (Confirmed)
+            </span>
+            <span className="text-2xl font-heading font-bold text-[#088F5B] block mt-1">
+              ${cardAmount.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-content-muted mt-0.5 block">
+              {cardPayments.length} instant card authorizations
+            </span>
+          </div>
+
+          <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
+            <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
+              Total Verified Receipts
+            </span>
+            <span className="text-2xl font-heading font-bold text-navy block mt-1">
+              ${verifiedAmount.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-content-muted mt-0.5 block">
+              {verifiedPayments.length} confirmed payments
+            </span>
+          </div>
+
+          <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
+            <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
+              Pending Verification
+            </span>
+            <span className="text-2xl font-heading font-bold text-amber-700 block mt-1">
+              ${pendingAmount.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-content-muted mt-0.5 block">
+              {pendingPayments.length} awaiting voucher check
+            </span>
+          </div>
+
+          <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
+            <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
+              Adjusted / Reversed
+            </span>
+            <span className="text-2xl font-heading font-bold text-slate-500 block mt-1">
+              ${reversedAmount.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-content-muted mt-0.5 block">
+              {reversedPayments.length} cancelled transactions
+            </span>
+          </div>
         </div>
 
-        <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
-          <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Total Verified Receipts
-          </span>
-          <span className="text-2xl font-heading font-bold text-navy block mt-1">
-            ${verifiedAmount.toFixed(2)}
-          </span>
-          <span className="text-[11px] text-content-muted mt-0.5 block">
-            {verifiedPayments.length} confirmed payments
-          </span>
+        {/* Instant Card Guarantee Strip */}
+        <div className="p-4 bg-emerald-50/70 rounded-brand border border-emerald-300/60 text-xs text-emerald-950 mb-6 flex items-start gap-2.5 shadow-sm">
+          <Sparkles className="w-4 h-4 text-[#088F5B] flex-shrink-0 mt-0.5" />
+          <div>
+            <strong>Online Card Processing Enabled:</strong> Subscriptions paid with Credit/Debit cards are verified immediately on submission and marked as <em>verified</em> with generated transaction IDs.
+          </div>
         </div>
 
-        <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
-          <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Pending Verification
-          </span>
-          <span className="text-2xl font-heading font-bold text-amber-700 block mt-1">
-            ${pendingAmount.toFixed(2)}
-          </span>
-          <span className="text-[11px] text-content-muted mt-0.5 block">
-            {pendingPayments.length} awaiting voucher check
-          </span>
+        {/* Search and Filter Bar */}
+        <div className="bg-white p-4 rounded-brand border border-border-subtle shadow-subtle mb-6 grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div className="sm:col-span-6 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by receipt ref, transaction ID, payer, or reg ID..."
+              className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
+            />
+          </div>
+
+          <div className="sm:col-span-3">
+            <select
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+              className="w-full h-10 px-3 text-xs sm:text-sm rounded-brand border border-border-subtle bg-white text-content-body focus:outline-none focus:ring-2 focus:ring-navy"
+            >
+              <option value="ALL">All Payment Methods</option>
+              <option value="card">Credit / Debit Card (Instant)</option>
+              <option value="offline">Offline Store Voucher / Transfer</option>
+            </select>
+          </div>
+
+          <div className="sm:col-span-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full h-10 px-3 text-xs sm:text-sm rounded-brand border border-border-subtle bg-white text-content-body focus:outline-none focus:ring-2 focus:ring-navy"
+            >
+              <option value="ALL">All Statuses ({payments.length})</option>
+              <option value="verified">Verified ({verifiedPayments.length})</option>
+              <option value="pending">Pending ({pendingPayments.length})</option>
+              <option value="reversed">Reversed ({reversedPayments.length})</option>
+            </select>
+          </div>
         </div>
 
-        <div className="p-4 rounded-brand bg-white border border-border-subtle shadow-subtle">
-          <span className="text-xs font-semibold uppercase tracking-wider text-content-muted block">
-            Adjusted / Reversed
-          </span>
-          <span className="text-2xl font-heading font-bold text-slate-500 block mt-1">
-            ${reversedAmount.toFixed(2)}
-          </span>
-          <span className="text-[11px] text-content-muted mt-0.5 block">
-            {reversedPayments.length} cancelled transactions
-          </span>
-        </div>
+        <DataTable
+          columns={columns}
+          data={filteredPayments}
+          keyExtractor={(item) => item.id}
+          emptyTitle="No Payments Match Filters"
+          emptyDescription="Adjust your search terms or status filter."
+        />
       </div>
-
-      {/* Instant Card Guarantee Strip */}
-      <div className="p-4 bg-emerald-50/70 rounded-brand border border-emerald-300/60 text-xs text-emerald-950 mb-6 flex items-start gap-2.5 shadow-sm">
-        <Sparkles className="w-4 h-4 text-[#088F5B] flex-shrink-0 mt-0.5" />
-        <div>
-          <strong>Online Card Processing Enabled:</strong> Subscriptions paid with Credit/Debit cards are verified immediately on submission and marked as <em>verified</em> with generated transaction IDs.
-        </div>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="bg-white p-4 rounded-brand border border-border-subtle shadow-subtle mb-6 grid grid-cols-1 sm:grid-cols-12 gap-3">
-        <div className="sm:col-span-6 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by receipt ref, transaction ID, payer, or reg ID..."
-            className="w-full h-10 pl-9 pr-4 text-xs sm:text-sm rounded-brand border border-border-subtle focus:outline-none focus:ring-2 focus:ring-navy"
-          />
-        </div>
-
-        <div className="sm:col-span-3">
-          <select
-            value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
-            className="w-full h-10 px-3 text-xs sm:text-sm rounded-brand border border-border-subtle bg-white text-content-body focus:outline-none focus:ring-2 focus:ring-navy"
-          >
-            <option value="ALL">All Payment Methods</option>
-            <option value="card">Credit / Debit Card (Instant)</option>
-            <option value="offline">Offline Store Voucher / Transfer</option>
-          </select>
-        </div>
-
-        <div className="sm:col-span-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full h-10 px-3 text-xs sm:text-sm rounded-brand border border-border-subtle bg-white text-content-body focus:outline-none focus:ring-2 focus:ring-navy"
-          >
-            <option value="ALL">All Statuses ({payments.length})</option>
-            <option value="verified">Verified ({verifiedPayments.length})</option>
-            <option value="pending">Pending ({pendingPayments.length})</option>
-            <option value="reversed">Reversed ({reversedPayments.length})</option>
-          </select>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={filteredPayments}
-        keyExtractor={(item) => item.id}
-        emptyTitle="No Payments Match Filters"
-        emptyDescription="Adjust your search terms or status filter."
-      />
 
       {/* View Full Receipt Modal */}
       <Modal
@@ -304,10 +318,34 @@ export const PaymentsListPage: React.FC = () => {
         onClose={() => setIsReceiptModalOpen(false)}
         title={`Payment Receipt: ${selectedPayment?.receiptRef}`}
         description="Official payment confirmation record and transaction audit details."
+        hideHeaderOnPrint
       >
         {selectedPayment && (
           <div className="space-y-4">
-            <div className="bg-neutral-soft p-4 rounded-brand border border-border-subtle text-xs space-y-2.5">
+            <div className="bg-neutral-soft p-4 sm:p-5 rounded-brand border border-border-subtle text-xs space-y-2.5 print:bg-white print:border-slate-300 print:p-6 print:rounded-lg print:space-y-3 print:max-w-xl print:mx-auto">
+              {/* Official Header for Print */}
+              <div className="hidden print:flex items-center justify-between pb-3 border-b-2 border-navy mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-navy text-mint flex items-center justify-center font-bold text-sm shadow-sm">
+                    <ShieldCheck className="w-5 h-5 text-mint" />
+                  </div>
+                  <div>
+                    <div className="font-heading font-black text-lg text-navy tracking-wide uppercase leading-none">
+                      WE 4 YOU
+                    </div>
+                    <div className="text-[10px] text-content-muted uppercase tracking-widest font-semibold mt-0.5">
+                      Child Safety &amp; Guardian Contact Service
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 block">
+                    Official Payment Receipt
+                  </span>
+                  <span className="font-mono font-bold text-sm text-navy">{selectedPayment.receiptRef}</span>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center pb-2 border-b border-border-subtle">
                 <span className="font-semibold text-navy">Receipt Reference:</span>
                 <span className="font-mono font-bold text-navy text-sm">{selectedPayment.receiptRef}</span>
@@ -334,6 +372,20 @@ export const PaymentsListPage: React.FC = () => {
                 <span className="text-content-muted">Payer / Guardian:</span>
                 <span className="font-semibold text-navy">{selectedPayment.payerName}</span>
               </div>
+              {linkedRegistration && (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-content-muted">Child / Wearer:</span>
+                    <span className="font-semibold text-navy">{linkedRegistration.child.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-content-muted">Band Reference:</span>
+                    <span className="font-mono font-bold text-navy bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                      {linkedRegistration.bandCode}
+                    </span>
+                  </div>
+                </>
+              )}
               {selectedPayment.registrationId && (
                 <div className="flex justify-between items-center">
                   <span className="text-content-muted">Registration Link:</span>
@@ -360,9 +412,16 @@ export const PaymentsListPage: React.FC = () => {
                   <p className="italic bg-white p-2 rounded border border-border-subtle">{selectedPayment.notes}</p>
                 </div>
               )}
+
+              {/* Official Footer for Print */}
+              <div className="hidden print:block pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500 space-y-0.5">
+                <p className="font-semibold text-slate-700">Official Computer Generated Payment Receipt &bull; We 4 You Registry</p>
+                <p>100 Safety Blvd, Suite 400 &bull; support@we4you.org &bull; www.we4you.org</p>
+                <p className="text-[9px] text-slate-400">Verified &bull; Electronic payment audit record</p>
+              </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 print:hidden">
               <Button onClick={() => window.print()} variant="outline" size="sm" leftIcon={<Printer className="w-3.5 h-3.5" />}>
                 Print
               </Button>
@@ -375,32 +434,34 @@ export const PaymentsListPage: React.FC = () => {
       </Modal>
 
       {/* Reverse Modal */}
-      <Modal
-        isOpen={isReverseModalOpen}
-        onClose={() => setIsReverseModalOpen(false)}
-        title={`Reverse Payment: ${selectedPayment?.receiptRef}`}
-        description="Record an adjustment reason to reverse a verified payment."
-      >
-        <form onSubmit={handleConfirmReverse} className="space-y-4">
-          <FormField label="Reversal Reason" required>
-            <Textarea
-              rows={3}
-              value={reverseReason}
-              onChange={(e) => setReverseReason(e.target.value)}
-              placeholder="e.g. Bank chargeback, customer cancellation, or mistaken entry..."
-              required
-            />
-          </FormField>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button onClick={() => setIsReverseModalOpen(false)} variant="outline" size="md">
-              Cancel
-            </Button>
-            <Button type="submit" variant="danger" size="md">
-              Confirm Reversal
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      <div className="print:hidden">
+        <Modal
+          isOpen={isReverseModalOpen}
+          onClose={() => setIsReverseModalOpen(false)}
+          title={`Reverse Payment: ${selectedPayment?.receiptRef}`}
+          description="Record an adjustment reason to reverse a verified payment."
+        >
+          <form onSubmit={handleConfirmReverse} className="space-y-4">
+            <FormField label="Reversal Reason" required>
+              <Textarea
+                rows={3}
+                value={reverseReason}
+                onChange={(e) => setReverseReason(e.target.value)}
+                placeholder="e.g. Bank chargeback, customer cancellation, or mistaken entry..."
+                required
+              />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button onClick={() => setIsReverseModalOpen(false)} variant="outline" size="md">
+                Cancel
+              </Button>
+              <Button type="submit" variant="danger" size="md">
+                Confirm Reversal
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      </div>
     </div>
   );
 };

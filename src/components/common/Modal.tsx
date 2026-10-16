@@ -8,6 +8,7 @@ interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  hideHeaderOnPrint?: boolean;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -32,6 +33,7 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   maxWidth = 'lg',
+  hideHeaderOnPrint = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -117,19 +119,19 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 print:static print:inset-auto print:bg-transparent print:backdrop-blur-none print:p-0 print:overflow-visible print:block"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 print:hidden" onClick={onClose} aria-hidden="true" />
 
       <div
         ref={modalRef}
         tabIndex={-1}
-        className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white rounded-brand-lg shadow-floating border border-border-subtle p-5 sm:p-7 z-10 my-auto`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white rounded-brand-lg shadow-floating border border-border-subtle p-5 sm:p-7 z-10 my-auto print:border-none print:shadow-none print:p-0 print:max-h-none print:w-full print:max-w-none print:my-0 print:rounded-none`}
       >
-        <div className="flex items-start justify-between gap-4 pb-3 sm:pb-4 border-b border-border-subtle flex-shrink-0">
+        <div className={`flex items-start justify-between gap-4 pb-3 sm:pb-4 border-b border-border-subtle flex-shrink-0 ${hideHeaderOnPrint ? 'print:hidden' : ''}`}>
           <div>
             <h3 id="modal-title" className="text-lg sm:text-xl font-heading font-bold text-navy">
               {title}
@@ -144,13 +146,13 @@ export const Modal: React.FC<ModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 -mr-1.5 text-content-muted hover:text-navy hover:bg-neutral-soft rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy"
+            className="p-1.5 -mr-1.5 text-content-muted hover:text-navy hover:bg-neutral-soft rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-navy print:hidden"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="mt-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">{children}</div>
+        <div className="mt-4 overflow-y-auto flex-1 pr-1 custom-scrollbar print:overflow-visible print:mt-0 print:p-0">{children}</div>
       </div>
     </div>
   );
