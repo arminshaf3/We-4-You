@@ -1,20 +1,20 @@
-# We 4 You — Child Identification Band & Guardian Contact Service
+# We 4 You — Identification Band & Subscription Service
 
-Frontend demonstration application for **We 4 You**, a child identification wristband service designed to help caring members of the public reconnect with families through an attentive office contact center.
+Production web application for **We 4 You**. Any person can buy a band, wear it, and keep an active subscription so the office can help reconnect them with their registered contacts.
 
 ---
 
-## 1. Project Overview & Architectural Boundaries
+## 1. Project Overview
 
-This project is a **pure frontend application** built using React, TypeScript, Tailwind CSS, and Vite.
+React, TypeScript, Tailwind CSS, and Vite on the client. Supabase provides authentication, the database, storage, and staff edge functions.
 
-### Important Architectural & Security Boundaries:
-- **Pure Frontend Implementation**: There is no live backend server, database, SMS gateway, telecommunications PBX, or external payment processor.
-- **Simulated Authentication**: The `/admin/login` page provides a simulated role persona picker to demonstrate staff dashboard navigation. It does *not* protect real production customer data or implement server-side access control.
-- **Simulated Payments**: Subscription and band purchase transactions are handled via an in-memory manual-verification workflow. No credit card or banking details are ever captured or processed.
-- **Draft Policies**: The Privacy Notice (`/privacy`) and Service Terms (`/terms`) are functional drafts prepared for review by the business and legal counsel; they do not represent finalized legal terms.
-- **Contact Details**: All office contact details, telephone numbers, and addresses come from the centralized demonstration configuration (`src/context/fixtures.ts` and `SettingsPage.tsx`).
-- **Future Backend Integration Points**: The mock service and state provider (`src/context/AppContext.tsx`) is structured so that each action (`submitPublicRegistration`, `addVendor`, `logIncident`, `verifyPayment`, etc.) can map directly to RESTful or GraphQL API endpoints in a future production backend.
+### How access works
+- **Accounts**: People sign up as account holders. Staff and admin accounts are created by an existing admin. A new signup cannot choose an admin role.
+- **Admin console**: `/admin` opens only for a real Supabase session whose profile role is `admin` or `support`.
+- **Subscriptions**: A band registration stays pending until staff review it. Card checkout stores the brand, last four digits, cardholder name, and expiry. Full card numbers and security codes are not stored, and a public request cannot mark itself paid.
+- **Found band**: The public report accepts a band code and a callback number. It does not publish the wearer's name, medical notes, or phone numbers.
+- **Configuration**: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` must be set in the environment. See `.env.example`. The service role key stays in Supabase, not in the frontend.
+- **Policies**: The Privacy Notice (`/privacy`) and Service Terms (`/terms`) are drafts for business and legal review.
 
 ---
 
@@ -106,18 +106,20 @@ All demonstration records share a reactive in-memory state store (`src/context/A
 
 ### Setup Commands
 ```bash
-# 1. Clone or navigate to the project directory
-cd "d:\WE4U band"
-
-# 2. Install dependencies
+# 1. Install dependencies
 npm install
+
+# 2. Create local environment from the example and fill in the Supabase values
+copy .env.example .env
 
 # 3. Start the local development server
 npm run dev
 
-# 4. Build for production preview
+# 4. Build for production
 npm run build
 npm run preview
 ```
+
+The first admin account is created in the Supabase dashboard, then given `role = 'admin'` on their `profiles` row. Later staff accounts are created from the admin staff screen.
 
 The application will be served locally at `http://localhost:5173`.

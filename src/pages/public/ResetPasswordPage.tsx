@@ -48,8 +48,8 @@ export const ResetPasswordPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!newPassword || newPassword.length < 6) {
-      setErrorMessage('Password must be at least 6 characters.');
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMessage('Password must be at least 8 characters.');
       return;
     }
 

@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'parent' | 'vendor' | 'support';
 
+const KNOWN_ROLES: UserRole[] = ['admin', 'parent', 'vendor', 'support'];
+
+function asRole(value: unknown): UserRole {
+  return KNOWN_ROLES.includes(value as UserRole) ? (value as UserRole) : 'parent';
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -105,19 +111,7 @@ export const authService = {
    * Universal Sign-in for Parent, Vendor, Support, Admin
    */
   async signIn(params: SignInParams): Promise<{ user: any; profile: UserProfile | null; error: string | null }> {
-    const trimmedEmail = params.email.trim().toLowerCase();
-
     if (!isSupabaseConfigured) {
-      if (trimmedEmail === 'we4u@gmail.com' || trimmedEmail === 'admin@we4u.com') {
-        const adminProfile: UserProfile = {
-          id: 'admin-we4u',
-          email: 'we4u@gmail.com',
-          fullName: 'We 4 You Administrator',
-          role: 'admin',
-          createdAt: new Date().toISOString().substring(0, 10),
-        };
-        return { user: { id: 'admin-we4u', email: 'we4u@gmail.com' }, profile: adminProfile, error: null };
-      }
       return { user: null, profile: null, error: 'Supabase is not configured.' };
     }
 
@@ -128,42 +122,12 @@ export const authService = {
       });
 
       if (authError || !authData.user) {
-        // Fallback convenience for designated master admin we4u@gmail.com
-        if ((trimmedEmail === 'we4u@gmail.com' || trimmedEmail === 'admin@we4u.com') && params.password.length >= 6) {
-          const adminProfile: UserProfile = {
-            id: 'admin-we4u',
-            email: 'we4u@gmail.com',
-            fullName: 'We 4 You Administrator',
-            role: 'admin',
-            createdAt: new Date().toISOString().substring(0, 10),
-          };
-          return { user: { id: 'admin-we4u', email: 'we4u@gmail.com' }, profile: adminProfile, error: null };
-        }
         return { user: null, profile: null, error: authError?.message || 'Invalid credentials.' };
       }
 
-      let profile = await this.getProfile(authData.user.id);
-      if (!profile && (trimmedEmail === 'we4u@gmail.com' || trimmedEmail === 'admin@we4u.com')) {
-        profile = {
-          id: authData.user.id,
-          email: authData.user.email || 'we4u@gmail.com',
-          fullName: 'We 4 You Administrator',
-          role: 'admin',
-        };
-      }
-
+      const profile = await this.getProfile(authData.user.id);
       return { user: authData.user, profile, error: null };
     } catch (err: any) {
-      if ((trimmedEmail === 'we4u@gmail.com' || trimmedEmail === 'admin@we4u.com') && params.password.length >= 6) {
-        const adminProfile: UserProfile = {
-          id: 'admin-we4u',
-          email: 'we4u@gmail.com',
-          fullName: 'We 4 You Administrator',
-          role: 'admin',
-          createdAt: new Date().toISOString().substring(0, 10),
-        };
-        return { user: { id: 'admin-we4u', email: 'we4u@gmail.com' }, profile: adminProfile, error: null };
-      }
       return { user: null, profile: null, error: err.message || 'Login failed.' };
     }
   },
@@ -182,7 +146,6 @@ export const authService = {
         .single();
 
       if (error || !data) {
-        // Fallback check metadata if profile table row not yet created
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user && userData.user.id === userId) {
           const meta = userData.user.user_metadata || {};
@@ -191,7 +154,7 @@ export const authService = {
             email: userData.user.email || '',
             fullName: meta.full_name || 'Authorized User',
             phone: meta.phone,
-            role: (meta.role as UserRole) || 'parent',
+            role: 'parent',
           };
         }
         return null;
@@ -202,7 +165,7 @@ export const authService = {
         email: data.email,
         fullName: data.full_name,
         phone: data.phone || undefined,
-        role: (data.role as UserRole) || 'parent',
+        role: asRole(data.role),
         avatarUrl: data.avatar_url || undefined,
         createdAt: data.created_at,
       };
@@ -290,9 +253,14 @@ export const authService = {
         return { user: edgeData.user, profile: edgeData.profile, error: null };
       }
 
-      // 2. Direct client fallback using isolated ephemeral auth instance (preserves admin session)
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qazflguhczceidcxwtlx.supabase.co';
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const supabaseAnonKey =
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        import.meta.env.VITE_SUPABASE_ANON_KEY ||
+        '';
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return { user: null, profile: null, error: edgeError?.message || 'Staff creation is unavailable.' };
+      }
 
       const ephemeralClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
@@ -311,7 +279,6 @@ export const authService = {
           data: {
             full_name: params.fullName,
             phone: params.phone || '',
-            role: params.role,
           },
         },
       });

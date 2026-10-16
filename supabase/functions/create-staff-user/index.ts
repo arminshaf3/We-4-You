@@ -1,14 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, requireStaff } from '../_shared/requireStaff.ts';
 
 serve(async (req) => {
+  const headers = corsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers });
   }
 
   try {
@@ -16,18 +13,27 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const staff = await requireStaff(req, supabase, ['admin']);
+    if (!staff.ok) return staff.response;
+
     const { email, password, fullName, phone, role } = await req.json();
 
     if (!email || !password || !fullName) {
       return new Response(JSON.stringify({ error: 'Email, password, and fullName are required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (String(password).length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
+        status: 400,
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
     const assignedRole = role === 'admin' ? 'admin' : 'support';
 
-    // 1. Create auth user with pre-confirmed email
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: email.trim(),
       password: password,
@@ -35,20 +41,18 @@ serve(async (req) => {
       user_metadata: {
         full_name: fullName,
         phone: phone || null,
-        role: assignedRole,
       },
     });
 
     if (authError || !authData.user) {
       return new Response(JSON.stringify({ error: authError?.message || 'Failed to create auth user' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
     const userId = authData.user.id;
 
-    // 2. Upsert profile with assigned role
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert({
@@ -64,14 +68,14 @@ serve(async (req) => {
     if (profileError) {
       return new Response(JSON.stringify({ error: profileError.message }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       });
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        user: authData.user,
+        user: { id: authData.user.id, email: authData.user.email },
         profile: {
           id: userId,
           email: email.trim(),
@@ -83,13 +87,13 @@ serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...headers, 'Content-Type': 'application/json' },
       }
     );
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...headers, 'Content-Type': 'application/json' },
     });
   }
 });

@@ -37,6 +37,7 @@ import {
   initialSettings,
 } from './fixtures';
 import { supabaseService } from '../services/supabaseService';
+import { safeCardRecord } from '../utils/cardPrivacy';
 
 export interface ToastMessage {
   id: string;
@@ -75,7 +76,7 @@ interface AppContextType {
   removeToast: (id: string) => void;
 
   // Registration workflows
-  submitPublicRegistration: (data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'> & { paymentMethod?: PaymentMethod; cardDetails?: CardPaymentDetails }) => Registration;
+  submitPublicRegistration: (data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'> & { paymentMethod?: PaymentMethod; cardDetails?: CardPaymentDetails; verifiedBand?: { found: boolean; assignable: boolean; alreadyRegistered?: boolean; status?: string } }) => Registration;
   updateRegistrationStatus: (id: string, status: RegistrationStatus, reason?: string) => void;
 
   // Vendor workflows
@@ -208,9 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activity, setActivity] = useState<AppActivity[]>(() => loadPersisted('we4u_activity', initialActivity));
   const [settings, setSettings] = useState<AppSettings>(() => loadPersisted('we4u_settings', initialSettings));
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return (localStorage.getItem('we4u_admin_auth') ?? sessionStorage.getItem('we4u_admin_auth')) === 'true';
-  });
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
 
   const [adminUser, setAdminUser] = useState<string>(() => {
     return localStorage.getItem('we4u_admin_user') ?? sessionStorage.getItem('we4u_admin_user') ?? 'we4u@gmail.com';
@@ -255,6 +254,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // ignore JSON errors
       }
     };
+    try {
+      localStorage.removeItem('we4u_admin_auth');
+      sessionStorage.removeItem('we4u_admin_auth');
+    } catch {}
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
@@ -428,10 +431,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Admin Auth Handlers
-  const loginAdmin = (username = 'we4u@gmail.com') => {
+  const loginAdmin = (username = 'staff') => {
     setIsAdminLoggedIn(true);
     setAdminUser(username);
-    savePersisted('we4u_admin_auth', 'true');
+    try {
+      localStorage.removeItem('we4u_admin_auth');
+      sessionStorage.removeItem('we4u_admin_auth');
+    } catch {}
     savePersisted('we4u_admin_user', username);
     addToast('success', 'Admin Sign In', 'Signed in successfully.');
     logAction('Admin Sign-In', `Signed in as ${username}.`, 'settings', 'AUTH');
@@ -453,23 +459,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     data: Omit<Registration, 'id' | 'referenceNumber' | 'submissionDate' | 'status' | 'paymentStatus' | 'timeline'> & {
       paymentMethod?: PaymentMethod;
       cardDetails?: CardPaymentDetails;
+      verifiedBand?: { found: boolean; assignable: boolean; alreadyRegistered?: boolean; status?: string };
     }
   ): Registration => {
     // 1. Strict Band Inventory Validation Guard
     const normCode = data.bandCode.toUpperCase().replace(/[\s-]/g, '').trim();
     const inventoryBand = bands.find((b) => b.referenceCode.toUpperCase().replace(/[\s-]/g, '') === normCode);
+    const liveCheck = supabaseService.isConfigured && data.verifiedBand;
 
-    if (!inventoryBand) {
+    if (liveCheck && data.verifiedBand) {
+      if (!data.verifiedBand.found) {
+        addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" was not found in system inventory. Only official pre-issued bands in inventory can be registered.`);
+        throw new Error(`Band reference "${data.bandCode}" is not present in system inventory.`);
+      }
+      if (data.verifiedBand.alreadyRegistered || data.verifiedBand.status === 'assigned' || !data.verifiedBand.assignable) {
+        addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" is not available for a new subscription.`);
+        throw new Error(`Band reference "${data.bandCode}" is not available for registration.`);
+      }
+    } else if (!inventoryBand) {
       addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" was not found in system inventory. Only official pre-issued bands in inventory can be registered.`);
       throw new Error(`Band reference "${data.bandCode}" is not present in system inventory.`);
-    }
-
-    if (inventoryBand.status === 'assigned' || inventoryBand.childId) {
+    } else if (inventoryBand.status === 'assigned' || inventoryBand.childId) {
       addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" is already registered and assigned to an active wearer. Duplicate registration is not permitted.`);
       throw new Error(`Band reference "${data.bandCode}" is already registered.`);
-    }
-
-    if (inventoryBand.status !== 'available') {
+    } else if (inventoryBand.status !== 'available') {
       addToast('error', 'Registration Blocked', `Band reference "${data.bandCode}" has status "${inventoryBand.status}" and cannot be registered.`);
       throw new Error(`Band reference "${data.bandCode}" is not available for registration.`);
     }
@@ -498,18 +511,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : `REC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const cardDetails: CardPaymentDetails | undefined = isCard
-      ? {
-          brand: data.cardDetails?.brand || 'Visa',
-          last4: data.cardDetails?.last4 || '4242',
+      ? safeCardRecord({
+          brand: data.cardDetails?.brand || 'Card',
+          last4: data.cardDetails?.last4 || '',
           cardholderName: data.cardDetails?.cardholderName || data.guardian.fullName,
-          expMonth: data.cardDetails?.expMonth || '12',
-          expYear: data.cardDetails?.expYear || '28',
+          expMonth: data.cardDetails?.expMonth,
+          expYear: data.cardDetails?.expYear,
           transactionId,
-          authCode: `AUTH-${Math.floor(100000 + Math.random() * 900000)}`,
-        }
+        })
       : undefined;
 
-    const paymentStatus = isCard ? 'verified' : 'pending';
+    const paymentStatus = 'pending' as const;
 
     const timeline = [
       {
@@ -517,22 +529,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         actor: 'Applicant',
         action: 'Registration submitted online',
         notes: isCard
-          ? 'Guardian and band details submitted with card checkout.'
-          : 'Awaiting office document verification and subscription payment confirmation.',
+          ? 'Subscription request received. Card reference stored as last four digits only. Payment stays pending until the office confirms it.'
+          : 'Awaiting office verification and subscription payment confirmation.',
       },
     ];
 
-    if (isCard && cardDetails) {
-      timeline.push({
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        actor: 'Payment Gateway (Card Processor)',
-        action: 'Card Payment Accepted & Confirmed',
-        notes: `Authorized $${amount.toFixed(2)} USD via ${cardDetails.brand} ending in ${cardDetails.last4}. Transaction Ref: ${transactionId}.`,
-      });
-    }
-
+    const { verifiedBand: _verifiedBand, ...registrationInput } = data;
     const newReg: Registration = {
-      ...data,
+      ...registrationInput,
       id: refNumber,
       referenceNumber: refNumber,
       submissionDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -562,28 +566,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       registrationId: refNumber,
       payerName: data.guardian.fullName,
       notes: isCard
-        ? `Card payment accepted & confirmed online (${cardDetails?.brand} ending ${cardDetails?.last4}). Instant verification.`
-        : 'Registration submitted; awaiting manual bank/store confirmation.',
+        ? `Card reference recorded (${cardDetails?.brand || 'Card'} ending ${cardDetails?.last4 || '----'}). Payment remains pending office confirmation.`
+        : 'Registration submitted; awaiting office payment confirmation.',
     };
     setPayments((prev) => [newPay, ...prev]);
 
-    // Log Activity
     logAction(
-      isCard ? 'Card Payment Confirmed' : 'Registration Received',
-      isCard
-        ? `Registration ${refNumber} received with confirmed card payment of $${amount.toFixed(2)} (${cardDetails?.brand} •••• ${cardDetails?.last4}).`
-        : `New registration ${refNumber} received for wearer "${data.child.name}".`,
+      'Registration Received',
+      `New registration ${refNumber} received for wearer "${data.child.name}".`,
       'registration',
       refNumber,
-      isCard ? 'Payment Gateway / Applicant' : 'Applicant (Public Web)'
+      'Applicant (Public Web)'
     );
 
     addToast(
       'success',
-      isCard ? 'Card Payment Accepted & Confirmed' : 'Registration Submitted',
-      isCard
-        ? `Receipt ${payRef} confirmed for $${amount.toFixed(2)}. Reference ${refNumber} queued.`
-        : `Reference ${refNumber} created for review.`
+      'Registration Submitted',
+      `Reference ${refNumber} is queued for office review.`
     );
     return newReg;
   };
@@ -1082,12 +1081,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       receiptRef,
       type: 'subscription',
       method,
-      cardDetails: isCard ? cardDetails || {
-        brand: 'Visa',
-        last4: '4242',
-        cardholderName: 'Registered Guardian',
-        transactionId: transactionId || `TXN-CARD-${Date.now()}`,
-      } : undefined,
+      cardDetails: isCard ? safeCardRecord(cardDetails) : undefined,
       transactionId,
       amount,
       currency: 'USD',
@@ -1196,7 +1190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           receiptRef,
           type: 'subscription',
           method: 'card',
-          cardDetails: params.cardDetails,
+          cardDetails: safeCardRecord(params.cardDetails),
           transactionId: txnId,
           amount,
           currency: 'USD',
@@ -1220,7 +1214,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       receiptRef,
       type: 'subscription',
       method: 'card',
-      cardDetails: params.cardDetails,
+      cardDetails: safeCardRecord(params.cardDetails),
       transactionId: txnId,
       amount,
       currency: 'USD',

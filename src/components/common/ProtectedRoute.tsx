@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../services/authService';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from './Button';
@@ -17,12 +16,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectTo,
 }) => {
-  const { isAuthenticated, isLoading, role, user, signOut } = useAuth();
-  const { isAdminLoggedIn } = useApp();
+  const { isAuthenticated, isLoading, role, signOut } = useAuth();
   const location = useLocation();
 
-  // 1. Show loading indicator only on cold initial boot if no session/auth has loaded yet
-  if (isLoading && !user && !isAdminLoggedIn) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-6 text-center">
         <Loader2 className="w-10 h-10 text-mint animate-spin mb-4" />
@@ -32,9 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // 2. Check if user is authenticated
-  const isAuth = isAuthenticated || isAdminLoggedIn;
-  if (!isAuth) {
+  if (!isAuthenticated) {
     const defaultRedirect = location.pathname.startsWith('/admin') ? '/admin/login' : '/login';
     return <Navigate to={redirectTo || defaultRedirect} state={{ from: location }} replace />;
   }
@@ -42,7 +37,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 3. If role is restricted and user does not have permission
   if (allowedRoles && allowedRoles.length > 0) {
     const userRole = role as UserRole;
-    const hasRole = allowedRoles.includes(userRole) || (isAdminLoggedIn && (allowedRoles.includes('admin') || allowedRoles.includes('support')));
+    const hasRole = allowedRoles.includes(userRole);
     if (!hasRole) {
       return (
         <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center">

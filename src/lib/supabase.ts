@@ -1,24 +1,28 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl: string =
-  (import.meta as any).env?.VITE_SUPABASE_URL || 'https://qazflguhczceidcxwtlx.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabasePublishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  '';
 
-const supabasePublishableKey: string =
-  (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ||
-  'sb_publishable_WXRwj82HAw91ZJDfiA4TYw_uKyn-ELL';
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 
-export const isSupabaseConfigured = Boolean(
-  supabaseUrl &&
-  supabasePublishableKey &&
-  !supabaseUrl.includes('your-project-id')
+if (!isSupabaseConfigured) {
+  console.error(
+    'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the environment.'
+  );
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'http://127.0.0.1:54321',
+  supabasePublishableKey || 'missing-publishable-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  }
 );
-
-export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});

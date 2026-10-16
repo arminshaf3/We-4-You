@@ -98,8 +98,8 @@ export const StaffListPage: React.FC = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setFormError('Password must be at least 6 characters long.');
+    if (password.length < 8) {
+      setFormError('Password must be at least 8 characters long.');
       return;
     }
 

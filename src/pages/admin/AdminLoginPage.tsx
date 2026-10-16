@@ -7,8 +7,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { ArrowRight, Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const AdminLoginPage: React.FC = () => {
-  const { loginAdmin, isAdminLoggedIn } = useApp();
-  const { signIn, isAuthenticated, role } = useAuth();
+  const { loginAdmin } = useApp();
+  const { signIn, isAuthenticated, isLoading, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,10 +22,11 @@ export const AdminLoginPage: React.FC = () => {
 
   // Only redirect on initial page mount if already authenticated
   React.useEffect(() => {
-    if (isAdminLoggedIn || (isAuthenticated && (role === 'admin' || role === 'support'))) {
+    if (isLoading) return;
+    if (isAuthenticated && (role === 'admin' || role === 'support')) {
       navigate('/admin', { replace: true });
     }
-  }, []);
+  }, [isAuthenticated, isLoading, navigate, role]);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

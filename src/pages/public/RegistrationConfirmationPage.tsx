@@ -66,7 +66,7 @@ export const RegistrationConfirmationPage: React.FC = () => {
   const guardianLanguage = state?.guardianLanguage || latestReg?.guardian?.preferredLanguage || 'English';
   const vendorName = state?.vendorName || 'Downtown Pharmacy & Care Supplies';
   const durationMonths = state?.durationMonths || 24;
-  const isCardPaid = state?.isCardPaid ?? (latestReg?.paymentStatus === 'verified' || true);
+  const isCardPaid = state?.isCardPaid ?? latestReg?.paymentStatus === 'verified';
   const transactionId = state?.transactionId || latestReg?.cardDetails?.transactionId || 'TXN-CARD-2026-432870';
   const receiptRef = state?.receiptRef || latestReg?.paymentRef || 'CARD-2026-7358';
   const amountPaid = state?.amountPaid || 49.0;
@@ -229,7 +229,7 @@ export const RegistrationConfirmationPage: React.FC = () => {
           </h4>
           <ol className="list-decimal pl-4 space-y-1 text-xs text-slate-700">
             <li>
-              <strong>Verified in Ledger:</strong> Transaction <code>{transactionId}</code> has been confirmed in the We 4 You payment database.
+              <strong>Queued for review:</strong> Reference <code>{referenceNumber}</code> is in the office queue. Subscription payment stays pending until staff confirm it.
             </li>
             <li>
               <strong>Instant Intermediary Protection:</strong> When anyone reports band <code>{bandCode}</code>, our hotline coordinates with <code>{guardianPhone}</code> without sharing private details.

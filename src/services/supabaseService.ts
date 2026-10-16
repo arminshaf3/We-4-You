@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { safeCardRecord } from '../utils/cardPrivacy';
 import {
   Vendor,
   Band,
@@ -398,7 +399,7 @@ export const supabaseService = {
           statusReason: r.status_reason || undefined,
           paymentStatus: r.payment_status,
           paymentRef: r.payment_ref || undefined,
-          cardDetails: r.card_details || undefined,
+          cardDetails: safeCardRecord(r.card_details),
           timeline: r.timeline || [],
           submissionDate: r.submission_date ? r.submission_date.substring(0, 16).replace('T', ' ') : new Date().toISOString().substring(0, 16).replace('T', ' '),
         }));
@@ -417,7 +418,7 @@ export const supabaseService = {
         statusReason: r.status_reason || undefined,
         paymentStatus: r.payment_status,
         paymentRef: r.payment_ref || undefined,
-        cardDetails: r.card_details || undefined,
+        cardDetails: safeCardRecord(r.card_details),
         timeline: r.timeline || [],
         submissionDate: r.submission_date ? r.submission_date.substring(0, 16).replace('T', ' ') : new Date().toISOString().substring(0, 16).replace('T', ' '),
       }));
@@ -449,9 +450,9 @@ export const supabaseService = {
         plan_id: reg.planId || null,
         status: reg.status || 'pending_verification',
         status_reason: reg.statusReason || null,
-        payment_status: reg.paymentStatus || 'pending',
+        payment_status: 'pending',
         payment_ref: reg.paymentRef || null,
-        card_details: reg.cardDetails || null,
+        card_details: safeCardRecord(reg.cardDetails) || null,
         timeline: reg.timeline || [],
       });
 
@@ -569,7 +570,7 @@ export const supabaseService = {
         receiptRef: p.receipt_ref,
         type: p.type || 'subscription',
         method: p.method || 'card',
-        cardDetails: p.card_details || undefined,
+        cardDetails: safeCardRecord(p.card_details),
         transactionId: p.transaction_id || undefined,
         amount: Number(p.amount),
         currency: p.currency || 'USD',
@@ -592,7 +593,7 @@ export const supabaseService = {
         receipt_ref: payment.receiptRef,
         type: payment.type,
         method: payment.method,
-        card_details: payment.cardDetails || null,
+        card_details: safeCardRecord(payment.cardDetails) || null,
         transaction_id: payment.transactionId || null,
         amount: payment.amount,
         currency: payment.currency,
@@ -830,6 +831,34 @@ export const supabaseService = {
     if (!isSupabaseConfigured) return '';
     const { data } = supabase.storage.from('branding-assets').getPublicUrl(filePath);
     return data.publicUrl;
+  },
+
+  async checkBandAvailability(code: string): Promise<{
+    queriedCode: string;
+    found: boolean;
+    status?: string;
+    assignable: boolean;
+    alreadyRegistered: boolean;
+    referenceCode?: string;
+    vendorId?: string;
+  } | null> {
+    const queriedCode = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!isSupabaseConfigured || queriedCode.length < 3) return null;
+    try {
+      const { data, error } = await supabase.rpc('check_band_availability', { p_code: code });
+      if (error || !data) return null;
+      return {
+        queriedCode,
+        found: Boolean(data.found),
+        status: data.status || undefined,
+        assignable: Boolean(data.assignable),
+        alreadyRegistered: Boolean(data.already_registered),
+        referenceCode: data.reference_code || undefined,
+        vendorId: data.vendor_id || undefined,
+      };
+    } catch {
+      return null;
+    }
   },
 
   // --- ATOMIC WORKFLOWS & EDGE RPCs ---

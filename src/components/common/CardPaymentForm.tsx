@@ -138,18 +138,6 @@ export const CardPaymentForm: React.FC<CardPaymentFormProps> = ({
     });
   };
 
-  // Demo auto-fill helper
-  const handleAutoFillDemo = () => {
-    onChange({
-      cardNumber: '4242 4242 4242 4242',
-      cardholderName: 'SARAH WATSON',
-      expiryDate: '12/28',
-      cvv: '849',
-      brand: 'Visa',
-      last4: '4242',
-    });
-  };
-
   return (
     <div className={`space-y-3.5 bg-white ${compact ? 'p-3.5 sm:p-4' : 'p-4 sm:p-5'} rounded-brand border border-border-subtle shadow-subtle`}>
       

@@ -83,6 +83,7 @@ export const RegisterPage: React.FC = () => {
     return searchParams.get('code') || searchParams.get('band') || '';
   });
   const [vendorId, setVendorId] = useState('');
+  const [remoteBand, setRemoteBand] = useState<Awaited<ReturnType<typeof supabaseService.checkBandAvailability>>>(null);
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().substring(0, 10));
 
   // Form State - Subscription Plan & Payment
@@ -204,10 +205,94 @@ export const RegisterPage: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    if (!supabaseService.isConfigured) {
+      setRemoteBand(null);
+      return;
+    }
+    const raw = bandCode.trim().replace(/[^A-Z0-9]/g, '').toUpperCase();
+    if (raw.length < 3) {
+      setRemoteBand(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      supabaseService.checkBandAvailability(bandCode).then((result) => {
+        if (cancelled) return;
+        setRemoteBand(result ?? {
+          queriedCode: raw,
+          found: false,
+          assignable: false,
+          alreadyRegistered: false,
+          status: 'lookup_failed',
+        });
+      });
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [bandCode]);
+
   // Real-time Inventory Verification Status Helper
   const bandInventoryStatus = useMemo(() => {
     const raw = bandCode.trim().replace(/[\s-]/g, '').toUpperCase();
     if (!raw || raw.length < 2) return null;
+
+    if (supabaseService.isConfigured && remoteBand?.status !== 'lookup_failed') {
+      if (raw.length < 3 || !remoteBand || remoteBand.queriedCode !== raw) {
+        return {
+          isValid: false,
+          status: 'checking',
+          title: 'Checking inventory',
+          message: 'Checking this band against live inventory.',
+        };
+      }
+      if (!remoteBand.found) {
+        return {
+          isValid: false,
+          status: 'not_in_inventory',
+          title: 'Band Not Found in Inventory',
+          message: `Band reference "${bandCode.toUpperCase()}" was not found in official inventory. Only pre-issued bands recorded in system inventory can be activated.`,
+        };
+      }
+      if (remoteBand.alreadyRegistered || remoteBand.status === 'assigned') {
+        return {
+          isValid: false,
+          status: 'already_registered',
+          title: 'Band Already Registered',
+          message: `Band "${remoteBand.referenceCode || bandCode.toUpperCase()}" is already registered. Duplicate registrations are not permitted.`,
+        };
+      }
+      if (remoteBand.status === 'retired' || remoteBand.status === 'lost' || remoteBand.status === 'replaced') {
+        return {
+          isValid: false,
+          status: 'inactive_status',
+          title: `Band Marked as ${String(remoteBand.status).toUpperCase()}`,
+          message: `Band "${remoteBand.referenceCode}" has status "${remoteBand.status}" and cannot be registered. Please contact support.`,
+        };
+      }
+      if (remoteBand.assignable && remoteBand.status === 'available') {
+        return {
+          isValid: true,
+          status: 'available',
+          band: {
+            id: remoteBand.referenceCode || raw,
+            referenceCode: remoteBand.referenceCode || bandCode.toUpperCase(),
+            status: 'available' as const,
+            vendorId: remoteBand.vendorId,
+          },
+          title: 'Official Band Verified & In Stock',
+          message: `Band "${remoteBand.referenceCode}" is verified in inventory and ready for activation.`,
+        };
+      }
+      return {
+        isValid: false,
+        status: 'unknown',
+        title: 'Invalid Band Status',
+        message: `Band "${remoteBand.referenceCode || bandCode}" is not available for registration.`,
+      };
+    }
 
     // 1. Check for duplicate active registrations
     const duplicate = registrations.find(
@@ -276,7 +361,7 @@ export const RegisterPage: React.FC = () => {
       title: 'Invalid Band Status',
       message: `Band "${existingBand.referenceCode}" is not available for registration.`,
     };
-  }, [bandCode, bands, registrations]);
+  }, [bandCode, bands, registrations, remoteBand]);
 
   // Auto-fill vendor if verified inventory band is already associated with a partner shop
   useEffect(() => {
@@ -405,12 +490,33 @@ export const RegisterPage: React.FC = () => {
 
     const processingDelay = paymentMethod === 'card' ? 700 : 350;
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const isCard = paymentMethod === 'card';
       const txnId = isCard ? `TXN-CARD-2026-${Math.floor(100000 + Math.random() * 900000)}` : undefined;
 
       try {
+        const verifiedBand = supabaseService.isConfigured
+          ? await supabaseService.checkBandAvailability(bandCode)
+          : null;
+        const liveBand = verifiedBand && verifiedBand.status !== 'lookup_failed' ? verifiedBand : null;
+        if (liveBand && (!liveBand.found || !liveBand.assignable)) {
+          setIsSubmitting(false);
+          setErrors((prev) => ({
+            ...prev,
+            bandCode: 'This band is not available in live inventory.',
+          }));
+          setCurrentStep(1);
+          return;
+        }
         const newRegistration = submitPublicRegistration({
+          verifiedBand: liveBand
+            ? {
+                found: liveBand.found,
+                assignable: liveBand.assignable,
+                alreadyRegistered: liveBand.alreadyRegistered,
+                status: liveBand.status,
+              }
+            : undefined,
           guardian: {
             fullName: guardianName.trim(),
             relationship,
@@ -473,7 +579,7 @@ export const RegisterPage: React.FC = () => {
             guardianLanguage: language || 'English',
             vendorName: selectedVendor?.shopName || 'Authorized We 4 You Partner Outlet',
             durationMonths: selectedPlan?.durationMonths || 12,
-            isCardPaid: isCard,
+            isCardPaid: false,
             paymentMethod,
             transactionId: newRegistration.cardDetails?.transactionId || txnId,
             receiptRef: newRegistration.paymentRef,
@@ -601,7 +707,7 @@ export const RegisterPage: React.FC = () => {
                     onChange={handleBandCodeChange}
                     placeholder="W4Y-7821-K9"
                     className="font-mono uppercase font-bold text-navy text-base tracking-wider h-12"
-                    error={!!errors.bandCode || (bandInventoryStatus !== null && !bandInventoryStatus.isValid && bandCode.trim().length >= 4)}
+                    error={!!errors.bandCode || (bandInventoryStatus !== null && !bandInventoryStatus.isValid && bandInventoryStatus.status !== 'checking' && bandCode.trim().length >= 4)}
                   />
                   {bandInventoryStatus?.isValid && (
                     <div className="absolute right-3.5 top-3.5 flex items-center text-emerald-600">
@@ -623,6 +729,8 @@ export const RegisterPage: React.FC = () => {
                     className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 transition-all ${
                       bandInventoryStatus.isValid
                         ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        : bandInventoryStatus.status === 'checking'
+                        ? 'bg-slate-50 border-slate-200 text-slate-700'
                         : bandCode.trim().length >= 3
                         ? 'bg-rose-50 border-rose-200 text-rose-900'
                         : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -630,6 +738,8 @@ export const RegisterPage: React.FC = () => {
                   >
                     {bandInventoryStatus.isValid ? (
                       <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    ) : bandInventoryStatus.status === 'checking' ? (
+                      <Clock className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
                     ) : (
                       <XCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
                     )}
