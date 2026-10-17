@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { FormField, Input, Select, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
+import { formatActivityTimestamp } from '../../utils/dateUtils';
 import { IncidentStatus } from '../../types';
 import {
   AlertTriangle,
@@ -277,7 +278,7 @@ export const IncidentDetailPage: React.FC = () => {
                         )}
                         <span>{att.method === 'phone_call' ? 'Telephone Call' : 'SMS Notification'} &rarr; {att.contactTarget}</span>
                       </span>
-                      <span className="text-[11px] text-content-muted font-mono">{att.timestamp}</span>
+                      <span className="text-[11px] text-content-muted font-mono">{formatActivityTimestamp(att.timestamp)}</span>
                     </div>
                     <p className="text-content-body">
                       <strong>Result:</strong> <span className="text-navy font-medium">{att.outcome}</span>

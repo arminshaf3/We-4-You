@@ -38,6 +38,7 @@ import {
 } from './fixtures';
 import { supabaseService } from '../services/supabaseService';
 import { safeCardRecord } from '../utils/cardPrivacy';
+import { createIsoTimestamp } from '../utils/dateUtils';
 
 export interface ToastMessage {
   id: string;
@@ -407,7 +408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ) => {
     const entry: AppActivity = {
       id: `ACT-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      timestamp: createIsoTimestamp(),
       actor,
       actionType,
       description,
@@ -525,7 +526,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const timeline = [
       {
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        timestamp: createIsoTimestamp(),
         actor: 'Applicant',
         action: 'Registration submitted online',
         notes: isCard
@@ -592,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const reg = registrations.find((r) => r.id === id || r.referenceNumber === id);
     if (!reg) return;
 
-    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const timestamp = createIsoTimestamp();
     let actionDesc = '';
     if (status === 'approved') actionDesc = 'Registration Approved';
     if (status === 'rejected') actionDesc = 'Registration Rejected';
@@ -1393,7 +1394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newAttempt: ContactAttempt = {
       ...attempt,
       id: `ATT-${Date.now()}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      timestamp: createIsoTimestamp(),
       staffName: adminUser,
     };
 
@@ -1437,7 +1438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     outcomeSummary?: string,
     notes?: string
   ) => {
-    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const timestamp = createIsoTimestamp();
     setIncidents((prev) =>
       prev.map((inc) =>
         inc.id === incidentId || inc.incidentRef === incidentId
@@ -1475,7 +1476,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       email,
       topic,
       message,
-      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      createdAt: createIsoTimestamp(),
       status: 'new',
     };
     setEnquiries((prev) => [newEnq, ...prev]);

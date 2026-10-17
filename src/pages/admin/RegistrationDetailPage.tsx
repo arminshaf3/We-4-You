@@ -6,6 +6,7 @@ import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
 import { FormField, Input, Textarea } from '../../components/common/FormField';
 import { useApp } from '../../context/AppContext';
+import { formatActivityTimestamp } from '../../utils/dateUtils';
 import {
   User,
   ShieldCheck,
@@ -443,7 +444,7 @@ export const RegistrationDetailPage: React.FC = () => {
             {reg.timeline.map((entry, idx) => (
               <div key={idx} className="relative pl-5 pb-3 border-l-2 border-slate-200 last:border-0 last:pb-0 text-xs">
                 <div className="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-navy" />
-                <span className="text-[11px] text-content-muted block">{entry.timestamp}</span>
+                <span className="text-[11px] text-content-muted block">{formatActivityTimestamp(entry.timestamp)}</span>
                 <span className="font-semibold text-navy block mt-0.5">{entry.action}</span>
                 <span className="text-content-muted block">By: {entry.actor}</span>
                 {entry.notes && (

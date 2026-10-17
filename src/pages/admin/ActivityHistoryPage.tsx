@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { useApp } from '../../context/AppContext';
+import { formatActivityTimestamp } from '../../utils/dateUtils';
 import {
   History,
   ShieldCheck,
@@ -286,7 +287,7 @@ export const ActivityHistoryPage: React.FC = () => {
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 flex-shrink-0 text-xs text-slate-500 font-mono">
                     <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-200 text-slate-600">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {act.timestamp}
+                      {formatActivityTimestamp(act.timestamp)}
                     </span>
                   </div>
                 </div>
