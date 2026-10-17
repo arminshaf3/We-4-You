@@ -429,16 +429,19 @@ WITH CHECK (
 
 -- 5. Public writes are limited to registration and contact messages.
 DROP POLICY IF EXISTS "public_insert_guardians" ON public.guardians;
+DROP POLICY IF EXISTS "users_insert_own_guardian" ON public.guardians;
 CREATE POLICY "users_insert_own_guardian" ON public.guardians
 FOR INSERT TO authenticated
 WITH CHECK (profile_id = auth.uid() OR public.is_support_or_admin());
 
 DROP POLICY IF EXISTS "public_insert_wearers" ON public.wearers;
+DROP POLICY IF EXISTS "staff_insert_wearers" ON public.wearers;
 CREATE POLICY "staff_insert_wearers" ON public.wearers
 FOR INSERT TO authenticated
 WITH CHECK (public.is_support_or_admin());
 
 DROP POLICY IF EXISTS "public_insert_child_guardians" ON public.child_guardians;
+DROP POLICY IF EXISTS "staff_insert_child_guardians" ON public.child_guardians;
 CREATE POLICY "staff_insert_child_guardians" ON public.child_guardians
 FOR INSERT TO authenticated
 WITH CHECK (public.is_support_or_admin());
@@ -472,16 +475,19 @@ WITH CHECK (
 );
 
 DROP POLICY IF EXISTS "public_insert_subscriptions" ON public.subscriptions;
+DROP POLICY IF EXISTS "staff_insert_subscriptions" ON public.subscriptions;
 CREATE POLICY "staff_insert_subscriptions" ON public.subscriptions
 FOR INSERT TO authenticated
 WITH CHECK (public.is_support_or_admin());
 
 DROP POLICY IF EXISTS "public_insert_payments" ON public.payments;
+DROP POLICY IF EXISTS "staff_insert_payments" ON public.payments;
 CREATE POLICY "staff_insert_payments" ON public.payments
 FOR INSERT TO authenticated
 WITH CHECK (public.is_admin());
 
 DROP POLICY IF EXISTS "public_submit_incidents" ON public.incidents;
+DROP POLICY IF EXISTS "staff_insert_incidents" ON public.incidents;
 CREATE POLICY "staff_insert_incidents" ON public.incidents
 FOR INSERT TO authenticated
 WITH CHECK (public.is_support_or_admin());
@@ -492,6 +498,7 @@ FOR INSERT TO anon, authenticated
 WITH CHECK (status = 'new');
 
 DROP POLICY IF EXISTS "authenticated_insert_audit_logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "staff_insert_audit_logs" ON public.audit_logs;
 CREATE POLICY "staff_insert_audit_logs" ON public.audit_logs
 FOR INSERT TO authenticated
 WITH CHECK (public.is_support_or_admin());
