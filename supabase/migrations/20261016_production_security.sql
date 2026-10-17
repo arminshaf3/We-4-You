@@ -275,6 +275,7 @@ END;
 $$;
 
 -- Public band check: existence and availability only. No wearer id, name, or contacts.
+DROP FUNCTION IF EXISTS public.check_band_availability(text);
 CREATE OR REPLACE FUNCTION public.check_band_availability(p_code TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -328,6 +329,7 @@ END;
 $$;
 
 -- Public emergency lookup no longer returns a person's name, medical data, or phone numbers.
+DROP FUNCTION IF EXISTS public.lookup_band_emergency(text);
 CREATE OR REPLACE FUNCTION public.lookup_band_emergency(lookup_code TEXT)
 RETURNS TABLE (
   band_reference TEXT,
