@@ -71,7 +71,8 @@
     page-break-inside: avoid !important;
   }
 
-  #branded-a4-receipt {
+  #branded-a4-receipt,
+  #executive-pdf-document {
     box-shadow: none !important;
     border: none !important;
     width: 100% !important;

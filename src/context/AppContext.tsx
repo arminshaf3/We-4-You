@@ -325,8 +325,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data && data.length > 0) setChildrenRecords(data);
     });
 
+    const syncActivity = () => {
+      supabaseService.getAuditLogs().then((data) => {
+        if (data && data.length > 0) {
+          setActivity((prev) => {
+            const map = new Map<string, AppActivity>();
+            prev.forEach((a) => map.set(a.id, a));
+            data.forEach((a) => map.set(a.id, a));
+            return Array.from(map.values()).sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+          });
+        }
+      });
+    };
+
     syncRegistrations();
     syncIncidents();
+    syncActivity();
 
     supabaseService.getPayments().then((data) => {
       if (data && data.length > 0) setPayments(data);
@@ -348,12 +362,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const pollInterval = setInterval(() => {
       syncRegistrations();
       syncIncidents();
+      syncActivity();
     }, 8000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         syncRegistrations();
         syncIncidents();
+        syncActivity();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -383,6 +399,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       onPaymentChange: () => {
         supabaseService.getPayments().then((data) => data && setPayments(data));
       },
+      onAuditLogChange: () => {
+        syncActivity();
+      },
     });
 
     return () => {
@@ -407,7 +426,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     actor = adminUser
   ) => {
     const entry: AppActivity = {
-      id: `ACT-${Date.now()}`,
+      id: `ACT-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       timestamp: createIsoTimestamp(),
       actor,
       actionType,
@@ -416,6 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       entityId,
     };
     setActivity((prev) => [entry, ...prev]);
+    supabaseService.insertAuditLog(entry);
   };
 
   // Toast handlers

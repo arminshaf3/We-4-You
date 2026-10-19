@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { useApp } from '../../context/AppContext';
-import { formatActivityTimestamp } from '../../utils/dateUtils';
+import { formatActivityTimestamp, formatRelativeTime } from '../../utils/dateUtils';
 import {
   History,
   ShieldCheck,
@@ -285,10 +285,15 @@ export const ActivityHistoryPage: React.FC = () => {
 
                   {/* Timestamp Right aligned */}
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 flex-shrink-0 text-xs text-slate-500 font-mono">
-                    <span className="inline-flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-200 text-slate-600">
+                    <span className="inline-flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded border border-slate-200 text-slate-700 font-medium shadow-2xs">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {formatActivityTimestamp(act.timestamp)}
+                      {formatActivityTimestamp(act.timestamp, true)}
                     </span>
+                    {formatRelativeTime(act.timestamp) && (
+                      <span className="text-[10px] text-slate-400 font-sans font-medium tracking-tight">
+                        {formatRelativeTime(act.timestamp)}
+                      </span>
+                    )}
                   </div>
                 </div>
               );

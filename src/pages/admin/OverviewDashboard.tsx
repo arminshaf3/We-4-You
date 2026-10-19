@@ -5,7 +5,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { BandLookupModal } from '../../components/admin/BandLookupModal';
 import { Button } from '../../components/common/Button';
 import { useApp } from '../../context/AppContext';
-import { formatActivityTime } from '../../utils/dateUtils';
+import { formatActivityTime, formatActivityTimestamp, formatRelativeTime } from '../../utils/dateUtils';
 import {
   ClipboardList,
   AlertTriangle,
@@ -413,7 +413,12 @@ export const OverviewDashboard: React.FC = () => {
                 <div key={act.id} className="text-xs space-y-1 pb-2.5 border-b border-slate-100 last:border-0 last:pb-0">
                   <div className="flex items-center justify-between text-[10px] text-content-muted">
                     <span className="font-semibold text-navy">{act.actor}</span>
-                    <span className="font-mono">{formatActivityTime(act.timestamp)}</span>
+                    <span
+                      className="font-mono text-slate-500 font-medium"
+                      title={formatActivityTimestamp(act.timestamp, true)}
+                    >
+                      {formatRelativeTime(act.timestamp) ? `${formatRelativeTime(act.timestamp)} · ${formatActivityTime(act.timestamp)}` : formatActivityTimestamp(act.timestamp, false)}
+                    </span>
                   </div>
                   <p className="text-slate-700 leading-snug font-medium">
                     {act.description}

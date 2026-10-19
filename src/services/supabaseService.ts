@@ -12,6 +12,7 @@ import {
   Payout,
   Incident,
   Enquiry,
+  AppActivity,
 } from '../types';
 
 /**
@@ -1106,6 +1107,47 @@ export const supabaseService = {
     }
   },
 
+  // --- AUDIT LOGS & ACTIVITY ---
+  async getAuditLogs(): Promise<AppActivity[] | null> {
+    if (!isSupabaseConfigured) return null;
+    try {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (error || !data) return null;
+      return data.map((log: any) => ({
+        id: log.id || `LOG-${Date.now()}`,
+        timestamp: log.timestamp || log.created_at || new Date().toISOString(),
+        actor: log.actor || 'System Staff',
+        actionType: log.action_type || log.action || 'System Action',
+        description: log.description || log.details?.description || 'Administrative event logged',
+        entityType: (log.entity_type || 'settings') as AppActivity['entityType'],
+        entityId: log.entity_id || log.id || 'N/A',
+      }));
+    } catch {
+      return null;
+    }
+  },
+
+  async insertAuditLog(entry: Omit<AppActivity, 'id'>): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    try {
+      await supabase.from('audit_logs').insert({
+        actor: entry.actor,
+        action_type: entry.actionType,
+        description: entry.description,
+        entity_type: entry.entityType,
+        entity_id: entry.entityId,
+        timestamp: entry.timestamp,
+      });
+    } catch {
+      // silently ignore if restricted by permissions
+    }
+  },
+
   // --- SUPABASE REALTIME SUBSCRIPTIONS ---
   subscribeToRealtime(callbacks: {
     onRegistrationChange?: (payload: any) => void;
@@ -1113,6 +1155,7 @@ export const supabaseService = {
     onSubscriptionChange?: (payload: any) => void;
     onBandChange?: (payload: any) => void;
     onPaymentChange?: (payload: any) => void;
+    onAuditLogChange?: (payload: any) => void;
   }) {
     if (!isSupabaseConfigured) return null;
 
@@ -1143,6 +1186,11 @@ export const supabaseService = {
           'postgres_changes',
           { event: '*', schema: 'public', table: 'payments' },
           (payload) => callbacks.onPaymentChange && callbacks.onPaymentChange(payload)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'audit_logs' },
+          (payload) => callbacks.onAuditLogChange && callbacks.onAuditLogChange(payload)
         )
         .subscribe();
 
