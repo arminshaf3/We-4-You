@@ -78,10 +78,13 @@ export const Footer: React.FC = () => {
                 <Link to="/faq" className="hover:text-mint transition-colors">Frequently Asked Questions</Link>
               </li>
               <li>
-                <Link to="/privacy" className="hover:text-mint transition-colors">Privacy Notice (Draft)</Link>
+                <Link to="/return-policy" className="hover:text-mint transition-colors">Return Policy</Link>
               </li>
               <li>
-                <Link to="/terms" className="hover:text-mint transition-colors">Service Terms (Draft)</Link>
+                <Link to="/privacy-policy" className="hover:text-mint transition-colors">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/terms" className="hover:text-mint transition-colors">Terms &amp; Conditions</Link>
               </li>
             </ul>
           </div>

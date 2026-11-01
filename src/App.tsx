@@ -19,7 +19,8 @@ import { RegistrationConfirmationPage } from './pages/public/RegistrationConfirm
 import { ContactPage } from './pages/public/ContactPage';
 import { FoundBandPage } from './pages/public/FoundBandPage';
 import { FaqPage } from './pages/public/FaqPage';
-import { PrivacyPage } from './pages/public/PrivacyPage';
+import { ReturnPolicyPage } from './pages/public/ReturnPolicyPage';
+import { PrivacyPolicyPage } from './pages/public/PrivacyPolicyPage';
 import { TermsPage } from './pages/public/TermsPage';
 import { NotFoundPage } from './pages/public/NotFoundPage';
 import { LoginPage } from './pages/public/LoginPage';
@@ -68,8 +69,11 @@ export const App: React.FC = () => {
               <Route path="/found-band" element={<FoundBandPage />} />
               <Route path="/band/:publicCode" element={<FoundBandPage />} />
               <Route path="/faq" element={<FaqPage />} />
-              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/return-policy" element={<ReturnPolicyPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/terms-and-conditions" element={<TermsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
