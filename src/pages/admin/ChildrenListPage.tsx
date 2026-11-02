@@ -5,11 +5,15 @@ import { DataTable, Column } from '../../components/common/DataTable';
 import { useApp } from '../../context/AppContext';
 import { ChildRecord } from '../../types';
 import { Button } from '../../components/common/Button';
+import { AddWearerModal } from '../../components/admin/AddWearerModal';
+import { BandLookupModal } from '../../components/admin/BandLookupModal';
 import { Search, User, Phone, Radio, Shield, UserPlus } from 'lucide-react';
 
 export const ChildrenListPage: React.FC = () => {
   const { childrenRecords, vendors, subscriptions } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLookupOpen, setIsLookupOpen] = useState(false);
 
   const filteredChildren = useMemo(() => {
     return childrenRecords.filter((child) => {
@@ -119,6 +123,14 @@ export const ChildrenListPage: React.FC = () => {
         actions={
           <div className="flex items-center gap-2">
             <Button
+              onClick={() => setIsLookupOpen(true)}
+              variant="outline"
+              size="sm"
+              leftIcon={<Search className="w-3.5 h-3.5 text-navy" />}
+            >
+              Band Lookup
+            </Button>
+            <Button
               to="/admin/bands"
               variant="outline"
               size="sm"
@@ -127,12 +139,12 @@ export const ChildrenListPage: React.FC = () => {
               Band Inventory
             </Button>
             <Button
-              to="/register"
+              onClick={() => setIsAddModalOpen(true)}
               variant="primary"
               size="sm"
               leftIcon={<UserPlus className="w-3.5 h-3.5 text-mint" />}
             >
-              New Registration
+              Add Wearer
             </Button>
           </div>
         }
@@ -233,6 +245,15 @@ export const ChildrenListPage: React.FC = () => {
             </div>
           </div>
         )}
+      />
+      <AddWearerModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
+
+      <BandLookupModal
+        isOpen={isLookupOpen}
+        onClose={() => setIsLookupOpen(false)}
       />
     </div>
   );

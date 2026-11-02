@@ -20,6 +20,8 @@ import {
   ContactAttempt,
   PaymentMethod,
   CardPaymentDetails,
+  GuardianData,
+  EmergencyContact,
 } from '../types';
 import {
   initialVendors,
@@ -93,6 +95,22 @@ interface AppContextType {
   addBandToInventory: (code: string) => Band | null;
 
   // Child and Guardian workflows
+  addWearerRecord: (data: {
+    name: string;
+    ageRange: string;
+    birthDate?: string;
+    calculatedAge?: string;
+    gender?: string;
+    bloodGroup?: string;
+    nationalId?: string;
+    medicalNotes?: string;
+    specialNeeds?: string;
+    primaryGuardian: GuardianData;
+    secondaryGuardians?: EmergencyContact[];
+    bandCode?: string;
+    planId?: string;
+    vendorId?: string;
+  }) => ChildRecord;
   updateChildRecord: (childId: string, updates: Partial<ChildRecord>) => void;
 
   // Plan & Subscription workflows
@@ -989,7 +1007,110 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newBand;
   };
 
-  // 5. Profile updates
+  // 5. Wearer Enrollment & Profile updates
+  const addWearerRecord = (data: {
+    name: string;
+    ageRange: string;
+    birthDate?: string;
+    calculatedAge?: string;
+    gender?: string;
+    bloodGroup?: string;
+    nationalId?: string;
+    medicalNotes?: string;
+    specialNeeds?: string;
+    primaryGuardian: GuardianData;
+    secondaryGuardians?: EmergencyContact[];
+    bandCode?: string;
+    planId?: string;
+    vendorId?: string;
+  }): ChildRecord => {
+    const today = new Date().toISOString().substring(0, 10);
+    const childId = `CHD-${Date.now().toString().slice(-6)}`;
+    const cleanBandCode = data.bandCode ? data.bandCode.trim().toUpperCase() : '';
+
+    let subId: string | undefined = undefined;
+    if (data.planId) {
+      subId = `SUB-${Date.now().toString().slice(-6)}`;
+      const selectedPlan = plans.find((p) => p.id === data.planId);
+      const duration = selectedPlan?.durationMonths || 12;
+      const expiry = new Date();
+      expiry.setMonth(expiry.getMonth() + duration);
+      const expiryDate = expiry.toISOString().substring(0, 10);
+
+      const newSub: Subscription = {
+        id: subId,
+        childId,
+        planId: data.planId,
+        status: 'active',
+        startDate: today,
+        expiryDate,
+        paymentRef: `REC-ADM-${childId}`,
+        renewalCount: 0,
+      };
+      setSubscriptions((prev) => [newSub, ...prev]);
+    }
+
+    if (cleanBandCode) {
+      const normBand = cleanBandCode.replace(/[\s-]/g, '').toUpperCase();
+      setBands((prev) => {
+        const index = prev.findIndex((b) => b.referenceCode.replace(/[\s-]/g, '').toUpperCase() === normBand);
+        if (index >= 0) {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            status: 'assigned',
+            childId,
+            assignedDate: today,
+          };
+          return deduplicateBands(updated);
+        } else {
+          const newBand: Band = {
+            id: `BND-${Date.now().toString().slice(-6)}`,
+            referenceCode: cleanBandCode,
+            status: 'assigned',
+            childId,
+            assignedDate: today,
+          };
+          return deduplicateBands([newBand, ...prev]);
+        }
+      });
+      supabaseService.updateBand(cleanBandCode, {
+        status: 'assigned',
+        childId,
+        assignedDate: today,
+      });
+    }
+
+    const newChild: ChildRecord = {
+      id: childId,
+      name: data.name.trim(),
+      ageRange: data.ageRange.trim() || 'General',
+      birthDate: data.birthDate || undefined,
+      calculatedAge: data.calculatedAge || undefined,
+      gender: data.gender || undefined,
+      bloodGroup: data.bloodGroup || undefined,
+      nationalId: data.nationalId?.trim() || undefined,
+      medicalNotes: data.medicalNotes?.trim() || undefined,
+      specialNeeds: data.specialNeeds?.trim() || undefined,
+      primaryGuardian: data.primaryGuardian,
+      secondaryGuardians: data.secondaryGuardians || [],
+      currentBandCode: cleanBandCode,
+      subscriptionId: subId,
+      vendorId: data.vendorId || 'central',
+      purchaseDate: today,
+      receiptRef: `REC-ADM-${childId}`,
+      registeredDate: today,
+      incidentsCount: 0,
+    };
+
+    setChildrenRecords((prev) => [newChild, ...prev]);
+    supabaseService.insertWearer(newChild).catch(() => {});
+
+    logAction('Wearer Enrolled', `Enrolled wearer "${data.name}" directly via Admin Portal.${cleanBandCode ? ` Assigned band ${cleanBandCode}.` : ''}`, 'child', childId);
+    addToast('success', 'Wearer Added', `Enrolled "${data.name}" successfully.`);
+    return newChild;
+  };
+
   const updateChildRecord = (childId: string, updates: Partial<ChildRecord>) => {
     setChildrenRecords((prev) =>
       prev.map((c) => (c.id === childId ? { ...c, ...updates } : c))
@@ -1544,15 +1665,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 12. Global Search for Band Reference
   const findBandRecord = (code: string) => {
-    const normalized = code.toUpperCase().replace(/\s+/g, '').trim();
-    const band = bands.find((b) => b.referenceCode.replace(/\s+/g, '').toUpperCase() === normalized);
-    const child = band?.childId ? childrenRecords.find((c) => c.id === band.childId) : undefined;
-    const subscription = child?.subscriptionId ? subscriptions.find((s) => s.id === child.subscriptionId) : undefined;
-    const vendor = band?.vendorId ? vendors.find((v) => v.id === band.vendorId) : undefined;
-    const matchedIncidents = incidents.filter((i) => i.bandReference.replace(/\s+/g, '').toUpperCase() === normalized);
+    const rawClean = code.trim().toUpperCase();
+    const normalized = rawClean.replace(/[\s-]/g, '');
+
+    // 1. Search in bands by normalized code (with or without dashes)
+    const band = bands.find((b) => {
+      const bNorm = b.referenceCode.replace(/[\s-]/g, '').toUpperCase();
+      return bNorm === normalized || b.referenceCode.toUpperCase() === rawClean;
+    });
+
+    // 2. Search for child: first by band's childId, OR by child's currentBandCode!
+    let child = band?.childId
+      ? childrenRecords.find((c) => c.id === band.childId)
+      : undefined;
+
+    if (!child) {
+      child = childrenRecords.find((c) => {
+        if (!c.currentBandCode) return false;
+        const cNorm = c.currentBandCode.replace(/[\s-]/g, '').toUpperCase();
+        return cNorm === normalized || c.currentBandCode.toUpperCase() === rawClean;
+      });
+    }
+
+    // 3. If child was found but band was missing from inventory, synthesize it
+    const effectiveBand: Band | undefined = band || (child && child.currentBandCode ? {
+      id: `BND-${child.id}`,
+      referenceCode: child.currentBandCode,
+      status: 'assigned',
+      childId: child.id,
+      assignedDate: child.registeredDate,
+    } : undefined);
+
+    const subscription = child?.subscriptionId
+      ? subscriptions.find((s) => s.id === child.subscriptionId)
+      : undefined;
+
+    const vendor = (effectiveBand?.vendorId || child?.vendorId)
+      ? vendors.find((v) => v.id === (effectiveBand?.vendorId || child?.vendorId))
+      : undefined;
+
+    const matchedIncidents = incidents.filter((i) => {
+      const iNorm = i.bandReference.replace(/[\s-]/g, '').toUpperCase();
+      return iNorm === normalized || i.bandReference.toUpperCase() === rawClean;
+    });
 
     return {
-      band,
+      band: effectiveBand,
       child,
       subscription,
       vendor,
@@ -1560,12 +1718,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-
-  // Memoize the full context value so consumers don't re-render unless
-  // actual state they care about has changed. Without this, the new object
-  // literal on every AppProvider render caused all consumers to re-render
-  // on every context state change (e.g. polling, toasts), which made typed
-  // characters appear to be lost (one-character-at-a-time bug).
   const contextValue = useMemo<AppContextType>(() => ({
     vendors,
     activeVendors,
@@ -1599,6 +1751,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     markBandLost,
     replaceBand,
     addBandToInventory,
+    addWearerRecord,
     updateChildRecord,
     addPlan,
     updatePlan,
@@ -1628,7 +1781,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loginAdmin, logoutAdmin, addToast, removeToast, submitPublicRegistration,
     updateRegistrationStatus, addVendor, updateVendor, toggleVendorActive,
     assignBandToChild, updateBandStatus, markBandLost, replaceBand,
-    addBandToInventory, updateChildRecord, addPlan, updatePlan, togglePlanActive,
+    addBandToInventory, addWearerRecord, updateChildRecord, addPlan, updatePlan, togglePlanActive,
     updateCustomerSubscriptionPrice, renewSubscription, sendRenewalReminder,
     directSubscribeWithCard, verifyPayment, reversePayment, approveCommission,
     createSimulatedPayout, logIncident, submitPublicFoundReport, addContactAttempt,

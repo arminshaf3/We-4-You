@@ -312,6 +312,7 @@ export const supabaseService = {
           primary_contact: wearer.primaryGuardian,
           secondary_contacts: wearer.secondaryGuardians,
           current_band_code: wearer.currentBandCode,
+          subscription_id: wearer.subscriptionId || null,
           vendor_id: wearer.vendorId,
           registered_date: wearer.registeredDate,
           purchase_date: wearer.purchaseDate,

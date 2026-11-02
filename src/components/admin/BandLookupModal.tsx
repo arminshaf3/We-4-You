@@ -27,10 +27,53 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
 
     setIsSearching(true);
     try {
-      // Trigger secure backend RPC (which records the mandatory audit log entry)
-      supabaseService.secureBandLookup(cleanCode, adminUser).catch(() => {});
+      // 1. Trigger secure backend RPC lookup (records mandatory audit trail)
+      let rpcData: any = null;
+      try {
+        const rpcRes = await supabaseService.secureBandLookup(cleanCode, adminUser);
+        if (rpcRes.success && rpcRes.data) {
+          rpcData = rpcRes.data;
+        }
+      } catch {
+        // Continue with local fallback
+      }
 
-      const res = findBandRecord(cleanCode);
+      // 2. Perform search in local context state
+      let res = findBandRecord(cleanCode);
+
+      // 3. If local state didn't find the wearer, but Supabase DB found the wearer, merge it!
+      if (!res.child && rpcData?.wearer) {
+        const w = rpcData.wearer;
+        const dbChild: any = {
+          id: w.id,
+          name: w.name,
+          ageRange: w.age_range || w.demographic_category || 'General',
+          primaryGuardian: w.primary_contact || {
+            fullName: 'Registered Contact',
+            relationship: 'Guardian',
+            mobile: 'Contact Office',
+            preferredLanguage: 'English',
+          },
+          secondaryGuardians: w.secondary_contacts || [],
+          currentBandCode: cleanCode,
+          incidentsCount: w.incidents_count || 0,
+          registeredDate: new Date().toISOString().substring(0, 10),
+          purchaseDate: new Date().toISOString().substring(0, 10),
+          receiptRef: 'REC-DB',
+          vendorId: rpcData.vendor?.id || 'central',
+        };
+        res = {
+          ...res,
+          child: dbChild,
+          band: res.band || {
+            id: `BND-${w.id}`,
+            referenceCode: cleanCode,
+            status: 'assigned',
+            childId: w.id,
+          },
+        };
+      }
+
       setResult(res);
       setSearched(true);
     } finally {
@@ -162,8 +205,27 @@ export const BandLookupModal: React.FC<BandLookupModalProps> = ({ isOpen, onClos
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs text-amber-900">
-                  Band reference exists in inventory ({result.band.status}), but is currently not assigned to an active wearer record.
+                <div className="p-4 bg-amber-50 rounded-brand border border-amber-200 text-xs text-amber-900 space-y-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-950">
+                        Band reference exists in inventory (Status: {result.band.status.toUpperCase()}), but has no wearer assigned.
+                      </p>
+                      <p className="text-amber-800 mt-0.5">
+                        This physical band is in stock, but is currently not linked to any wearer profile.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="pt-1 flex items-center gap-2">
+                    <Link
+                      to="/admin/bands"
+                      onClick={onClose}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-navy text-white text-xs font-semibold rounded-brand hover:bg-navy-light transition-colors"
+                    >
+                      <span>Assign Wearer in Band Inventory &rarr;</span>
+                    </Link>
+                  </div>
                 </div>
               )}
 
