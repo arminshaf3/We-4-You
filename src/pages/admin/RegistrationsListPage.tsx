@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { Button } from '../../components/common/Button';
+import { AddRegistrationModal } from '../../components/admin/AddRegistrationModal';
 import { useApp } from '../../context/AppContext';
 import { Registration, RegistrationStatus } from '../../types';
-import { Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, ClipboardList } from 'lucide-react';
 
 export const RegistrationsListPage: React.FC = () => {
   const { registrations, vendors } = useApp();
@@ -13,6 +15,7 @@ export const RegistrationsListPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [vendorFilter, setVendorFilter] = useState<string>('ALL');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const pendingCount = useMemo(() => registrations.filter(r => r.status === 'pending_verification').length, [registrations]);
   const updateReqCount = useMemo(() => registrations.filter(r => r.status === 'update_requested').length, [registrations]);
@@ -120,6 +123,16 @@ export const RegistrationsListPage: React.FC = () => {
       <PageHeader
         title="Registration Review Queue"
         description="Verify emergency contact authority, check band references, and manage activation eligibility."
+        actions={
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="primary"
+            size="sm"
+            leftIcon={<ClipboardList className="w-4 h-4 text-mint" />}
+          >
+            Add Registration
+          </Button>
+        }
       />
 
       {/* Queue Stat Filter Pills */}
@@ -276,6 +289,10 @@ export const RegistrationsListPage: React.FC = () => {
             </div>
           </div>
         )}
+      />
+      <AddRegistrationModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
       />
     </div>
   );

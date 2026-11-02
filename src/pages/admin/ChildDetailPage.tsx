@@ -27,16 +27,31 @@ import {
   MapPin,
   Calendar,
   AlertCircle,
+  ClipboardList,
 } from 'lucide-react';
 
 export const ChildDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { childrenRecords, subscriptions, vendors, incidents, updateChildRecord, updateCustomerSubscriptionPrice } = useApp();
+  const {
+    childrenRecords,
+    subscriptions,
+    vendors,
+    incidents,
+    registrations,
+    updateChildRecord,
+    updateCustomerSubscriptionPrice,
+  } = useApp();
 
   const child = childrenRecords.find((c) => c.id === id);
   const sub = subscriptions.find((s) => s.id === child?.subscriptionId);
   const vendor = vendors.find((v) => v.id === child?.vendorId);
   const childIncidents = incidents.filter((i) => i.bandReference === child?.currentBandCode);
+  const linkedReg = registrations.find(
+    (r) =>
+      (child?.currentBandCode && r.bandCode.replace(/[\s-]/g, '').toUpperCase() === child.currentBandCode.replace(/[\s-]/g, '').toUpperCase()) ||
+      r.child.name.toLowerCase() === child?.name.toLowerCase() ||
+      r.referenceNumber === child?.receiptRef?.replace('REC-REG-', '')
+  );
 
   // Signed URL for private photo
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(child?.photoUrl || null);
@@ -64,6 +79,7 @@ export const ChildDetailPage: React.FC = () => {
   const [editBloodGroup, setEditBloodGroup] = useState(child?.bloodGroup || '');
   const [editNationalId, setEditNationalId] = useState(child?.nationalId || '');
   const [editMedicalNotes, setEditMedicalNotes] = useState(child?.medicalNotes || '');
+  const [editSpecialNeeds, setEditSpecialNeeds] = useState(child?.specialNeeds || '');
   
   const [editGuardianName, setEditGuardianName] = useState(child?.primaryGuardian.fullName || '');
   const [editMobile, setEditMobile] = useState(child?.primaryGuardian.mobile || '');
@@ -93,6 +109,7 @@ export const ChildDetailPage: React.FC = () => {
     setEditBloodGroup(child.bloodGroup || '');
     setEditNationalId(child.nationalId || '');
     setEditMedicalNotes(child.medicalNotes || '');
+    setEditSpecialNeeds(child.specialNeeds || '');
 
     setEditGuardianName(child.primaryGuardian.fullName);
     setEditMobile(child.primaryGuardian.mobile);
@@ -138,6 +155,7 @@ export const ChildDetailPage: React.FC = () => {
       bloodGroup: editBloodGroup || undefined,
       nationalId: editNationalId.trim() || undefined,
       medicalNotes: editMedicalNotes.trim() || undefined,
+      specialNeeds: editSpecialNeeds.trim() || undefined,
       primaryGuardian: {
         ...child.primaryGuardian,
         fullName: editGuardianName.trim(),
@@ -249,8 +267,29 @@ export const ChildDetailPage: React.FC = () => {
                   <span className="text-content-muted block mb-0.5">Registration Date</span>
                   <span className="text-sm font-semibold text-navy">{child.registeredDate}</span>
                 </div>
+
+                <div>
+                  <span className="text-content-muted block mb-0.5">Purchase Date &amp; Receipt</span>
+                  <span className="text-sm font-semibold text-navy block">{child.purchaseDate || 'Direct'}</span>
+                  {child.receiptRef && (
+                    <span className="font-mono text-[11px] text-content-muted block truncate" title={child.receiptRef}>
+                      {child.receiptRef}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* Special Needs / Assistance Banner if present */}
+            {child.specialNeeds && (
+              <div className="p-3.5 bg-blue-50/80 rounded-brand border border-blue-200 text-xs text-blue-950 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-blue-900 block mb-0.5">Special Needs &amp; Behavioral Assistance Profile:</span>
+                  <p className="text-blue-900 leading-relaxed">{child.specialNeeds}</p>
+                </div>
+              </div>
+            )}
 
             {/* Medical / Allergy Banner if present */}
             {child.medicalNotes && (
@@ -508,6 +547,84 @@ export const ChildDetailPage: React.FC = () => {
             </p>
           </div>
 
+          {/* Linked Registration Record Card */}
+          <div className="bg-white p-5 rounded-brand border border-border-subtle shadow-subtle space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-navy font-bold text-xs uppercase tracking-wider">
+                <ClipboardList className="w-4 h-4 text-navy" />
+                <span>Registration Dossier</span>
+              </div>
+              {linkedReg && <StatusBadge status={linkedReg.status} size="sm" />}
+            </div>
+
+            {linkedReg ? (
+              <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-content-muted">Application Ref:</span>
+                  <Link
+                    to={`/admin/registrations/${linkedReg.id}`}
+                    className="font-mono font-bold text-navy hover:underline"
+                  >
+                    {linkedReg.referenceNumber}
+                  </Link>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-content-muted">Submitted Date:</span>
+                  <span className="font-semibold text-slate-800">{linkedReg.submissionDate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-content-muted">Payment Status:</span>
+                  <span
+                    className={`font-semibold capitalize ${
+                      linkedReg.paymentStatus === 'verified' ? 'text-emerald-700' : 'text-amber-700'
+                    }`}
+                  >
+                    {linkedReg.paymentStatus}
+                  </span>
+                </div>
+                {linkedReg.paymentMethod && (
+                  <div className="flex justify-between">
+                    <span className="text-content-muted">Payment Method:</span>
+                    <span className="font-medium text-slate-800 capitalize">
+                      {linkedReg.paymentMethod.replace('_', ' ')}
+                    </span>
+                  </div>
+                )}
+                {linkedReg.statusReason && (
+                  <div className="pt-1 text-[11px] text-content-muted border-t border-border-subtle">
+                    <span className="font-semibold text-slate-700 block">Status Note:</span>
+                    <p className="italic text-slate-600 mt-0.5">{linkedReg.statusReason}</p>
+                  </div>
+                )}
+                <div className="pt-2 border-t border-border-subtle">
+                  <Link
+                    to={`/admin/registrations/${linkedReg.id}`}
+                    className="text-xs text-navy font-semibold hover:underline block text-center"
+                  >
+                    View Full Registration Dossier →
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-neutral-soft rounded-brand border border-border-subtle text-xs space-y-2">
+                <p className="text-content-muted">
+                  Directly enrolled via staff admin portal or direct band activation.
+                </p>
+                {child.receiptRef && (
+                  <p className="text-content-muted">
+                    Receipt Ref: <span className="font-mono font-semibold text-navy">{child.receiptRef}</span>
+                  </p>
+                )}
+                <Link
+                  to="/admin/registrations"
+                  className="text-xs text-navy font-semibold hover:underline block pt-1"
+                >
+                  Browse All Registrations →
+                </Link>
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>
@@ -606,14 +723,22 @@ export const ChildDetailPage: React.FC = () => {
                 />
               </FormField>
 
-              <FormField label="Emergency Medical Notes / Allergies (Optional)">
+              <FormField label="Special Needs / Conditions (Optional)">
                 <Input
-                  value={editMedicalNotes}
-                  onChange={(e) => setEditMedicalNotes(e.target.value)}
-                  placeholder="e.g. Asthmatic, Penicillin allergy, Diabetic"
+                  value={editSpecialNeeds}
+                  onChange={(e) => setEditSpecialNeeds(e.target.value)}
+                  placeholder="e.g. Non-verbal, Autism Spectrum, Wandering risk, Hearing impaired"
                 />
               </FormField>
             </div>
+
+            <FormField label="Emergency Medical Notes / Allergies (Optional)">
+              <Input
+                value={editMedicalNotes}
+                onChange={(e) => setEditMedicalNotes(e.target.value)}
+                placeholder="e.g. Asthmatic, Penicillin allergy, Diabetic"
+              />
+            </FormField>
           </div>
 
           {/* Guardian Details Section */}
