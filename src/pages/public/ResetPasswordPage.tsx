@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Logo } from '../../components/common/Logo';
 import { Button } from '../../components/common/Button';
+import { supabase } from '../../lib/supabase';
 import { Lock, Mail, AlertCircle, ArrowRight, CheckCircle2, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 export const ResetPasswordPage: React.FC = () => {
@@ -19,9 +20,30 @@ export const ResetPasswordPage: React.FC = () => {
   const [isPasswordUpdated, setIsPasswordUpdated] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
 
-  // Check if user is authenticated (e.g. from reset password link)
-  const isUpdatingPassword = isAuthenticated;
+  useEffect(() => {
+    // 1. Detect recovery token in URL hash or code in search params
+    const hash = window.location.hash;
+    const search = window.location.search;
+    if (hash.includes('type=recovery') || hash.includes('access_token') || search.includes('code=')) {
+      setIsRecoverySession(true);
+    }
+
+    // 2. Listen for Supabase recovery event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoverySession(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Show "Set New Password" form if authenticated or coming from password recovery link
+  const isUpdatingPassword = isAuthenticated || isRecoverySession;
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();

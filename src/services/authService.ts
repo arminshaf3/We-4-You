@@ -190,7 +190,10 @@ export const authService = {
     if (!isSupabaseConfigured) {
       return { error: 'Supabase is not configured.' };
     }
-    const redirectTo = `${window.location.origin}/reset-password`;
+    const origin = typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost')
+      ? window.location.origin
+      : (typeof window !== 'undefined' ? window.location.origin : 'https://we-4-you.vercel.app');
+    const redirectTo = `${origin}/reset-password`;
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo,
     });
