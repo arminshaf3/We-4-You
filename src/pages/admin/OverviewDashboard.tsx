@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../../components/admin/PageHeader';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { BandLookupModal } from '../../components/admin/BandLookupModal';
+import { AddWearerModal } from '../../components/admin/AddWearerModal';
 import { Button } from '../../components/common/Button';
 import { useApp } from '../../context/AppContext';
 import { formatActivityTime, formatActivityTimestamp, formatRelativeTime } from '../../utils/dateUtils';
@@ -20,11 +21,13 @@ import {
   Store,
   CheckCircle2,
   ExternalLink,
+  UserPlus,
 } from 'lucide-react';
 
 export const OverviewDashboard: React.FC = () => {
   const { registrations, incidents, subscriptions, commissions, activity, bands, childrenRecords } = useApp();
   const [isLookupOpen, setIsLookupOpen] = useState(false);
+  const [isAddWearerOpen, setIsAddWearerOpen] = useState(false);
 
   // Derived Metrics from live Supabase data
   const totalWearers = childrenRecords.length;
@@ -41,14 +44,32 @@ export const OverviewDashboard: React.FC = () => {
         title="Operations Overview"
         description="Live operational hub for protected wearers, subscription renewals, review queues, and incident response."
         actions={
-          <Button
-            onClick={() => setIsLookupOpen(true)}
-            variant="primary"
-            size="md"
-            leftIcon={<Search className="w-4 h-4" />}
-          >
-            Exact Band Lookup
-          </Button>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Button
+              onClick={() => setIsLookupOpen(true)}
+              variant="outline"
+              size="md"
+              leftIcon={<Search className="w-4 h-4 text-navy" />}
+            >
+              Exact Band Lookup
+            </Button>
+            <Button
+              to="/admin/bands"
+              variant="outline"
+              size="md"
+              leftIcon={<Radio className="w-4 h-4 text-navy" />}
+            >
+              Band Inventory
+            </Button>
+            <Button
+              onClick={() => setIsAddWearerOpen(true)}
+              variant="primary"
+              size="md"
+              leftIcon={<UserPlus className="w-4 h-4 text-mint" />}
+            >
+              Add Wearer
+            </Button>
+          </div>
         }
       />
 
@@ -434,6 +455,9 @@ export const OverviewDashboard: React.FC = () => {
 
       {/* Exact Band Lookup Modal */}
       <BandLookupModal isOpen={isLookupOpen} onClose={() => setIsLookupOpen(false)} />
+
+      {/* Direct Add Wearer Portal */}
+      <AddWearerModal isOpen={isAddWearerOpen} onClose={() => setIsAddWearerOpen(false)} />
     </div>
   );
 };
