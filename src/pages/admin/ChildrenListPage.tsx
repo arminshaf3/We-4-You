@@ -4,7 +4,8 @@ import { PageHeader } from '../../components/admin/PageHeader';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { useApp } from '../../context/AppContext';
 import { ChildRecord } from '../../types';
-import { Search, User, Phone, Radio, Shield } from 'lucide-react';
+import { Button } from '../../components/common/Button';
+import { Search, User, Phone, Radio, Shield, UserPlus } from 'lucide-react';
 
 export const ChildrenListPage: React.FC = () => {
   const { childrenRecords, vendors, subscriptions } = useApp();
@@ -115,6 +116,26 @@ export const ChildrenListPage: React.FC = () => {
       <PageHeader
         title="Wearers & Contacts Registry"
         description="Searchable individual and member profiles, emergency contact priority, and linked band assignments."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              to="/admin/bands"
+              variant="outline"
+              size="sm"
+              leftIcon={<Radio className="w-3.5 h-3.5 text-navy" />}
+            >
+              Band Inventory
+            </Button>
+            <Button
+              to="/register"
+              variant="primary"
+              size="sm"
+              leftIcon={<UserPlus className="w-3.5 h-3.5 text-mint" />}
+            >
+              New Registration
+            </Button>
+          </div>
+        }
       />
 
       {/* Summary KPI Cards */}
