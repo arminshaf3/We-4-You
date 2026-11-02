@@ -213,7 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
 
   const [adminUser, setAdminUser] = useState<string>(() => {
-    return localStorage.getItem('we4u_admin_user') ?? sessionStorage.getItem('we4u_admin_user') ?? 'we4u@gmail.com';
+    return localStorage.getItem('we4u_admin_user') ?? sessionStorage.getItem('we4u_admin_user') ?? 'we4ulk@gmail.com';
   });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 

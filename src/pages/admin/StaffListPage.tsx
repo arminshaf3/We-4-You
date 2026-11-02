@@ -55,7 +55,7 @@ export const StaffListPage: React.FC = () => {
       setStaffList([
         {
           id: 'staff-admin-01',
-          email: 'we4u@gmail.com',
+          email: 'we4ulk@gmail.com',
           fullName: 'We 4 You Administrator',
           role: 'admin',
           createdAt: new Date().toISOString().substring(0, 10),
